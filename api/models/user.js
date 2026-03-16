@@ -229,6 +229,63 @@ class User {
     );
     return result.rows[0];
   }
+
+  // ===== FORGOT PASSWORD METHODS =====
+  
+  static async setResetToken(userId, token, expiresAt) {
+    const result = await query(
+      `UPDATE users 
+       SET reset_token = $1, reset_token_expires = $2, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $3 
+       RETURNING *`,
+      [token, expiresAt, userId]
+    );
+    return result.rows[0];
+  }
+
+  static async findByResetToken(token) {
+    const result = await query(
+      `SELECT * FROM users WHERE reset_token = $1 AND reset_token_expires > NOW()`,
+      [token]
+    );
+    return result.rows[0];
+  }
+
+  static async clearResetToken(userId) {
+    const result = await query(
+      `UPDATE users 
+       SET reset_token = NULL, reset_token_expires = NULL, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $1 
+       RETURNING *`,
+      [userId]
+    );
+    return result.rows[0];
+  }
+
+  static async updatePassword(userId, hashedPassword) {
+    const result = await query(
+      `UPDATE users 
+       SET password = $1, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $2 
+       RETURNING *`,
+      [hashedPassword, userId]
+    );
+    return result.rows[0];
+  }
+
+  // Check if user is admin (first user or has admin email)
+  static async isAdmin(userId) {
+    const user = await this.findById(userId);
+    if (!user) return false;
+    
+    // First user is admin
+    const firstUser = await query('SELECT id FROM users ORDER BY created_at ASC LIMIT 1');
+    if (firstUser.rows[0]?.id === userId) return true;
+    
+    // Or check admin email list
+    const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim());
+    return adminEmails.includes(user.email);
+  }
 }
 
 module.exports = User;

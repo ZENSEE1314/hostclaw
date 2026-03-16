@@ -5,8 +5,15 @@ const { body, validationResult } = require('express-validator');
 const User = require('../models/user');
 const EmailService = require('../services/email');
 const { authenticate } = require('../middleware/auth');
+const crypto = require('crypto');
+const axios = require('axios');
 
 const router = express.Router();
+
+// Google OAuth configuration
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || `${process.env.FRONTEND_URL}/api/auth/google/callback`;
 
 // Register
 router.post('/register', [
@@ -147,6 +154,164 @@ router.get('/profile', authenticate, async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+});
+
+// ===== FORGOT PASSWORD =====
+
+// Request password reset
+router.post('/forgot-password', async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const user = await User.findByEmail(email);
+    if (!user) {
+      // Don't reveal if email exists
+      return res.json({ message: 'If an account exists, a reset link has been sent' });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+
+    await User.setResetToken(user.id, resetToken, resetTokenExpiry);
+
+    // Send reset email
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password.html?token=${resetToken}`;
+    
+    try {
+      await EmailService.send({
+        to: user.email,
+        subject: 'Password Reset - HostClaw',
+        html: `
+          <div style="font-family: Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background: #0a0a1a; color: #f8fafc; border-radius: 20px;">
+            <h1 style="color: #6366f1;">Password Reset</h1>
+            <p>Hi ${user.name},</p>
+            <p>You requested a password reset. Click the button below to reset your password:</p>
+            <a href="${resetUrl}" style="display: inline-block; background: linear-gradient(135deg, #6366f1, #06b6d4); color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; margin: 20px 0;">Reset Password</a>
+            <p style="color: #94a3b8;">This link expires in 1 hour.</p>
+            <p style="color: #94a3b8;">If you didn't request this, please ignore this email.</p>
+          </div>
+        `
+      });
+    } catch (emailError) {
+      console.error('Failed to send reset email:', emailError);
+    }
+
+    res.json({ message: 'If an account exists, a reset link has been sent' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Reset password with token
+router.post('/reset-password', async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+    
+    if (!token || !password) {
+      return res.status(400).json({ error: 'Token and password are required' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
+    }
+
+    const user = await User.findByResetToken(token);
+    if (!user || new Date(user.reset_token_expires) < new Date()) {
+      return res.status(400).json({ error: 'Invalid or expired reset token' });
+    }
+
+    // Hash new password and update
+    const hashedPassword = await bcrypt.hash(password, 12);
+    await User.updatePassword(user.id, hashedPassword);
+    await User.clearResetToken(user.id);
+
+    res.json({ message: 'Password reset successful. Please log in.' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ===== GOOGLE OAUTH =====
+
+// Google OAuth login URL
+router.get('/google', (req, res) => {
+  if (!GOOGLE_CLIENT_ID) {
+    return res.status(500).json({ error: 'Google OAuth not configured' });
+  }
+
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?` +
+    `client_id=${GOOGLE_CLIENT_ID}&` +
+    `redirect_uri=${GOOGLE_REDIRECT_URI}&` +
+    `response_type=code&` +
+    `scope=email profile&` +
+    `access_type=offline&` +
+    `prompt=consent`;
+
+  res.redirect(url);
+});
+
+// Google OAuth callback
+router.get('/google/callback', async (req, res, next) => {
+  try {
+    const { code } = req.query;
+    
+    if (!code) {
+      return res.redirect(`${process.env.FRONTEND_URL}/login.html?error=oauth_failed`);
+    }
+
+    // Exchange code for tokens
+    const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
+      client_id: GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      code,
+      redirect_uri: GOOGLE_REDIRECT_URI,
+      grant_type: 'authorization_code'
+    });
+
+    const { access_token } = tokenResponse.data;
+
+    // Get user info from Google
+    const userResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${access_token}` }
+    });
+
+    const { email, name, picture } = userResponse.data;
+
+    // Check if user exists
+    let user = await User.findByEmail(email);
+    
+    if (!user) {
+      // Create new user
+      const randomPassword = crypto.randomBytes(32).toString('hex');
+      const hashedPassword = await bcrypt.hash(randomPassword, 12);
+      
+      user = await User.createUser({
+        email,
+        password: hashedPassword,
+        name,
+        plan: 'starter',
+        credits: 20
+      });
+    }
+
+    // Generate JWT
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+    );
+
+    // Redirect to dashboard with token
+    res.redirect(`${process.env.FRONTEND_URL}/dashboard.html?token=${token}&oauth=success`);
+  } catch (error) {
+    console.error('Google OAuth error:', error);
+    res.redirect(`${process.env.FRONTEND_URL}/login.html?error=oauth_failed`);
   }
 });
 
