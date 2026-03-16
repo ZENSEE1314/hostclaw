@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - HostClaw.ai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --secondary: #06b6d4;
+            --dark: #0f0f23;
+            --darker: #0a0a1a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--darker); color: var(--text); min-height: 100vh; }
+        .container { max-width: 700px; margin: 0 auto; padding: 2rem; }
+        
+        .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+        .back-btn { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem 1rem; color: var(--text); text-decoration: none; }
+        h1 { font-size: 1.75rem; }
+        
+        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 1.5rem; }
+        .card-header { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); }
+        .card-title { font-weight: 600; font-size: 1.125rem; }
+        .card-body { padding: 1.5rem; }
+        
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label { display: block; font-weight: 500; margin-bottom: 0.5rem; font-size: 0.875rem; }
+        .form-input { width: 100%; padding: 0.75rem 1rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 0.9375rem; }
+        .form-input:focus { outline: none; border-color: var(--primary); }
+        
+        .btn { padding: 0.75rem 1.5rem; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+        .btn-danger { background: rgba(239,68,68,0.1); border: 1px solid var(--danger); color: var(--danger); }
+        
+        .info-row { display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: var(--text-muted); }
+        
+        .payment-wall { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .payment-card { background: var(--dark); border: 1px solid var(--border); border-radius: 24px; padding: 3rem; text-align: center; max-width: 450px; }
+        .payment-icon { font-size: 4rem; margin-bottom: 1rem; }
+        .payment-title { font-size: 1.5rem; font-weight: 700; }
+        .payment-price { font-size: 2.5rem; font-weight: 800; color: var(--primary-light); }
+        .payment-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 1rem 2rem; border-radius: 12px; font-weight: 600; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="payment-wall" id="paymentWall" style="display: none;">
+        <div class="payment-card">
+            <div class="payment-icon">💳</div>
+            <div class="payment-title">One-Time Setup Fee</div>
+            <div class="payment-price">$500</div>
+            <p style="margin: 1rem 0; color: var(--text-muted);">Pay once to unlock all features!</p>
+            <button class="payment-btn" onclick="alert('Contact support to pay $500')">Pay $500</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <a href="/dashboard.html" class="back-btn">← Back</a>
+            <h1>Settings</h1>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Profile</h3></div>
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input type="text" class="form-input" id="nameInput" placeholder="Your name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-input" id="emailInput" placeholder="your@email.com" disabled>
+                </div>
+                <button class="btn btn-primary" onclick="saveProfile()">Save Changes</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Account</h3></div>
+            <div class="card-body">
+                <div class="info-row">
+                    <span class="info-label">Plan</span>
+                    <span id="planDisplay">Starter</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Credits</span>
+                    <span id="creditsDisplay">$0.00</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Member Since</span>
+                    <span id="memberSince">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h3 class="card-title">Security</h3></div>
+            <div class="card-body">
+                <button class="btn btn-danger" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://hostclaw-api.onrender.com';
+        const token = localStorage.getItem('token');
+        if (!token) window.location.href = '/login.html';
+
+        let user = {};
+
+        async function loadUser() {
+            try {
+                const res = await fetch(`${API_URL}/api/auth/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    user = (await res.json()).user || {};
+                    updateUI();
+                    checkPayment();
+                } else {
+                    logout();
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        function updateUI() {
+            document.getElementById('nameInput').value = user.name || '';
+            document.getElementById('emailInput').value = user.email || '';
+            document.getElementById('planDisplay').textContent = user.plan || 'Starter';
+            document.getElementById('creditsDisplay').textContent = '$' + parseFloat(user.credits || 0).toFixed(2);
+            if (user.created_at) {
+                document.getElementById('memberSince').textContent = new Date(user.created_at).toLocaleDateString();
+            }
+        }
+
+        function checkPayment() {
+            if (!user.has_paid && user.plan === 'starter') {
+                document.getElementById('paymentWall').style.display = 'flex';
+            }
+        }
+
+        async function saveProfile() {
+            alert('Profile saving coming soon!');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+
+        loadUser();
+    </script>
+</body>
+</html>

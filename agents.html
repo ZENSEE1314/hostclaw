@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Agents - HostClaw.ai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --secondary: #06b6d4;
+            --dark: #0f0f23;
+            --darker: #0a0a1a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--darker); color: var(--text); min-height: 100vh; }
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        
+        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+        .header h1 { font-size: 1.75rem; font-weight: 700; }
+        
+        .back-btn { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem 1rem; color: var(--text); text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
+        
+        .empty-state { text-align: center; padding: 4rem 2rem; }
+        .empty-icon { font-size: 4rem; margin-bottom: 1rem; }
+        .empty-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .empty-desc { color: var(--text-muted); margin-bottom: 1.5rem; }
+        
+        .btn { padding: 0.75rem 1.5rem; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+        
+        .payment-wall { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .payment-card { background: var(--dark); border: 1px solid var(--border); border-radius: 24px; padding: 3rem; text-align: center; max-width: 450px; }
+        .payment-icon { font-size: 4rem; margin-bottom: 1rem; }
+        .payment-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .payment-price { font-size: 2.5rem; font-weight: 800; color: var(--primary-light); }
+        .payment-desc { color: var(--text-muted); margin: 1rem 0; line-height: 1.7; }
+        .payment-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 1rem 2rem; border-radius: 12px; font-size: 1rem; font-weight: 600; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="payment-wall" id="paymentWall" style="display: none;">
+        <div class="payment-card">
+            <div class="payment-icon">💳</div>
+            <div class="payment-title">One-Time Setup Fee</div>
+            <div class="payment-price">$500</div>
+            <div class="payment-desc">Pay once to unlock all features forever!</div>
+            <button class="payment-btn" onclick="alert('Contact support to pay $500')">Pay $500</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <a href="/dashboard.html" class="back-btn">← Back</a>
+            <h1>My Agents</h1>
+            <button class="btn btn-primary" onclick="alert('Coming soon!')">+ Create Agent</button>
+        </div>
+
+        <div class="empty-state">
+            <div class="empty-icon">🤖</div>
+            <div class="empty-title">No Agents Yet</div>
+            <div class="empty-desc">Create your first AI agent to get started</div>
+            <button class="btn btn-primary" onclick="alert('Coming soon!')">+ Create Agent</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://hostclaw-api.onrender.com';
+        const token = localStorage.getItem('token');
+        
+        if (!token) window.location.href = '/login.html';
+
+        async function checkPayment() {
+            try {
+                const res = await fetch(`${API_URL}/api/auth/profile`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const user = data.user || data;
+                    if (!user.has_paid && user.plan === 'starter') {
+                        document.getElementById('paymentWall').style.display = 'flex';
+                    }
+                }
+            } catch(e) { console.error(e); }
+        }
+        checkPayment();
+    </script>
+</body>
+</html>
