@@ -1,9 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 
-let useJSON = true;
-
-// JSON Database setup
 const DATA_DIR = path.join(__dirname, '../data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 
@@ -16,8 +13,12 @@ let jsonDb = { users: [], agents: [], chat_messages: [], invoices: [], usage_log
 function loadJsonDb() {
   if (fs.existsSync(DB_FILE)) {
     try {
-      jsonDb = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-    } catch (e) { console.log('Creating new database'); }
+      const data = fs.readFileSync(DB_FILE, 'utf8');
+      jsonDb = JSON.parse(data);
+      console.log('Loaded DB with', jsonDb.users?.length || 0, 'users');
+    } catch (e) { 
+      console.log('Creating new database'); 
+    }
   }
 }
 
@@ -26,63 +27,87 @@ function saveJsonDb() {
 }
 
 function uuid() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
     const r = Math.random() * 16 | 0;
-    const v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
   });
 }
 
 loadJsonDb();
 
-// Parse PostgreSQL-style WHERE conditions
 function parseWhere(sql, params) {
   const conditions = {};
   const whereMatch = sql.match(/WHERE\s+(.+?)(?:\s+ORDER|\s+LIMIT|\s+AND|\s+OR|$)/i);
+  
   if (whereMatch) {
     let clause = whereMatch[1];
-    // Replace $1, $2, $3 with actual values
+    // Replace $1, $2 with actual param values
     params.forEach((param, i) => {
       const placeholder = '$' + (i + 1);
       if (clause.includes(placeholder)) {
-        const paramStr = typeof param === 'string' ? `'${param.replace(/'/g, "''")}'` : param;
-        clause = clause.replace(placeholder, paramStr);
+        let paramStr;
+        if (typeof param === 'string') {
+          paramStr = param; // Don't add quotes, we'll handle that
+        } else {
+          paramStr = String(param);
+        }
+        clause = clause.replace(placeholder, '__PARAM' + i + '__');
       }
     });
     
-    // Parse conditions (email = 'test@test.com', etc)
+    // Now replace the placeholders with actual values
+    params.forEach((param, i) => {
+      let paramStr;
+      if (typeof param === 'string') {
+        paramStr = param; // Use as-is for string comparison
+      } else {
+        paramStr = String(param);
+      }
+      clause = clause.replace('__PARAM' + i + '__', paramStr);
+    });
+    
+    // Parse conditions
     const parts = clause.split(/\s+AND\s+/i);
     parts.forEach(part => {
       part = part.trim();
+      // Match column = value
       const match = part.match(/(\w+)\s*=\s*(.+)/);
       if (match) {
+        let col = match[1].trim();
         let val = match[2].trim();
-        // Remove quotes
+        // Remove quotes if present
         if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith('"') && val.endsWith('"'))) {
           val = val.slice(1, -1);
         }
-        conditions[match[1]] = val;
+        conditions[col] = val;
       }
     });
   }
+  
   return conditions;
 }
 
 function matches(row, conditions) {
   for (const [key, val] of Object.entries(conditions)) {
-    if (String(row[key]) !== String(val)) return false;
+    // Convert both to string for comparison
+    if (String(row[key]) !== String(val)) {
+      return false;
+    }
   }
   return true;
 }
 
-// Main query function
 async function query(sql, params = []) {
   const sqlLower = sql.toLowerCase();
   const tableMatch = sql.match(/(?:FROM|INTO|UPDATE|JOIN)\s+(\w+)/i);
-  const table = tableMatch ? tableMatch[1].toLowerCase() : '';
+  const table = (tableMatch ? tableMatch[1] : 'unknown').toLowerCase();
+  
+  console.log('Query:', sql.substring(0, 50), 'table:', table, 'params:', params);
   
   // Ensure table exists
-  if (!jsonDb[table]) jsonDb[table] = [];
+  if (!jsonDb[table]) {
+    jsonDb[table] = [];
+  }
   
   // INSERT
   if (sqlLower.startsWith('insert')) {
@@ -92,17 +117,20 @@ async function query(sql, params = []) {
       updated_at: new Date().toISOString() 
     };
     
-    // Parse column names
+    // Parse column names from SQL
     const colMatch = sql.match(/\(([^)]+)\)\s+VALUES\s*\(([^)]+)\)/i);
     if (colMatch) {
       const cols = colMatch[1].split(',').map(c => c.trim());
       cols.forEach((col, i) => {
-        newRow[col] = params[i];
+        if (params[i] !== undefined) {
+          newRow[col] = params[i];
+        }
       });
     }
     
     jsonDb[table].push(newRow);
     saveJsonDb();
+    console.log('Inserted into', table, 'id:', newRow.id);
     return { rows: [newRow], rowCount: 1 };
   }
   
@@ -110,24 +138,15 @@ async function query(sql, params = []) {
   if (sqlLower.startsWith('select')) {
     let results = [...jsonDb[table]];
     
-    // WHERE
+    // Parse WHERE conditions
     const conditions = parseWhere(sql, params);
+    console.log('Conditions:', conditions);
+    
     if (Object.keys(conditions).length > 0) {
       results = results.filter(row => matches(row, conditions));
     }
     
-    // ORDER BY
-    const orderMatch = sql.match(/ORDER\s+BY\s+(\w+)(?:\s+(DESC|ASC))?/i);
-    if (orderMatch) {
-      const col = orderMatch[1];
-      const desc = orderMatch[2]?.toUpperCase() === 'DESC';
-      results.sort((a, b) => {
-        const aVal = a[col] || '';
-        const bVal = b[col] || '';
-        if (desc) return aVal > bVal ? -1 : 1;
-        return aVal > bVal ? 1 : -1;
-      });
-    }
+    console.log('Found', results.length, 'results');
     
     // LIMIT
     const limitMatch = sql.match(/LIMIT\s+(\d+)/i);
@@ -139,8 +158,8 @@ async function query(sql, params = []) {
   }
   
   // UPDATE
-  if (sqlLower.startsWith('update')) {
-    const conditions = parseWhere(sql, params.slice(1)); // Skip SET params
+  if (sqlLower.startsWith(' update')) {
+    const conditions = parseWhere(sql, params.slice(1));
     let updated = 0;
     
     jsonDb[table].forEach(row => {
@@ -154,7 +173,9 @@ async function query(sql, params = []) {
             if (m) {
               const col = m[1];
               const paramIdx = parseInt(m[2]) - 1;
-              row[col] = params[paramIdx];
+              if (params[paramIdx] !== undefined) {
+                row[col] = params[paramIdx];
+              }
             }
           });
           row.updated_at = new Date().toISOString();
@@ -167,21 +188,11 @@ async function query(sql, params = []) {
     return { rowCount: updated };
   }
   
-  // DELETE
-  if (sqlLower.startsWith('delete')) {
-    const conditions = parseWhere(sql, params);
-    const beforeLen = jsonDb[table].length;
-    jsonDb[table] = jsonDb[table].filter(row => !matches(row, conditions));
-    const deleted = beforeLen - jsonDb[table].length;
-    if (deleted > 0) saveJsonDb();
-    return { rowCount: deleted };
-  }
-  
   return { rows: [] };
 }
 
 async function initDb() {
-  console.log('✅ JSON database ready');
+  console.log('✅ JSON DB ready, users:', jsonDb.users?.length || 0);
 }
 
 module.exports = { initDb, query };
