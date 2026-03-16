@@ -2,8 +2,9 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
-const { createUser, findUserByEmail } = require('../models/user');
+const User = require('../models/user');
 const EmailService = require('../services/email');
+const { authenticate } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ router.post('/register', [
     const { email, password, name } = req.body;
 
     // Check if user exists
-    const existingUser = await findUserByEmail(email);
+    const existingUser = await User.findByEmail(email);
     if (existingUser) {
       return res.status(400).json({ error: 'Email already registered' });
     }
@@ -31,7 +32,7 @@ router.post('/register', [
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Create user
-    const user = await createUser({
+    const user = await User.createUser({
       email,
       password: hashedPassword,
       name,
@@ -75,7 +76,7 @@ router.post('/login', async (req, res, next) => {
     const { email, password } = req.body;
 
     // Find user
-    const user = await findUserByEmail(email);
+    const user = await User.findByEmail(email);
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -123,6 +124,29 @@ router.post('/refresh', async (req, res, next) => {
     res.json({ token: newToken });
   } catch (error) {
     res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// Get user profile
+router.get('/profile', authenticate, async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        plan: user.plan,
+        credits: user.credits,
+        created_at: user.created_at
+      }
+    });
+  } catch (error) {
+    next(error);
   }
 });
 

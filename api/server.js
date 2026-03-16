@@ -17,6 +17,9 @@ const agentRoutes = require('./routes/agents');
 const billingRoutes = require('./routes/billing');
 const webhookRoutes = require('./routes/webhooks');
 const adminRoutes = require('./routes/admin');
+const chatRoutes = require('./routes/chat');
+const skillsRoutes = require('./routes/skills');
+const providersRoutes = require('./routes/providers');
 const { errorHandler } = require('./middleware/error');
 
 const app = express();
@@ -61,6 +64,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/agents', agentRoutes);
 app.use('/api/billing', billingRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/skills', skillsRoutes);
+app.use('/api/providers', providersRoutes);
 app.use('/webhooks', webhookRoutes);
 
 // Error handling

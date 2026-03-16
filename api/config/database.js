@@ -17,6 +17,10 @@ async function initDb() {
         name VARCHAR(255) NOT NULL,
         plan VARCHAR(50) DEFAULT 'starter',
         credits DECIMAL(10,2) DEFAULT 20.00,
+        has_paid BOOLEAN DEFAULT FALSE,
+        api_providers JSONB DEFAULT '{}',
+        skills JSONB DEFAULT '[]',
+        default_provider VARCHAR(50) DEFAULT 'openai',
         stripe_customer_id VARCHAR(255),
         stripe_subscription_id VARCHAR(255),
         gateway_config JSONB,
@@ -74,11 +78,24 @@ async function initDb() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
 
+      CREATE TABLE IF NOT EXISTS chat_messages (
+        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+        session_id VARCHAR(100) DEFAULT 'default',
+        role VARCHAR(20) NOT NULL,
+        content TEXT NOT NULL,
+        model VARCHAR(100),
+        tokens INTEGER,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+
       CREATE INDEX IF NOT EXISTS idx_agents_user_id ON agents(user_id);
       CREATE INDEX IF NOT EXISTS idx_agents_status ON agents(status);
       CREATE INDEX IF NOT EXISTS idx_invoices_user_id ON invoices(user_id);
       CREATE INDEX IF NOT EXISTS idx_usage_logs_user_id ON usage_logs(user_id);
       CREATE INDEX IF NOT EXISTS idx_usage_logs_created_at ON usage_logs(created_at);
+      CREATE INDEX IF NOT EXISTS idx_chat_messages_user_id ON chat_messages(user_id);
+      CREATE INDEX IF NOT EXISTS idx_chat_messages_session ON chat_messages(user_id, session_id);
     `);
     console.log('✅ Database initialized');
   } catch (err) {

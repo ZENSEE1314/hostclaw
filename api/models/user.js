@@ -5,8 +5,8 @@ class User {
   static async createUser({ email, password, name, plan = 'starter', credits = 20 }) {
     const hashedPassword = await bcrypt.hash(password, 12);
     const result = await query(
-      `INSERT INTO users (email, password, name, plan, credits) 
-       VALUES ($1, $2, $3, $4, $5) 
+      `INSERT INTO users (email, password, name, plan, credits, has_paid, api_providers, skills, default_provider) 
+       VALUES ($1, $2, $3, $4, $5, false, '{}', '[]', 'openai') 
        RETURNING id, email, name, plan, credits, created_at`,
       [email, hashedPassword, name, plan, credits]
     );
@@ -75,6 +75,123 @@ class User {
       [amount, userId]
     );
     return result.rows[0]?.credits;
+  }
+
+  // API Provider methods
+  static async updateApiProvider(userId, provider, config) {
+    const result = await query(
+      `UPDATE users 
+       SET api_providers = jsonb_set(COALESCE(api_providers, '{}'), array[$1], $2::jsonb),
+       updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $3 
+       RETURNING api_providers`,
+      [provider, JSON.stringify(config), userId]
+    );
+    return result.rows[0]?.api_providers;
+  }
+
+  static async deactivateApiProvider(userId, provider) {
+    const result = await query(
+      `UPDATE users 
+       SET api_providers = api_providers - $1,
+       updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $2 
+       RETURNING api_providers`,
+      [provider, userId]
+    );
+    return result.rows[0]?.api_providers;
+  }
+
+  static async setDefaultProvider(userId, provider) {
+    const result = await query(
+      `UPDATE users 
+       SET default_provider = $1,
+       updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $2 
+       RETURNING default_provider`,
+      [provider, userId]
+    );
+    return result.rows[0]?.default_provider;
+  }
+
+  // Skills methods
+  static async addSkill(userId, skill) {
+    const result = await query(
+      `UPDATE users 
+       SET skills = COALESCE(skills, '[]'::jsonb) || $1::jsonb,
+       updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $2 
+       RETURNING skills`,
+      [JSON.stringify([skill]), userId]
+    );
+    return result.rows[0]?.skills;
+  }
+
+  static async removeSkill(userId, skillId) {
+    const result = await query(
+      `UPDATE users 
+       SET skills = COALESCE(
+         (SELECT jsonb_agg(elem) FROM jsonb_array_elements(skills) elem WHERE elem->>'id' != $1),
+         '[]'::jsonb
+       ),
+       updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $2 
+       RETURNING skills`,
+      [skillId, userId]
+    );
+    return result.rows[0]?.skills;
+  }
+
+  static async toggleSkill(userId, skillId) {
+    const result = await query(
+      `UPDATE users 
+       SET skills = (
+         SELECT jsonb_agg(
+           CASE 
+             WHEN elem->>'id' = $1 THEN elem || '{"active": "false"}'::jsonb
+             ELSE elem
+           END
+         )
+         FROM jsonb_array_elements(skills) elem
+       ),
+       updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $2 
+       RETURNING skills`,
+      [skillId, userId]
+    );
+    return result.rows[0]?.skills;
+  }
+
+  static async updateSkillConfig(userId, skillId, config) {
+    const result = await query(
+      `UPDATE users 
+       SET skills = (
+         SELECT jsonb_agg(
+           CASE 
+             WHEN elem->>'id' = $1 THEN elem || jsonb_build_object('config', $2::jsonb)
+             ELSE elem
+           END
+         )
+         FROM jsonb_array_elements(skills) elem
+       ),
+       updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $3 
+       RETURNING skills`,
+      [skillId, JSON.stringify(config), userId]
+    );
+    return result.rows[0]?.skills;
+  }
+
+  // Mark user as paid
+  static async markAsPaid(userId) {
+    const result = await query(
+      `UPDATE users 
+       SET has_paid = true, updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $1 
+       RETURNING *`,
+      [userId]
+    );
+    return result.rows[0];
   }
 }
 

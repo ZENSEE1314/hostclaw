@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skills - HostClaw.ai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --secondary: #06b6d4;
+            --accent: #f59e0b;
+            --dark: #0f0f23;
+            --darker: #0a0a1a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--darker);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .back-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            transition: all 0.2s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--primary);
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab {
+            padding: 0.75rem 1.25rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* Skills Grid */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+        }
+
+        .skill-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .skill-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .skill-card.installed {
+            border-color: var(--success);
+        }
+
+        .skill-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .skill-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .skill-info {
+            flex: 1;
+        }
+
+        .skill-name {
+            font-weight: 600;
+            font-size: 1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .skill-desc {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .skill-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 0.625rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .btn-outline:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: var(--primary);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .skill-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            margin-top: 0.75rem;
+        }
+
+        .skill-status.active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .skill-status.inactive {
+            background: rgba(148, 163, 184, 0.1);
+            color: var(--text-muted);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-desc {
+            color: var(--text-muted);
+        }
+
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--dark);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-color: var(--success);
+        }
+
+        .toast.error {
+            border-color: var(--danger);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <button class="back-btn" onclick="window.location.href='/dashboard.html'">←</button>
+                <div>
+                    <h1>Skills</h1>
+                    <p>Add capabilities to your AI assistant</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('catalog')">📦 Skill Catalog</button>
+            <button class="tab" onclick="switchTab('installed')">✅ My Skills</button>
+        </div>
+
+        <div id="catalogView" class="skills-grid">
+            <div class="empty-state">
+                <div class="loading"></div>
+                <p style="margin-top: 1rem; color: var(--text-muted);">Loading skills...</p>
+            </div>
+        </div>
+
+        <div id="installedView" class="skills-grid" style="display: none;">
+            <div class="empty-state">
+                <div class="loading"></div>
+                <p style="margin-top: 1rem; color: var(--text-muted);">Loading your skills...</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <span id="toastIcon">✓</span>
+        <span id="toastMessage">Success!</span>
+    </div>
+
+    <script>
+        const API_URL = 'https://hostclaw-api.onrender.com';
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        let allSkills = [];
+        let mySkills = [];
+
+        async function loadSkills() {
+            try {
+                // Load catalog
+                const catalogRes = await fetch(`${API_URL}/api/skills/catalog`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (catalogRes.ok) {
+                    const data = await catalogRes.json();
+                    allSkills = data.skills || [];
+                }
+
+                // Load my skills
+                const myRes = await fetch(`${API_URL}/api/skills/my`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (myRes.ok) {
+                    const data = await myRes.json();
+                    mySkills = data.skills || [];
+                }
+
+                renderCatalog();
+                renderInstalled();
+            } catch (error) {
+                console.error('Failed to load skills:', error);
+                showToast('Failed to load skills', 'error');
+            }
+        }
+
+        function renderCatalog() {
+            const container = document.getElementById('catalogView');
+            const installedIds = mySkills.map(s => s.id);
+            
+            const availableSkills = allSkills.filter(s => !installedIds.includes(s.id));
+            
+            if (availableSkills.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <div class="empty-icon">🎉</div>
+                        <div class="empty-title">All skills installed!</div>
+                        <div class="empty-desc">You've installed all available skills. Check "My Skills" to manage them.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = availableSkills.map(skill => `
+                <div class="skill-card">
+                    <div class="skill-header">
+                        <div class="skill-icon">${skill.icon}</div>
+                        <div class="skill-info">
+                            <div class="skill-name">${skill.name}</div>
+                            <div class="skill-desc">${skill.description}</div>
+                        </div>
+                    </div>
+                    <div class="skill-actions">
+                        <button class="btn btn-primary" onclick="installSkill('${skill.id}')">
+                            + Install
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderInstalled() {
+            const container = document.getElementById('installedView');
+            
+            if (mySkills.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="grid-column: 1 / -1;">
+                        <div class="empty-icon">🧩</div>
+                        <div class="empty-title">No skills installed</div>
+                        <div class="empty-desc">Go to the Skill Catalog to add capabilities to your AI assistant.</div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = mySkills.map(skill => `
+                <div class="skill-card installed">
+                    <div class="skill-header">
+                        <div class="skill-icon">${skill.icon}</div>
+                        <div class="skill-info">
+                            <div class="skill-name">${skill.name}</div>
+                            <div class="skill-desc">${skill.description}</div>
+                        </div>
+                    </div>
+                    <span class="skill-status ${skill.active !== false ? 'active' : 'inactive'}">
+                        ${skill.active !== false ? '● Active' : '○ Inactive'}
+                    </span>
+                    <div class="skill-actions">
+                        <button class="btn btn-outline" onclick="toggleSkill('${skill.id}')">
+                            ${skill.active !== false ? 'Disable' : 'Enable'}
+                        </button>
+                        <button class="btn btn-danger" onclick="uninstallSkill('${skill.id}')">
+                            Remove
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function installSkill(skillId) {
+            try {
+                const response = await fetch(`${API_URL}/api/skills/install`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ skillId })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast(`${data.skill.name} installed!`);
+                    await loadSkills();
+                } else {
+                    showToast(data.error || 'Failed to install skill', 'error');
+                }
+            } catch (error) {
+                showToast('Network error', 'error');
+            }
+        }
+
+        async function uninstallSkill(skillId) {
+            if (!confirm('Remove this skill?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/api/skills/${skillId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    showToast('Skill removed');
+                    await loadSkills();
+                } else {
+                    showToast('Failed to remove skill', 'error');
+                }
+            } catch (error) {
+                showToast('Network error', 'error');
+            }
+        }
+
+        async function toggleSkill(skillId) {
+            try {
+                const response = await fetch(`${API_URL}/api/skills/${skillId}/toggle`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.ok) {
+                    showToast('Skill status updated');
+                    await loadSkills();
+                } else {
+                    showToast('Failed to update skill', 'error');
+                }
+            } catch (error) {
+                showToast('Network error', 'error');
+            }
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('catalogView').style.display = tab === 'catalog' ? 'grid' : 'none';
+            document.getElementById('installedView').style.display = tab === 'installed' ? 'grid' : 'none';
+        }
+
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            document.getElementById('toastIcon').textContent = type === 'success' ? '✓' : '✗';
+            toast.className = `toast ${type} show`;
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        loadSkills();
+    </script>
+</body>
+</html>
