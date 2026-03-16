@@ -2,15 +2,43 @@ const nodemailer = require('nodemailer');
 
 class EmailService {
   constructor() {
-    this.transporter = nodemailer.createTransporter({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      secure: process.env.SMTP_PORT === '465',
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-      }
-    });
+    // Only create transporter if SMTP is configured
+    if (process.env.SMTP_HOST && process.env.SMTP_USER) {
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: process.env.SMTP_PORT || 587,
+        secure: (process.env.SMTP_PORT || '587') === '465',
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        }
+      });
+    } else {
+      console.log('⚠️ SMTP not configured, emails will be logged but not sent');
+      this.transporter = null;
+    }
+  }
+
+  async send({ to, subject, html }) {
+    if (!this.transporter) {
+      console.log(`📧 [Email would be sent] To: ${to}, Subject: ${subject}`);
+      return { messageId: 'mock-' + Date.now() };
+    }
+    
+    try {
+      const info = await this.transporter.sendMail({
+        from: `"HostClaw" <${process.env.SMTP_USER}>`,
+        to,
+        subject,
+        html
+      });
+      console.log('📧 Email sent:', info.messageId);
+      return info;
+    } catch (error) {
+      console.error('❌ Email failed:', error.message);
+      // Don't throw - just log error
+      return { error: error.message };
+    }
   }
 
   async sendWelcomeEmail(user) {
