@@ -44,7 +44,7 @@ services:
         value: https://hostclaw.onrender.com
 
   # Static Site (Frontend)
-  - type: static
+  - type: web
     name: hostclaw-web
     runtime: static
     buildCommand: echo "No build needed"
