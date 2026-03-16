@@ -1,27 +1,38 @@
 const User = require('../models/user');
 
-const PLAN_LIMITS = {
-  starter: { maxAgents: 1, maxChannels: 2, storageGB: 1 },
-  pro: { maxAgents: 5, maxChannels: Infinity, storageGB: 10 },
-  enterprise: { maxAgents: Infinity, maxChannels: Infinity, storageGB: 100 }
+// Single pricing plan
+const PLAN_CONFIG = {
+  name: 'professional',
+  setupFee: 500,      // $500 USD setup fee
+  monthlyTokens: 500, // 500 tokens included per month
+  maxAgents: Infinity,
+  maxChannels: Infinity,
+  storageGB: 10
+};
+
+// Top up pricing
+const TOP_UP_PRICING = {
+  amount: 20,    // $20 USD
+  tokens: 1000   // 1000 tokens
 };
 
 class BillingService {
-  static async canCreateAgent(userId) {
-    const user = await User.findById(userId);
-    if (!user) return false;
-
-    const limits = PLAN_LIMITS[user.plan] || PLAN_LIMITS.starter;
-    const currentAgentCount = await User.getAgentCount(userId);
-
-    return currentAgentCount < limits.maxAgents;
+  static async getPlanConfig() {
+    return PLAN_CONFIG;
   }
 
-  static async getPlanLimits(plan) {
-    return PLAN_LIMITS[plan] || PLAN_LIMITS.starter;
+  static async getTopUpPricing() {
+    return TOP_UP_PRICING;
+  }
+
+  static async canCreateAgent(userId) {
+    // With single plan, users can create unlimited agents after setup
+    const user = await User.findById(userId);
+    return user && user.plan === 'professional';
   }
 
   static async calculateUsageCost(type, quantity) {
+    // Token costs per operation
     const rates = {
       'gpt-4o': { input: 0.005, output: 0.015 }, // per 1K tokens
       'gpt-4-turbo': { input: 0.01, output: 0.03 },
@@ -30,7 +41,7 @@ class BillingService {
       'claude-3-opus': { input: 0.015, output: 0.075 },
       'gemini-pro': { input: 0.0005, output: 0.0015 },
       'message': 0.001, // per message
-      'storage': 0.10 // per GB/month
+      'storage': 0.10   // per GB/month
     };
 
     return rates[type] || 0;
@@ -45,6 +56,21 @@ class BillingService {
     }
 
     return { cost, remainingCredits: credits };
+  }
+
+  static async processTopUp(userId, paymentAmount) {
+    // Calculate tokens based on $20 = 1000 tokens ratio
+    const tokensPerDollar = TOP_UP_PRICING.tokens / TOP_UP_PRICING.amount;
+    const tokensToAdd = Math.floor(paymentAmount * tokensPerDollar);
+    
+    // Add credits to user account
+    const newBalance = await User.updateCredits(userId, tokensToAdd);
+    
+    return {
+      amountPaid: paymentAmount,
+      tokensAdded: tokensToAdd,
+      newBalance: newBalance
+    };
   }
 }
 
