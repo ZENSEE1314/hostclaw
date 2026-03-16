@@ -1,0 +1,225 @@
+const { OpenAI } = require('openai');
+const axios = require('axios');
+
+// Generate AI response using user's configured provider
+async function generateAIResponse({ message, provider, providerConfig, skills, user }) {
+  if (!providerConfig || !providerConfig.apiKey) {
+    return {
+      content: '⚠️ No AI provider configured. Please add your API keys at: /providers.html',
+      model: 'none',
+      tokens: 0
+    };
+  }
+
+  const decryptedKey = Buffer.from(providerConfig.apiKey, 'base64').toString();
+  const model = providerConfig.model || getDefaultModel(provider);
+
+  try {
+    switch (provider) {
+      case 'openai':
+        return await callOpenAI(message, decryptedKey, model, skills);
+      
+      case 'anthropic':
+        return await callAnthropic(message, decryptedKey, model, skills);
+      
+      case 'kimi':
+        return await callKimi(message, decryptedKey, model, skills);
+      
+      case 'gemini':
+        return await callGemini(message, decryptedKey, model, skills);
+      
+      case 'deepseek':
+        return await callDeepSeek(message, decryptedKey, model, skills);
+      
+      case 'groq':
+        return await callGroq(message, decryptedKey, model, skills);
+      
+      default:
+        return {
+          content: 'Unsupported provider: ' + provider,
+          model: 'none',
+          tokens: 0
+        };
+    }
+  } catch (error) {
+    console.error(`Error calling ${provider}:`, error.message);
+    return {
+      content: `Error: ${error.message}. Please check your API key configuration.`,
+      model: provider,
+      tokens: 0
+    };
+  }
+}
+
+async function callOpenAI(message, apiKey, model, skills) {
+  const openai = new OpenAI({ apiKey });
+  
+  const messages = [
+    { role: 'system', content: buildSystemPrompt(skills) },
+    { role: 'user', content: message }
+  ];
+
+  const response = await openai.chat.completions.create({
+    model: model,
+    messages: messages,
+    temperature: 0.7,
+    max_tokens: 2000
+  });
+
+  return {
+    content: response.choices[0].message.content,
+    model: response.model,
+    tokens: response.usage?.total_tokens || estimateTokens(message + response.choices[0].message.content)
+  };
+}
+
+async function callAnthropic(message, apiKey, model, skills) {
+  const response = await axios.post('https://api.anthropic.com/v1/messages', {
+    model: model,
+    max_tokens: 2000,
+    system: buildSystemPrompt(skills),
+    messages: [{ role: 'user', content: message }]
+  }, {
+    headers: {
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'Content-Type': 'application/json'
+    }
+  });
+
+  return {
+    content: response.data.content[0].text,
+    model: response.data.model,
+    tokens: response.data.usage?.input_tokens + response.data.usage?.output_tokens || estimateTokens(message + response.data.content[0].text)
+  };
+}
+
+async function callKimi(message, apiKey, model, skills) {
+  const response = await axios.post('https://api.moonshot.cn/v1/chat/completions', {
+    model: model,
+    messages: [
+      { role: 'system', content: buildSystemPrompt(skills) },
+      { role: 'user', content: message }
+    ],
+    temperature: 0.7
+  }, {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  return {
+    content: response.data.choices[0].message.content,
+    model: response.data.model,
+    tokens: response.data.usage?.total_tokens || estimateTokens(message + response.data.choices[0].message.content)
+  };
+}
+
+async function callGemini(message, apiKey, model, skills) {
+  const response = await axios.post(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+    {
+      contents: [{
+        parts: [{
+          text: buildSystemPrompt(skills) + '\n\nUser: ' + message
+        }]
+      }]
+    }
+  );
+
+  const text = response.data.candidates[0].content.parts[0].text;
+  return {
+    content: text,
+    model: model,
+    tokens: estimateTokens(message + text)
+  };
+}
+
+async function callDeepSeek(message, apiKey, model, skills) {
+  const response = await axios.post('https://api.deepseek.com/v1/chat/completions', {
+    model: model,
+    messages: [
+      { role: 'system', content: buildSystemPrompt(skills) },
+      { role: 'user', content: message }
+    ],
+    temperature: 0.7
+  }, {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  return {
+    content: response.data.choices[0].message.content,
+    model: response.data.model,
+    tokens: response.data.usage?.total_tokens || estimateTokens(message + response.data.choices[0].message.content)
+  };
+}
+
+async function callGroq(message, apiKey, model, skills) {
+  const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+    model: model,
+    messages: [
+      { role: 'system', content: buildSystemPrompt(skills) },
+      { role: 'user', content: message }
+    ],
+    temperature: 0.7
+  }, {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  return {
+    content: response.data.choices[0].message.content,
+    model: response.data.model,
+    tokens: response.data.usage?.total_tokens || estimateTokens(message + response.data.choices[0].message.content)
+  };
+}
+
+function buildSystemPrompt(skills) {
+  let prompt = `You are a helpful AI assistant running on HostClaw.ai platform. `;
+  
+  if (skills && skills.length > 0) {
+    prompt += `You have access to these skills: ${skills.join(', ')}. `;
+    
+    if (skills.includes('web_search')) {
+      prompt += `For web search queries, indicate you'd search the web. `;
+    }
+    if (skills.includes('image_gen')) {
+      prompt += `For image generation requests, indicate you'd generate an image. `;
+    }
+    if (skills.includes('code_executor')) {
+      prompt += `You can help write and explain code. `;
+    }
+    if (skills.includes('translator')) {
+      prompt += `You can translate between languages. `;
+    }
+  }
+  
+  prompt += `Be concise but helpful in your responses.`;
+  
+  return prompt;
+}
+
+function estimateTokens(text) {
+  // Rough estimate: ~4 characters per token
+  return Math.ceil(text.length / 4);
+}
+
+function getDefaultModel(provider) {
+  const models = {
+    openai: 'gpt-4o',
+    anthropic: 'claude-3-5-sonnet-20241022',
+    kimi: 'kimi-k2.5',
+    gemini: 'gemini-pro',
+    deepseek: 'deepseek-chat',
+    groq: 'llama-3.1-70b-versatile'
+  };
+  return models[provider] || 'gpt-4o';
+}
+
+module.exports = { generateAIResponse };

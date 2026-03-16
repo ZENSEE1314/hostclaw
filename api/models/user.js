@@ -193,6 +193,42 @@ class User {
     );
     return result.rows[0];
   }
+
+  // Platform connection methods
+  static async updatePlatform(userId, platform, config) {
+    const result = await query(
+      `UPDATE users 
+       SET platforms = jsonb_set(COALESCE(platforms, '{}'), array[$1], $2::jsonb),
+       updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $3 
+       RETURNING platforms`,
+      [platform, JSON.stringify(config), userId]
+    );
+    return result.rows[0]?.platforms;
+  }
+
+  static async removePlatform(userId, platform) {
+    const result = await query(
+      `UPDATE users 
+       SET platforms = platforms - $1,
+       updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $2 
+       RETURNING platforms`,
+      [platform, userId]
+    );
+    return result.rows[0]?.platforms;
+  }
+
+  // Find user by platform ID (for webhook routing)
+  static async findByPlatform(platform, platformUserId) {
+    const result = await query(
+      `SELECT * FROM users 
+       WHERE platforms->${platform}->>'user_id' = $1 
+       LIMIT 1`,
+      [platformUserId]
+    );
+    return result.rows[0];
+  }
 }
 
 module.exports = User;

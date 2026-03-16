@@ -20,6 +20,7 @@ async function initDb() {
         has_paid BOOLEAN DEFAULT FALSE,
         api_providers JSONB DEFAULT '{}',
         skills JSONB DEFAULT '[]',
+        platforms JSONB DEFAULT '{}',
         default_provider VARCHAR(50) DEFAULT 'openai',
         stripe_customer_id VARCHAR(255),
         stripe_subscription_id VARCHAR(255),

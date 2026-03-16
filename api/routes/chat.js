@@ -3,6 +3,7 @@ const { authenticate } = require('../middleware/auth');
 const { checkPayment } = require('../middleware/payment');
 const User = require('../models/user');
 const Chat = require('../models/chat');
+const { generateAIResponse } = require('../services/ai');
 
 const router = express.Router();
 
@@ -111,37 +112,6 @@ router.delete('/history', async (req, res, next) => {
     next(error);
   }
 });
-
-// Generate AI response (simplified - would integrate with actual AI APIs)
-async function generateAIResponse({ message, provider, providerConfig, skills, user }) {
-  // This is a mock implementation
-  // In production, this would call OpenAI, Anthropic, Kimi, etc.
-  
-  const responses = [
-    "I understand you're asking about " + message.slice(0, 30) + "... Let me help you with that.",
-    "That's an interesting question! Based on my knowledge, I can provide some insights.",
-    "I'd be happy to help. Here's what I know about this topic.",
-    "Let me think about that for a moment. Based on the available information..."
-  ];
-  
-  const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-  
-  // Check for skill triggers in the message
-  const skillsUsed = [];
-  if (skills.includes('web_search') && message.toLowerCase().includes('search')) {
-    skillsUsed.push('web_search');
-  }
-  if (skills.includes('calculator') && /\d+[\+\-\*\/]\d+/.test(message)) {
-    skillsUsed.push('calculator');
-  }
-  
-  return {
-    content: randomResponse + "\n\n[This is a demo response. In production, this would call the actual AI provider API using your configured keys. Active skills: " + (skillsUsed.join(', ') || 'none') + "]",
-    model: providerConfig?.model || 'gpt-4o',
-    tokens: Math.floor(message.length / 4) + 50,
-    skillsUsed
-  };
-}
 
 function calculateCost(tokens, provider) {
   // Rough cost calculation per 1K tokens
