@@ -99,7 +99,7 @@ databases:
   - name: hostclaw-db
     databaseName: hostclaw
     user: hostclaw
-    plan: starter
+    plan: free
     region: singapore
 
 # NOTE: Redis is not supported in Blueprints.
