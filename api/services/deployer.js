@@ -62,13 +62,17 @@ class Deployer {
         ['completed', deploymentId]
       );
 
-      // Send deployment complete email
-      const user = await User.findById(agent.user_id);
-      if (user) {
-        await EmailService.sendDeploymentComplete(user, {
-          ...agent,
-          deployment_url: url
-        });
+      // Try to send deployment complete email
+      try {
+        const user = await User.findById(agent.user_id);
+        if (user) {
+          await EmailService.sendDeploymentComplete(user, {
+            ...agent,
+            deployment_url: url
+          });
+        }
+      } catch (e) {
+        console.log('Deployment email not sent:', e.message);
       }
 
       return {

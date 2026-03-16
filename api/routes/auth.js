@@ -46,8 +46,12 @@ router.post('/register', [
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
-    // Send welcome email
-    await EmailService.sendWelcomeEmail(user);
+    // Try to send welcome email (don't fail if SMTP not configured)
+    try {
+      await EmailService.sendWelcomeEmail(user);
+    } catch (e) {
+      console.log('Welcome email not sent:', e.message);
+    }
 
     res.status(201).json({
       message: 'User created successfully',
