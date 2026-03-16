@@ -733,12 +733,12 @@
             
             <div class="user-section">
                 <div class="user-card">
-                    <div class="user-avatar">JD</div>
+                    <div class="user-avatar" id="userAvatar">JD</div>
                     <div class="user-info">
-                        <div class="user-name">John Doe</div>
-                        <div class="user-plan">Pro Plan</div>
+                        <div class="user-name" id="userName">Loading...</div>
+                        <div class="user-plan">Professional</div>
                     </div>
-                    <span>⚙️</span>
+                    <span onclick="logout()" style="cursor: pointer;" title="Logout">🚪</span>
                 </div>
             </div>
         </aside>
@@ -1043,6 +1043,53 @@
     </div>
 
     <script>
+        const API_URL = 'https://hostclaw-api.onrender.com';
+        
+        // Check authentication
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+        
+        // Load user data
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        if (user.name) {
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('userAvatar').textContent = user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+        }
+        
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+        
+        // Load agents from API
+        async function loadAgents() {
+            try {
+                const response = await fetch(`${API_URL}/api/agents`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+                
+                const data = await response.json();
+                console.log('Agents:', data);
+                // Update UI with real data here
+            } catch (error) {
+                console.error('Failed to load agents:', error);
+            }
+        }
+        
+        // Load on page load
+        loadAgents();
+
         function openModal() {
             document.getElementById('newAgentModal').classList.add('active');
         }
