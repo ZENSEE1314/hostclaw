@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - HostClaw.ai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --secondary: #06b6d4;
+            --accent: #f59e0b;
+            --dark: #0f0f23;
+            --darker: #0a0a1a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--darker);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--dark);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            position: fixed;
+            width: 280px;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .admin-badge {
+            background: var(--danger);
+            color: white;
+            font-size: 0.625rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 100px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-left: auto;
+        }
+
+        .nav-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-section-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.75rem;
+            padding-left: 0.75rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 10px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-bottom: 0.25rem;
+            cursor: pointer;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: var(--card-bg);
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary-light);
+        }
+
+        /* Main Content */
+        .main {
+            margin-left: 280px;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .page-title p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        .stat-breakdown {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        .stat-breakdown span {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .dot.starter { background: var(--success); }
+        .dot.pro { background: var(--primary); }
+        .dot.enterprise { background: var(--accent); }
+
+        /* Content Sections */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 0;
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem 1.5rem;
+            text-align: left;
+            font-size: 0.875rem;
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr {
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:last-child {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .user-info {
+            line-height: 1.4;
+        }
+
+        .user-name {
+            font-weight: 600;
+        }
+
+        .user-email {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-starter {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .badge-pro {
+            background: rgba(99, 102, 241, 0.1);
+            color: var(--primary-light);
+        }
+
+        .badge-enterprise {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent);
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .status-dot.online {
+            background: var(--success);
+            box-shadow: 0 0 8px var(--success);
+        }
+
+        .status-dot.offline {
+            background: var(--danger);
+        }
+
+        /* Revenue Chart */
+        .revenue-display {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .revenue-amount {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .revenue-period {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .revenue-breakdown {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .revenue-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 1rem;
+            border-radius: 10px;
+        }
+
+        .revenue-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 0.25rem;
+        }
+
+        .revenue-value {
+            font-weight: 600;
+        }
+
+        /* System Health */
+        .health-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .health-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+        }
+
+        .health-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .health-icon.healthy {
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .health-icon.warning {
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .health-info {
+            flex: 1;
+        }
+
+        .health-name {
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .health-status {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        /* Announcement Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--dark);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 1.25rem;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 10px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-outline {
+            color: var(--text);
+            border: 1px solid var(--border);
+            background: transparent;
+        }
+
+        .btn-outline:hover {
+            background: var(--card-bg);
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .pagination-btn {
+            padding: 0.5rem 0.75rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .pagination-btn:hover, .pagination-btn.active {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .admin-layout {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                display: none;
+            }
+            .main {
+                margin-left: 0;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                🐾 HostClaw
+                <span class="admin-badge">Admin</span>
+            </div>
+            
+            <nav>
+                <div class="nav-section">
+                    <div class="nav-section-title">Overview</div>
+                    <a href="#" class="nav-item active" onclick="showSection('dashboard')">
+                        📊 Dashboard
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('users')">
+                        👥 Users
+                    </a>
+                    <a href="#" class="nav-item" onclick="showSection('agents')">
+                        🤖 Agents
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">Management</div>
+                    <a href="#" class="nav-item" onclick="openAnnounceModal()">
+                        📢 Announcements
+                    </a>
+                    <a href="#" class="nav-item">
+                        ⚙️ Settings
+                    </a>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">Exit</div>
+                    <a href="dashboard.html" class="nav-item">
+                        ← Back to App
+                    </a>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Header -->
+            <div class="header">
+                <div class="page-title">
+                    <h1>Admin Dashboard</h1>
+                    <p>Platform overview and management</p>
+                </div>
+                <button class="btn btn-primary" onclick="openAnnounceModal()">
+                    📢 Send Announcement
+                </button>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-value">1,247</div>
+                    <div class="stat-label">Total Users</div>
+                    <div class="stat-breakdown">
+                        <span><span class="dot starter"></span> 892 Starter</span>
+                        <span><span class="dot pro"></span> 312 Pro</span>
+                        <span><span class="dot enterprise"></span> 43 Enterprise</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🤖</div>
+                    <div class="stat-value">3,842</div>
+                    <div class="stat-label">Total Agents</div>
+                    <div class="stat-breakdown">
+                        <span><span class="dot starter"></span> 3,102 Running</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-value">$48,392</div>
+                    <div class="stat-label">Total Revenue</div>
+                    <div class="stat-breakdown">
+                        <span>+$12,450 this month</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💬</div>
+                    <div class="stat-value">2.4M</div>
+                    <div class="stat-label">Messages Processed</div>
+                    <div class="stat-breakdown">
+                        <span>+18% from last week</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Grid -->
+            <div class="content-grid">
+                <div class="main-content">
+                    <!-- Users Table -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Recent Users</h3>
+                            <a href="#" class="btn btn-outline btn-sm" onclick="showSection('users')">View All</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Plan</th>
+                                            <th>Agents</th>
+                                            <th>Joined</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>
+                                                <div class="user-cell">
+                                                    <div class="user-avatar">JD</div>
+                                                    <div class="user-info">
+                                                        <div class="user-name">John Doe</div>
+                                                        <div class="user-email">john@example.com</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge badge-pro">Pro</span></td>
+                                            <td>5</td>
+                                            <td>2 days ago</td>
+                                            <td><button class="btn btn-outline btn-sm">View</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <div class="user-cell">
+                                                    <div class="user-avatar">AS</div>
+                                                    <div class="user-info">
+                                                        <div class="user-name">Alice Smith</div>
+                                                        <div class="user-email">alice@example.com</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge badge-enterprise">Enterprise</span></td>
+                                            <td>12</td>
+                                            <td>5 days ago</td>
+                                            <td><button class="btn btn-outline btn-sm">View</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <div class="user-cell">
+                                                    <div class="user-avatar">BJ</div>
+                                                    <div class="user-info">
+                                                        <div class="user-name">Bob Johnson</div>
+                                                        <div class="user-email">bob@example.com</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td><span class="badge badge-starter">Starter</span></td>
+                                            <td>1</td>
+                                            <td>1 week ago</td>
+                                            <td><button class="btn btn-outline btn-sm">View</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Agents Table -->
+                    <div class="card" style="margin-top: 1.5rem;">
+                        <div class="card-header">
+                            <h3 class="card-title">Recent Agents</h3>
+                            <a href="#" class="btn btn-outline btn-sm" onclick="showSection('agents')">View All</a>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-container">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Agent</th>
+                                            <th>Owner</th>
+                                            <th>Status</th>
+                                            <th>Messages</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Customer Support Bot</td>
+                                            <td>John Doe</td>
+                                            <td>
+                                                <span class="status">
+                                                    <span class="status-dot online"></span>
+                                                    Running
+                                                </span>
+                                            </td>
+                                            <td>12,450</td>
+                                            <td><button class="btn btn-outline btn-sm">Logs</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Sales Assistant</td>
+                                            <td>Alice Smith</td>
+                                            <td>
+                                                <span class="status">
+                                                    <span class="status-dot online"></span>
+                                                    Running
+                                                </span>
+                                            </td>
+                                            <td>8,230</td>
+                                            <td><button class="btn btn-outline btn-sm">Logs</button></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Test Agent</td>
+                                            <td>Bob Johnson</td>
+                                            <td>
+                                                <span class="status">
+                                                    <span class="status-dot offline"></span>
+                                                    Stopped
+                                                </span>
+                                            </td>
+                                            <td>45</td>
+                                            <td><button class="btn btn-outline btn-sm">Start</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Side Panel -->
+                <div class="side-panel">
+                    <!-- Revenue Card -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Revenue</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="revenue-display">
+                                <div class="revenue-amount">$12,450</div>
+                                <div class="revenue-period">This Month</div>
+                                <div class="revenue-breakdown">
+                                    <div class="revenue-item">
+                                        <div class="revenue-label">Last 7 Days</div>
+                                        <div class="revenue-value">$3,240</div>
+                                    </div>
+                                    <div class="revenue-item">
+                                        <div class="revenue-label">Subscriptions</div>
+                                        <div class="revenue-value">$8,920</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Health -->
+                    <div class="card" style="margin-top: 1.5rem;">
+                        <div class="card-header">
+                            <h3 class="card-title">System Health</h3>
+                        </div>
+                        <div class="card-body" style="padding: 1.5rem;">
+                            <div class="health-grid">
+                                <div class="health-item">
+                                    <div class="health-icon healthy">🐘</div>
+                                    <div class="health-info">
+                                        <div class="health-name">Database</div>
+                                        <div class="health-status">Healthy</div>
+                                    </div>
+                                </div>
+                                <div class="health-item">
+                                    <div class="health-icon healthy">⚡</div>
+                                    <div class="health-info">
+                                        <div class="health-name">Redis</div>
+                                        <div class="health-status">Healthy</div>
+                                    </div>
+                                </div>
+                                <div class="health-item">
+                                    <div class="health-icon healthy">☸️</div>
+                                    <div class="health-info">
+                                        <div class="health-name">Kubernetes</div>
+                                        <div class="health-status">Healthy</div>
+                                    </div>
+                                </div>
+                                <div class="health-item">
+                                    <div class="health-icon healthy">💳</div>
+                                    <div class="health-info">
+                                        <div class="health-name">Stripe API</div>
+                                        <div class="health-status">Healthy</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+                                <p style="font-size: 0.875rem; color: var(--text-muted); margin-bottom: 0.5rem;">Recent Errors (24h)</p>
+                                <p style="font-size: 1.5rem; font-weight: 700; color: var(--success);">3 <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 400;">(0.02% error rate)</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Announcement Modal -->
+    <div class="modal-overlay" id="announceModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 class="modal-title">📢 Send Announcement</h2>
+                <button class="modal-close" onclick="closeAnnounceModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Target Audience</label>
+                    <select class="form-select">
+                        <option value="all">All Users</option>
+                        <option value="starter">Starter Plan Only</option>
+                        <option value="pro">Pro Plan Only</option>
+                        <option value="enterprise">Enterprise Only</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Subject</label>
+                    <input type="text" class="form-input" placeholder="e.g., New Feature Announcement">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Message</label>
+                    <textarea class="form-textarea" placeholder="Write your announcement here..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeAnnounceModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="sendAnnouncement()">Send to 1,247 Users</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Modal functions
+        function openAnnounceModal() {
+            document.getElementById('announceModal').classList.add('active');
+        }
+
+        function closeAnnounceModal() {
+            document.getElementById('announceModal').classList.remove('active');
+        }
+
+        function sendAnnouncement() {
+            alert('Announcement sent to all users!');
+            closeAnnounceModal();
+        }
+
+        function showSection(section) {
+            // In real implementation, this would show/hide different sections
+            console.log('Showing section:', section);
+        }
+
+        // Close modal on overlay click
+        document.getElementById('announceModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                closeAnnounceModal();
+            }
+        });
+    </script>
+</body>
+</html>

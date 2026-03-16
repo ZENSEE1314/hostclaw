@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - DATABASE_URL=postgresql://hostclaw:hostclaw@postgres:5432/hostclaw
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=dev-secret-key-change-in-production
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET}
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    command: npm run dev
+    networks:
+      - hostclaw-network
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=hostclaw
+      - POSTGRES_PASSWORD=hostclaw
+      - POSTGRES_DB=hostclaw
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - hostclaw-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - hostclaw-network
+
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "3001:80"
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html
+      - ./dashboard.html:/usr/share/nginx/html/dashboard.html
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - hostclaw-network
+
+  # Optional: BullMQ Dashboard for job monitoring
+  bull-dashboard:
+    image: deadly0/bull-board:latest
+    ports:
+      - "3002:3000"
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+    networks:
+      - hostclaw-network
+
+  # Queue worker
+  worker:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://hostclaw:hostclaw@postgres:5432/hostclaw
+      - REDIS_URL=redis://redis:6379
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+    volumes:
+      - ./api:/app
+      - /app/node_modules
+    depends_on:
+      - postgres
+      - redis
+    command: node workers/index.js
+    networks:
+      - hostclaw-network
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  hostclaw-network:
+    driver: bridge
