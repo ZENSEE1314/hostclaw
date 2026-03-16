@@ -1,0 +1,10 @@
+{
+  "root": ".",
+  "clean_urls": true,
+  "routes": {
+    "/api/**": "https://hostclaw-api.onrender.com/api/:splat",
+    "/dashboard": "/dashboard.html",
+    "/admin": "/admin.html",
+    "/": "/index.html"
+  }
+}
