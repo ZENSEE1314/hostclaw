@@ -23,41 +23,23 @@ services:
       - key: JWT_EXPIRES_IN
         value: 7d
       - key: FRONTEND_URL
-        value: https://hostclaw.onrender.com
-      # Optional - add these manually after initial deploy
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: SMTP_USER
-        sync: false
+        value: https://hostclaw-web.onrender.com
 
-  # Static Site (Frontend)
+  # Web Server (Frontend)
   - type: web
     name: hostclaw-web
-    runtime: static
-    buildCommand: echo "Build complete"
-    staticPublishPath: .
-    routes:
-      - type: rewrite
-        source: /api/*
-        destination: https://hostclaw-api.onrender.com/api/*
-      - type: rewrite
-        source: /admin
-        destination: /admin.html
-      - type: rewrite
-        source: /dashboard
-        destination: /dashboard.html
-      - type: rewrite
-        source: /dashboard.html
-        destination: /dashboard.html
-      - type: rewrite
-        source: /admin.html
-        destination: /admin.html
-      - type: rewrite
-        source: /
-        destination: /index.html
-      - type: rewrite
-        source: /index.html
-        destination: /index.html
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: API_URL
+        value: https://hostclaw-api.onrender.com
 
 databases:
   - name: hostclaw-db
@@ -65,8 +47,3 @@ databases:
     user: hostclaw
     plan: free
     region: singapore
-
-# NOTE: Add these manually after initial deploy:
-# 1. Create Redis: Render Dashboard → New + → Redis → name: hostclaw-redis
-# 2. Create Worker: New + → Background Worker → name: hostclaw-worker → connect same repo
-# 3. Update environment variables with actual Redis URL
