@@ -23,377 +23,75 @@
             --danger: #ef4444;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--darker); color: var(--text); min-height: 100vh; }
+        .container { max-width: 1000px; margin: 0 auto; padding: 2rem; }
+        
+        .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+        .back-btn { width: 40px; height: 40px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; transition: all 0.2s; }
+        .back-btn:hover { background: rgba(255,255,255,0.05); border-color: var(--primary); }
+        .header h1 { font-size: 1.75rem; font-weight: 700; }
+        .header p { color: var(--text-muted); font-size: 0.875rem; }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--darker);
-            color: var(--text);
-            min-height: 100vh;
-        }
+        .platform-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+        
+        .platform-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; transition: all 0.2s; }
+        .platform-card:hover { border-color: rgba(255,255,255,0.2); }
+        .platform-card.connected { border-color: var(--success); }
+        .platform-card.connecting { border-color: var(--warning); }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 2rem;
-        }
+        .platform-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .platform-icon { width: 56px; height: 56px; background: rgba(255,255,255,0.05); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+        .platform-info { flex: 1; }
+        .platform-name { font-weight: 600; font-size: 1.125rem; display: flex; align-items: center; gap: 0.5rem; }
+        .platform-badge { font-size: 0.625rem; padding: 0.125rem 0.5rem; border-radius: 100px; background: var(--success); color: white; }
+        .platform-badge.connecting { background: var(--warning); }
+        .platform-desc { font-size: 0.875rem; color: var(--text-muted); }
+        .platform-status { display: flex; align-items: center; gap: 0.5rem; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+        .status-dot.disconnected { background: var(--text-muted); }
+        .status-dot.connecting { background: var(--warning); }
+        .status-text { font-size: 0.875rem; color: var(--text-muted); }
 
-        /* Header */
-        .header {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border);
-        }
+        .connection-info { background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.2); border-radius: 10px; padding: 1rem; margin: 1rem 0; }
+        .info-row { display: flex; justify-content: space-between; font-size: 0.875rem; margin-bottom: 0.5rem; }
+        .info-row:last-child { margin-bottom: 0; }
+        .info-label { color: var(--text-muted); }
 
-        .back-btn {
-            width: 40px;
-            height: 40px;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: var(--text);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            transition: all 0.2s;
-        }
+        .form-group { margin-bottom: 1rem; }
+        .form-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; }
+        .form-input { width: 100%; padding: 0.75rem 1rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 0.9375rem; font-family: inherit; }
+        .form-input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
+        .form-hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.375rem; }
 
-        .back-btn:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: var(--primary);
-        }
+        .btn { padding: 0.75rem 1.5rem; border-radius: 10px; font-size: 0.9375rem; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(99,102,241,0.4); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { background: rgba(255,255,255,0.05); border-color: var(--primary); }
+        .btn-danger { background: rgba(239,68,68,0.1); border: 1px solid var(--danger); color: var(--danger); }
+        .btn-danger:hover { background: rgba(239,68,68,0.2); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.875rem; }
 
-        .header h1 {
-            font-size: 1.75rem;
-            font-weight: 700;
-        }
+        .platform-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+        
+        .instructions { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; margin: 1rem 0; font-size: 0.875rem; }
+        .instructions ol { margin: 0.5rem 0 0 0; padding-left: 1.25rem; color: var(--text-muted); }
+        .instructions li { margin-bottom: 0.375rem; }
 
-        .header p {
-            color: var(--text-muted);
-            font-size: 0.875rem;
-        }
+        .pairing-code { text-align: center; padding: 1.5rem; background: rgba(99,102,241,0.1); border: 2px dashed var(--primary); border-radius: 12px; margin: 1rem 0; }
+        .pairing-code-value { font-size: 2rem; font-weight: 700; font-family: monospace; letter-spacing: 0.25rem; color: var(--primary-light); }
 
-        /* Platform Cards */
-        .platform-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            transition: all 0.2s;
-        }
+        .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .platform-card:hover {
-            border-color: rgba(255, 255, 255, 0.2);
-        }
+        .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--dark); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 1000; }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-color: var(--success); }
+        .toast.error { border-color: var(--danger); }
 
-        .platform-card.connected {
-            border-color: var(--success);
-        }
-
-        .platform-header {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .platform-icon {
-            width: 56px;
-            height: 56px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-        }
-
-        .platform-info {
-            flex: 1;
-        }
-
-        .platform-name {
-            font-weight: 600;
-            font-size: 1.125rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .platform-badge {
-            font-size: 0.625rem;
-            padding: 0.125rem 0.5rem;
-            border-radius: 100px;
-            background: var(--success);
-            color: white;
-        }
-
-        .platform-desc {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-        }
-
-        .platform-status {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--success);
-        }
-
-        .status-dot.disconnected {
-            background: var(--text-muted);
-        }
-
-        .status-text {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-        }
-
-        /* Connection Info */
-        .connection-info {
-            background: rgba(16, 185, 129, 0.05);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            border-radius: 10px;
-            padding: 1rem;
-            margin: 1rem 0;
-        }
-
-        .connection-info.telegram {
-            background: rgba(6, 182, 212, 0.05);
-            border-color: rgba(6, 182, 212, 0.2);
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.875rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .info-row:last-child {
-            margin-bottom: 0;
-        }
-
-        .info-label {
-            color: var(--text-muted);
-        }
-
-        /* Form */
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            color: var(--text);
-            font-size: 0.9375rem;
-            font-family: inherit;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-        }
-
-        .form-hint {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 0.375rem;
-        }
-
-        /* Buttons */
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
-            font-size: 0.9375rem;
-            font-weight: 500;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text);
-        }
-
-        .btn-outline:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: var(--primary);
-        }
-
-        .btn-danger {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid var(--danger);
-            color: var(--danger);
-        }
-
-        .btn-danger:hover {
-            background: rgba(239, 68, 68, 0.2);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .platform-actions {
-            display: flex;
-            gap: 0.75rem;
-        }
-
-        /* Instructions */
-        .instructions {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 1rem;
-            margin: 1rem 0;
-        }
-
-        .instructions-title {
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-            font-size: 0.875rem;
-        }
-
-        .instructions ol {
-            margin: 0;
-            padding-left: 1.25rem;
-            font-size: 0.875rem;
-            color: var(--text-muted);
-        }
-
-        .instructions li {
-            margin-bottom: 0.5rem;
-        }
-
-        /* QR Code placeholder */
-        .qr-placeholder {
-            width: 200px;
-            height: 200px;
-            background: white;
-            border-radius: 10px;
-            margin: 1rem auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #333;
-            font-size: 0.875rem;
-        }
-
-        /* Pairing Code */
-        .pairing-code {
-            text-align: center;
-            padding: 1.5rem;
-            background: rgba(99, 102, 241, 0.1);
-            border: 2px dashed var(--primary);
-            border-radius: 12px;
-            margin: 1rem 0;
-        }
-
-        .pairing-code-label {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-        }
-
-        .pairing-code-value {
-            font-size: 2rem;
-            font-weight: 700;
-            font-family: monospace;
-            letter-spacing: 0.25rem;
-            color: var(--primary-light);
-        }
-
-        /* Loading */
-        .loading {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            background: var(--dark);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 1rem 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            transform: translateY(100px);
-            opacity: 0;
-            transition: all 0.3s;
-            z-index: 1000;
-        }
-
-        .toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .toast.success {
-            border-color: var(--success);
-        }
-
-        .toast.error {
-            border-color: var(--danger);
-        }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -402,124 +100,12 @@
             <button class="back-btn" onclick="window.location.href='/dashboard.html'">←</button>
             <div>
                 <h1>Connected Platforms</h1>
-                <p>Link WhatsApp and Telegram to chat anywhere</p>
+                <p>Chat with your AI on any platform</p>
             </div>
         </div>
 
-        <!-- WhatsApp Card -->
-        <div class="platform-card" id="whatsappCard">
-            <div class="platform-header">
-                <div class="platform-icon">💬</div>
-                <div class="platform-info">
-                    <div class="platform-name">
-                        WhatsApp
-                        <span class="platform-badge" id="whatsappBadge" style="display: none;">Connected</span>
-                    </div>
-                    <div class="platform-desc">Chat with your AI through WhatsApp</div>
-                </div>
-                <div class="platform-status">
-                    <div class="status-dot disconnected" id="whatsappStatus"></div>
-                    <span class="status-text" id="whatsappStatusText">Not connected</span>
-                </div>
-            </div>
-
-            <div id="whatsappConnected" style="display: none;">
-                <div class="connection-info">
-                    <div class="info-row">
-                        <span class="info-label">Phone Number</span>
-                        <span class="info-value" id="whatsappPhone">--</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Connected Since</span>
-                        <span class="info-value" id="whatsappDate">--</span>
-                    </div>
-                </div>
-                <div class="platform-actions">
-                    <button class="btn btn-danger" onclick="disconnectPlatform('whatsapp')">Disconnect</button>
-                </div>
-            </div>
-
-            <div id="whatsappConnect">
-                <div class="instructions">
-                    <div class="instructions-title">How to connect:</div>
-                    <ol>
-                        <li>Click "Generate Code" below</li>
-                        <li>Open WhatsApp on your phone</li>
-                        <li>Go to Settings → Linked Devices</li>
-                        <li>Tap "Link a Device" → "Link with phone number"</li>
-                        <li>Enter the pairing code shown</li>
-                    </ol>
-                </div>
-                <div id="whatsappCodeSection" style="display: none;">
-                    <div class="pairing-code">
-                        <div class="pairing-code-label">Your Pairing Code</div>
-                        <div class="pairing-code-value" id="whatsappCode">------</div>
-                    </div>
-                    <p style="text-align: center; font-size: 0.875rem; color: var(--text-muted);">
-                        Code expires in 2 minutes
-                    </p>
-                </div>
-                <div class="platform-actions">
-                    <button class="btn btn-primary" onclick="connectWhatsApp()" id="whatsappBtn">
-                        Generate Code
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Telegram Card -->
-        <div class="platform-card" id="telegramCard">
-            <div class="platform-header">
-                <div class="platform-icon">✈️</div>
-                <div class="platform-info">
-                    <div class="platform-name">
-                        Telegram
-                        <span class="platform-badge" id="telegramBadge" style="display: none;">Connected</span>
-                    </div>
-                    <div class="platform-desc">Create a Telegram bot and connect it</div>
-                </div>
-                <div class="platform-status">
-                    <div class="status-dot disconnected" id="telegramStatus"></div>
-                    <span class="status-text" id="telegramStatusText">Not connected</span>
-                </div>
-            </div>
-
-            <div id="telegramConnected" style="display: none;">
-                <div class="connection-info telegram">
-                    <div class="info-row">
-                        <span class="info-label">Bot Username</span>
-                        <span class="info-value" id="telegramBot">--</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Webhook URL</span>
-                        <span class="info-value" style="font-size: 0.75rem;" id="telegramWebhook">--</span>
-                    </div>
-                </div>
-                <div class="platform-actions">
-                    <button class="btn btn-outline" onclick="testTelegram()">Test Bot</button>
-                    <button class="btn btn-danger" onclick="disconnectPlatform('telegram')">Disconnect</button>
-                </div>
-            </div>
-
-            <div id="telegramConnect">
-                <div class="instructions">
-                    <div class="instructions-title">How to create a bot:</div>
-                    <ol>
-                        <li>Open Telegram and search for <strong>@BotFather</strong></li>
-                        <li>Send <code>/newbot</code> and follow instructions</li>
-                        <li>Copy the API token you receive</li>
-                        <li>Paste it below and click Connect</li>
-                    </ol>
-                </div>
-                <div class="form-group" style="margin-top: 1rem;">
-                    <label class="form-label">Bot API Token</label>
-                    <input type="password" class="form-input" id="telegramToken" placeholder="123456789:ABCdefGHIjklMNOpqrsTUVwxyz">
-                    <div class="form-hint">Your token is encrypted and stored securely</div>
-                </div>
-                <div class="platform-actions">
-                    <button class="btn btn-primary" onclick="connectTelegram()">Connect Bot</button>
-                </div>
-            </div>
+        <div class="platform-grid" id="platformGrid">
+            <!-- Platforms will be rendered here -->
         </div>
     </div>
 
@@ -531,120 +117,261 @@
     <script>
         const API_URL = 'https://hostclaw-api.onrender.com';
         const token = localStorage.getItem('token');
-        
-        if (!token) {
-            window.location.href = '/login.html';
-        }
+        if (!token) window.location.href = '/login.html';
+
+        const PLATFORMS = {
+            whatsapp: {
+                name: 'WhatsApp',
+                icon: '💬',
+                desc: 'Chat via WhatsApp messaging',
+                instructions: [
+                    'Click "Generate Code" below',
+                    'Open WhatsApp → Settings → Linked Devices',
+                    'Tap "Link a Device"',
+                    'Enter the pairing code'
+                ],
+                fields: [],
+                showCode: true
+            },
+            telegram: {
+                name: 'Telegram',
+                icon: '✈️',
+                desc: 'Create a Telegram bot',
+                instructions: [
+                    'Message @BotFather on Telegram',
+                    'Send /newbot and follow steps',
+                    'Copy the API token',
+                    'Paste below and connect'
+                ],
+                fields: [
+                    { name: 'botToken', label: 'Bot API Token', type: 'password', placeholder: '123456789:ABCdef...' }
+                ]
+            },
+            discord: {
+                name: 'Discord',
+                icon: '🎮',
+                desc: 'Add bot to your Discord server',
+                instructions: [
+                    'Go to Discord Developer Portal',
+                    'Create New Application → Bot',
+                    'Copy the bot token',
+                    'Paste below and invite the bot'
+                ],
+                fields: [
+                    { name: 'botToken', label: 'Bot Token', type: 'password', placeholder: 'Your Discord bot token' }
+                ]
+            },
+            slack: {
+                name: 'Slack',
+                icon: '💼',
+                desc: 'Connect your Slack workspace',
+                instructions: [
+                    'Go to api.slack.com/apps',
+                    'Create New App → From scratch',
+                    'Go to OAuth & Permissions',
+                    'Copy Bot User OAuth Token'
+                ],
+                fields: [
+                    { name: 'botToken', label: 'Bot User OAuth Token', type: 'password', placeholder: 'xoxb-...' },
+                    { name: 'signingSecret', label: 'Signing Secret (optional)', type: 'password', placeholder: 'For webhook verification' }
+                ]
+            },
+            line: {
+                name: 'LINE',
+                icon: '📱',
+                desc: 'Connect LINE Official Account',
+                instructions: [
+                    'Go to LINE Developers Console',
+                    'Create a Messaging API channel',
+                    'Get Channel Secret and Access Token',
+                    'Paste both below'
+                ],
+                fields: [
+                    { name: 'channelSecret', label: 'Channel Secret', type: 'password', placeholder: 'Your channel secret' },
+                    { name: 'channelAccessToken', label: 'Channel Access Token', type: 'password', placeholder: 'Your channel access token' }
+                ]
+            },
+            messenger: {
+                name: 'Messenger',
+                icon: '📘',
+                desc: 'Facebook Messenger integration',
+                instructions: [
+                    'Go to developers.facebook.com',
+                    'Create App → Messenger product',
+                    'Connect your Facebook Page',
+                    'Get Page Access Token'
+                ],
+                fields: [
+                    { name: 'pageAccessToken', label: 'Page Access Token', type: 'password', placeholder: 'EAAG...' },
+                    { name: 'pageId', label: 'Page ID', type: 'text', placeholder: 'Your Facebook Page ID' }
+                ]
+            },
+            signal: {
+                name: 'Signal',
+                icon: '🔐',
+                desc: 'Signal messaging (via signal-cli)',
+                instructions: [
+                    'Set up signal-cli-rest-api',
+                    'Register your phone number',
+                    'Get the REST API URL',
+                    'Enter details below'
+                ],
+                fields: [
+                    { name: 'phoneNumber', label: 'Your Phone Number', type: 'text', placeholder: '+1234567890' },
+                    { name: 'signalCliRestApiUrl', label: 'Signal CLI REST API URL', type: 'text', placeholder: 'http://localhost:8080' }
+                ]
+            }
+        };
+
+        let platforms = {};
 
         async function loadPlatforms() {
             try {
                 const response = await fetch(`${API_URL}/api/platforms/status`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
                 if (response.ok) {
-                    const data = await response.json();
-                    updateUI(data);
+                    platforms = await response.json();
+                    renderPlatforms();
                 }
             } catch (error) {
-                console.error('Failed to load platforms:', error);
+                showToast('Failed to load platforms', 'error');
             }
         }
 
-        function updateUI(data) {
-            // WhatsApp
-            if (data.whatsapp.connected) {
-                document.getElementById('whatsappCard').classList.add('connected');
-                document.getElementById('whatsappBadge').style.display = 'inline';
-                document.getElementById('whatsappStatus').classList.remove('disconnected');
-                document.getElementById('whatsappStatusText').textContent = 'Connected';
-                document.getElementById('whatsappConnected').style.display = 'block';
-                document.getElementById('whatsappConnect').style.display = 'none';
-                document.getElementById('whatsappPhone').textContent = data.whatsapp.phone_number || 'Connected';
-                document.getElementById('whatsappDate').textContent = data.whatsapp.connected_at ? 
-                    new Date(data.whatsapp.connected_at).toLocaleDateString() : '--';
-            }
+        function renderPlatforms() {
+            const grid = document.getElementById('platformGrid');
+            grid.innerHTML = Object.entries(PLATFORMS).map(([id, config]) => {
+                const status = platforms[id] || { connected: false };
+                const isConnected = status.connected;
+                
+                return `
+                    <div class="platform-card ${isConnected ? 'connected' : ''}" id="card-${id}">
+                        <div class="platform-header">
+                            <div class="platform-icon">${config.icon}</div>
+                            <div class="platform-info">
+                                <div class="platform-name">
+                                    ${config.name}
+                                    ${isConnected ? '<span class="platform-badge">✓ Connected</span>' : ''}
+                                </div>
+                                <div class="platform-desc">${config.desc}</div>
+                            </div>
+                            <div class="platform-status">
+                                <div class="status-dot ${isConnected ? '' : 'disconnected'}"></div>
+                                <span class="status-text">${isConnected ? 'Active' : 'Not connected'}</span>
+                            </div>
+                        </div>
 
-            // Telegram
-            if (data.telegram.connected) {
-                document.getElementById('telegramCard').classList.add('connected');
-                document.getElementById('telegramBadge').style.display = 'inline';
-                document.getElementById('telegramStatus').classList.remove('disconnected');
-                document.getElementById('telegramStatusText').textContent = 'Connected';
-                document.getElementById('telegramConnected').style.display = 'block';
-                document.getElementById('telegramConnect').style.display = 'none';
-                document.getElementById('telegramBot').textContent = data.telegram.bot_username || '@your_bot';
-                document.getElementById('telegramWebhook').textContent = data.telegram.webhook_url || 'Active';
-            }
+                        ${isConnected ? `
+                            <div class="connection-info">
+                                <div class="info-row">
+                                    <span class="info-label">Connected</span>
+                                    <span>${new Date(status.connected_at).toLocaleDateString()}</span>
+                                </div>
+                                ${status.name ? `
+                                <div class="info-row">
+                                    <span class="info-label">Account</span>
+                                    <span>${status.name}</span>
+                                </div>` : ''}
+                            </div>
+                            <div class="platform-actions">
+                                <button class="btn btn-danger btn-sm" onclick="disconnectPlatform('${id}')">Disconnect</button>
+                            </div>
+                        ` : `
+                            <div class="instructions">
+                                <strong>How to connect:</strong>
+                                <ol>
+                                    ${config.instructions.map(i => `<li>${i}</li>`).join('')}
+                                </ol>
+                            </div>
+                            
+                            ${config.showCode ? `
+                                <div id="codeSection-${id}" class="hidden">
+                                    <div class="pairing-code">
+                                        <div class="pairing-code-value" id="code-${id}">------</div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                            
+                            <div id="form-${id}">
+                                ${config.fields.map(f => `
+                                    <div class="form-group">
+                                        <label class="form-label">${f.label}</label>
+                                        <input type="${f.type}" class="form-input" id="${id}-${f.name}" placeholder="${f.placeholder}">
+                                    </div>
+                                `).join('')}
+                                
+                                <div class="platform-actions">
+                                    <button class="btn btn-primary" onclick="connectPlatform('${id}')" id="btn-${id}">
+                                        ${config.showCode ? 'Generate Code' : 'Connect'}
+                                    </button>
+                                </div>
+                            </div>
+                        `}
+                    </div>
+                `;
+            }).join('');
         }
 
-        async function connectWhatsApp() {
-            const btn = document.getElementById('whatsappBtn');
+        async function connectPlatform(platform) {
+            const config = PLATFORMS[platform];
+            const btn = document.getElementById(`btn-${platform}`);
+            
             btn.disabled = true;
-            btn.innerHTML = '<span class="loading"></span> Generating...';
+            btn.innerHTML = '<span class="loading"></span> Connecting...';
 
             try {
-                const response = await fetch(`${API_URL}/api/platforms/whatsapp/connect`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
+                let body = {};
+                
+                // Collect form fields
+                config.fields.forEach(f => {
+                    body[f.name] = document.getElementById(`${platform}-${f.name}`).value.trim();
                 });
 
-                const data = await response.json();
-
-                if (response.ok) {
-                    document.getElementById('whatsappCode').textContent = data.pairing_code;
-                    document.getElementById('whatsappCodeSection').style.display = 'block';
-                    showToast('Code generated! Check your WhatsApp.');
-                    
-                    // Poll for connection
-                    setTimeout(() => {
-                        pollForConnection('whatsapp');
-                    }, 5000);
-                } else {
-                    showToast(data.error || 'Failed to generate code', 'error');
+                // Validate required fields
+                const missing = config.fields.filter(f => !body[f.name]);
+                if (missing.length > 0) {
+                    showToast(`Please fill in: ${missing.map(f => f.label).join(', ')}`, 'error');
+                    return;
                 }
-            } catch (error) {
-                showToast('Network error', 'error');
-            } finally {
-                btn.disabled = false;
-                btn.textContent = 'Generate Code';
-            }
-        }
 
-        async function connectTelegram() {
-            const tokenInput = document.getElementById('telegramToken');
-            const botToken = tokenInput.value.trim();
-
-            if (!botToken) {
-                showToast('Please enter bot token', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch(`${API_URL}/api/platforms/telegram/connect`, {
+                const response = await fetch(`${API_URL}/api/platforms/${platform}/connect`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
                     },
-                    body: JSON.stringify({ botToken })
+                    body: JSON.stringify(body)
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    showToast('Telegram bot connected!');
-                    loadPlatforms();
+                    if (data.pairing_code) {
+                        // Show pairing code for WhatsApp
+                        document.getElementById(`code-${platform}`).textContent = data.pairing_code;
+                        document.getElementById(`codeSection-${platform}`).classList.remove('hidden');
+                        showToast('Code generated! Enter it in WhatsApp.');
+                        
+                        // Poll for connection
+                        setInterval(() => loadPlatforms(), 5000);
+                    } else {
+                        showToast(`${config.name} connected successfully!`);
+                        loadPlatforms();
+                    }
                 } else {
                     showToast(data.error || 'Failed to connect', 'error');
                 }
             } catch (error) {
                 showToast('Network error', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = config.showCode ? 'Generate Code' : 'Connect';
             }
         }
 
         async function disconnectPlatform(platform) {
-            if (!confirm(`Disconnect ${platform}?`)) return;
+            if (!confirm(`Disconnect ${PLATFORMS[platform].name}?`)) return;
 
             try {
                 const response = await fetch(`${API_URL}/api/platforms/${platform}`, {
@@ -653,8 +380,8 @@
                 });
 
                 if (response.ok) {
-                    showToast(`${platform} disconnected`);
-                    location.reload();
+                    showToast('Disconnected');
+                    loadPlatforms();
                 } else {
                     showToast('Failed to disconnect', 'error');
                 }
@@ -663,36 +390,12 @@
             }
         }
 
-        async function testTelegram() {
-            showToast('Sending test message...');
-            // Would implement actual test
-        }
-
-        async function pollForConnection(platform) {
-            // Simple polling to check if connected
-            const check = setInterval(async () => {
-                await loadPlatforms();
-                
-                // Stop polling if connected
-                const card = document.getElementById(`${platform}Card`);
-                if (card.classList.contains('connected')) {
-                    clearInterval(check);
-                }
-            }, 5000);
-
-            // Stop after 2 minutes
-            setTimeout(() => clearInterval(check), 120000);
-        }
-
         function showToast(message, type = 'success') {
             const toast = document.getElementById('toast');
             document.getElementById('toastMessage').textContent = message;
             document.getElementById('toastIcon').textContent = type === 'success' ? '✓' : '✗';
             toast.className = `toast ${type} show`;
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+            setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
         loadPlatforms();
