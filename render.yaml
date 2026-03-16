@@ -18,10 +18,9 @@ services:
           name: hostclaw-db
           property: connectionString
       - key: REDIS_URL
-        fromService:
-          type: redis
-          name: hostclaw-redis
-          property: connectionString
+        value: redis://default:password@hostclaw-redis:6379
+        # Note: Create Redis instance manually in Render Dashboard
+        # Then update this with the actual Redis URL
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
@@ -82,10 +81,9 @@ services:
           name: hostclaw-db
           property: connectionString
       - key: REDIS_URL
-        fromService:
-          type: redis
-          name: hostclaw-redis
-          property: connectionString
+        value: redis://default:password@hostclaw-redis:6379
+        # Note: Create Redis instance manually in Render Dashboard
+        # Then update this with the actual Redis URL
       - key: SMTP_HOST
         value: smtp.gmail.com
       - key: SMTP_PORT
@@ -104,8 +102,9 @@ databases:
     plan: starter
     region: singapore
 
-redis:
-  - name: hostclaw-redis
-    plan: starter
-    region: singapore
-    maxmemoryPolicy: noeviction
+# NOTE: Redis is not supported in Blueprints.
+# Please create a Redis instance manually:
+# 1. Go to Render Dashboard → New + → Redis
+# 2. Name it "hostclaw-redis"
+# 3. Copy the "Internal Redis URL"
+# 4. Update REDIS_URL in both hostclaw-api and hostclaw-worker services
