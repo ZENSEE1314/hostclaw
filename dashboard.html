@@ -528,7 +528,26 @@
         }
 
         async function handlePayment() {
-            alert('Stripe payment integration coming soon! For now, please contact support to pay the $500 one-time fee.');
+            try {
+                const response = await fetch(`${API_URL}/api/billing/setup-fee`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.url) {
+                    window.location.href = data.url;
+                } else {
+                    alert(data.error || 'Payment error. Please try again.');
+                }
+            } catch (error) {
+                console.error('Payment error:', error);
+                alert('Payment system unavailable. Please try again later.');
+            }
         }
 
         function logout() {
