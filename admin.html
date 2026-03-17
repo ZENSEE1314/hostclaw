@@ -785,6 +785,12 @@
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
                 
+                if (response.status === 401) {
+                    // Token invalid, logout
+                    logout();
+                    return;
+                }
+                
                 if (response.ok) {
                     const data = await response.json();
                     
