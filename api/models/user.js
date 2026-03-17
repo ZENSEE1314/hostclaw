@@ -9,15 +9,21 @@ class User {
     console.log('Creating user with email:', normalizedEmail);
     
     const hashedPassword = await bcrypt.hash(password, 12);
-    const result = await query(
-      `INSERT INTO users (email, password, name, plan, credits, has_paid, api_providers, skills, default_provider) 
-       VALUES ($1, $2, $3, $4, $5, false, '{}', '[]', 'openai') 
-       RETURNING id, email, name, plan, credits, created_at`,
-      [normalizedEmail, hashedPassword, name, plan, credits]
-    );
     
-    console.log('User created:', result.rows[0]?.id);
-    return result.rows[0];
+    try {
+      const result = await query(
+        `INSERT INTO users (id, email, password, name, plan, credits, has_paid, api_providers, skills, default_provider) 
+         VALUES (lower(hex(randomblob(16))), $1, $2, $3, $4, $5, 0, '{}', '[]', 'openai') 
+         RETURNING id, email, name, plan, credits, created_at`,
+        [normalizedEmail, hashedPassword, name, plan, credits]
+      );
+      
+      console.log('User created:', result.rows[0]?.id);
+      return result.rows[0];
+    } catch (err) {
+      console.error('Error creating user:', err.message);
+      throw err;
+    }
   }
 
   static async findByEmail(email) {
@@ -28,15 +34,20 @@ class User {
     
     console.log('Looking up user by email:', normalizedEmail);
     
-    // Get all users and do case-insensitive comparison
-    const result = await query('SELECT * FROM users', []);
-    
-    const user = result.rows.find(u => 
-      u.email && u.email.toLowerCase().trim() === normalizedEmail
-    );
-    
-    console.log('User lookup result:', user ? `Found user ${user.id}` : 'Not found');
-    return user || null;
+    try {
+      // Use SQLite with case-insensitive comparison
+      const result = await query(
+        'SELECT * FROM users WHERE LOWER(email) = LOWER($1)',
+        [normalizedEmail]
+      );
+      
+      const user = result.rows[0] || null;
+      console.log('User lookup result:', user ? `Found user ${user.id}` : 'Not found');
+      return user;
+    } catch (err) {
+      console.error('Error finding user:', err.message);
+      return null;
+    }
   }
 
   static async findById(id) {

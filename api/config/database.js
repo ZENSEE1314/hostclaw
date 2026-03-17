@@ -1,198 +1,153 @@
-const fs = require('fs');
+const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 
 const DATA_DIR = path.join(__dirname, '../data');
-const DB_FILE = path.join(DATA_DIR, 'db.json');
+const DB_PATH = process.env.SQLITE_PATH || path.join(DATA_DIR, 'database.sqlite');
 
+// Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-let jsonDb = { users: [], agents: [], chat_messages: [], invoices: [], usage_logs: [] };
+let db;
 
-function loadJsonDb() {
-  if (fs.existsSync(DB_FILE)) {
-    try {
-      const data = fs.readFileSync(DB_FILE, 'utf8');
-      jsonDb = JSON.parse(data);
-      console.log('Loaded DB with', jsonDb.users?.length || 0, 'users');
-    } catch (e) { 
-      console.log('Creating new database'); 
-    }
-  }
-}
-
-function saveJsonDb() {
-  fs.writeFileSync(DB_FILE, JSON.stringify(jsonDb, null, 2));
-}
-
-function uuid() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-    const r = Math.random() * 16 | 0;
-    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-  });
-}
-
-loadJsonDb();
-
-function parseWhere(sql, params) {
-  const conditions = {};
-  const whereMatch = sql.match(/WHERE\s+(.+?)(?:\s+ORDER|\s+LIMIT|\s+AND|\s+OR|$)/i);
-  
-  if (whereMatch) {
-    let clause = whereMatch[1];
-    // Replace $1, $2 with actual param values
-    params.forEach((param, i) => {
-      const placeholder = '$' + (i + 1);
-      if (clause.includes(placeholder)) {
-        let paramStr;
-        if (typeof param === 'string') {
-          paramStr = param; // Don't add quotes, we'll handle that
-        } else {
-          paramStr = String(param);
-        }
-        clause = clause.replace(placeholder, '__PARAM' + i + '__');
-      }
-    });
-    
-    // Now replace the placeholders with actual values
-    params.forEach((param, i) => {
-      let paramStr;
-      if (typeof param === 'string') {
-        paramStr = param; // Use as-is for string comparison
+function getDb() {
+  if (!db) {
+    db = new sqlite3.Database(DB_PATH, (err) => {
+      if (err) {
+        console.error('SQLite connection error:', err);
       } else {
-        paramStr = String(param);
+        console.log('✅ Connected to SQLite database at', DB_PATH);
       }
-      clause = clause.replace('__PARAM' + i + '__', paramStr);
     });
+  }
+  return db;
+}
+
+// Promisify query
+function query(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    const db = getDb();
     
-    // Parse conditions
-    const parts = clause.split(/\s+AND\s+/i);
-    parts.forEach(part => {
-      part = part.trim();
-      // Match column = value
-      const match = part.match(/(\w+)\s*=\s*(.+)/);
-      if (match) {
-        let col = match[1].trim();
-        let val = match[2].trim();
-        // Remove quotes if present
-        if ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith('"') && val.endsWith('"'))) {
-          val = val.slice(1, -1);
+    console.log('SQL:', sql.substring(0, 100), 'Params:', params);
+    
+    if (sql.trim().toLowerCase().startsWith('select')) {
+      db.all(sql, params, (err, rows) => {
+        if (err) {
+          console.error('Query error:', err);
+          reject(err);
+        } else {
+          console.log('Query returned', rows.length, 'rows');
+          resolve({ rows });
         }
-        conditions[col] = val;
-      }
-    });
-  }
-  
-  return conditions;
-}
-
-function matches(row, conditions) {
-  for (const [key, val] of Object.entries(conditions)) {
-    // Convert both to string for comparison
-    if (String(row[key]) !== String(val)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-async function query(sql, params = []) {
-  const sqlLower = sql.toLowerCase();
-  const tableMatch = sql.match(/(?:FROM|INTO|UPDATE|JOIN)\s+(\w+)/i);
-  const table = (tableMatch ? tableMatch[1] : 'unknown').toLowerCase();
-  
-  console.log('Query:', sql.substring(0, 50), 'table:', table, 'params:', params);
-  
-  // Ensure table exists
-  if (!jsonDb[table]) {
-    jsonDb[table] = [];
-  }
-  
-  // INSERT
-  if (sqlLower.startsWith('insert')) {
-    const newRow = { 
-      id: uuid(), 
-      created_at: new Date().toISOString(), 
-      updated_at: new Date().toISOString() 
-    };
-    
-    // Parse column names from SQL
-    const colMatch = sql.match(/\(([^)]+)\)\s+VALUES\s*\(([^)]+)\)/i);
-    if (colMatch) {
-      const cols = colMatch[1].split(',').map(c => c.trim());
-      cols.forEach((col, i) => {
-        if (params[i] !== undefined) {
-          newRow[col] = params[i];
+      });
+    } else {
+      db.run(sql, params, function(err) {
+        if (err) {
+          console.error('Query error:', err);
+          reject(err);
+        } else {
+          console.log('Query affected', this.changes, 'rows, lastID:', this.lastID);
+          resolve({ rowCount: this.changes, rows: [{ id: this.lastID }] });
         }
       });
     }
-    
-    jsonDb[table].push(newRow);
-    saveJsonDb();
-    console.log('Inserted into', table, 'id:', newRow.id);
-    return { rows: [newRow], rowCount: 1 };
-  }
-  
-  // SELECT
-  if (sqlLower.startsWith('select')) {
-    let results = [...jsonDb[table]];
-    
-    // Parse WHERE conditions
-    const conditions = parseWhere(sql, params);
-    console.log('Conditions:', conditions);
-    
-    if (Object.keys(conditions).length > 0) {
-      results = results.filter(row => matches(row, conditions));
-    }
-    
-    console.log('Found', results.length, 'results');
-    
-    // LIMIT
-    const limitMatch = sql.match(/LIMIT\s+(\d+)/i);
-    if (limitMatch) {
-      results = results.slice(0, parseInt(limitMatch[1]));
-    }
-    
-    return { rows: results };
-  }
-  
-  // UPDATE
-  if (sqlLower.startsWith(' update')) {
-    const conditions = parseWhere(sql, params.slice(1));
-    let updated = 0;
-    
-    jsonDb[table].forEach(row => {
-      if (matches(row, conditions)) {
-        // Parse SET clause
-        const setMatch = sql.match(/SET\s+(.+?)\s+WHERE/i);
-        if (setMatch) {
-          const sets = setMatch[1].split(',');
-          sets.forEach(set => {
-            const m = set.trim().match(/(\w+)\s*=\s*\$(\d+)/);
-            if (m) {
-              const col = m[1];
-              const paramIdx = parseInt(m[2]) - 1;
-              if (params[paramIdx] !== undefined) {
-                row[col] = params[paramIdx];
-              }
-            }
-          });
-          row.updated_at = new Date().toISOString();
-          updated++;
-        }
-      }
-    });
-    
-    if (updated > 0) saveJsonDb();
-    return { rowCount: updated };
-  }
-  
-  return { rows: [] };
+  });
 }
 
+// Initialize database tables
 async function initDb() {
-  console.log('✅ JSON DB ready, users:', jsonDb.users?.length || 0);
+  const db = getDb();
+  
+  return new Promise((resolve, reject) => {
+    db.serialize(() => {
+      // Users table
+      db.run(`CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        name TEXT NOT NULL,
+        plan TEXT DEFAULT 'starter',
+        credits REAL DEFAULT 20.00,
+        has_paid INTEGER DEFAULT 0,
+        api_providers TEXT DEFAULT '{}',
+        skills TEXT DEFAULT '[]',
+        platforms TEXT DEFAULT '{}',
+        default_provider TEXT DEFAULT 'openai',
+        stripe_customer_id TEXT,
+        stripe_subscription_id TEXT,
+        gateway_config TEXT,
+        reset_token TEXT,
+        reset_token_expires DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )`, (err) => {
+        if (err) console.error('Error creating users table:', err);
+      });
+
+      // Agents table
+      db.run(`CREATE TABLE IF NOT EXISTS agents (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        model TEXT DEFAULT 'gpt-4o',
+        channels TEXT DEFAULT '[]',
+        config TEXT DEFAULT '{}',
+        status TEXT DEFAULT 'pending',
+        deployment_url TEXT,
+        deployment_id TEXT,
+        container_id TEXT,
+        last_deployed_at DATETIME,
+        message_count INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )`, (err) => {
+        if (err) console.error('Error creating agents table:', err);
+      });
+
+      // Chat messages table
+      db.run(`CREATE TABLE IF NOT EXISTS chat_messages (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        session_id TEXT DEFAULT 'default',
+        role TEXT NOT NULL,
+        content TEXT NOT NULL,
+        model TEXT,
+        tokens INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )`, (err) => {
+        if (err) console.error('Error creating chat_messages table:', err);
+      });
+
+      // Invoices table
+      db.run(`CREATE TABLE IF NOT EXISTS invoices (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        stripe_invoice_id TEXT,
+        amount REAL NOT NULL,
+        currency TEXT DEFAULT 'usd',
+        status TEXT DEFAULT 'pending',
+        description TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        paid_at DATETIME,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )`, (err) => {
+        if (err) console.error('Error creating invoices table:', err);
+        else {
+          console.log('✅ Database tables initialized');
+          resolve();
+        }
+      });
+    });
+  });
 }
 
-module.exports = { initDb, query };
+module.exports = {
+  getDb,
+  query,
+  initDb
+};

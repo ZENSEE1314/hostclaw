@@ -12,10 +12,16 @@ const router = express.Router();
 
 // Google OAuth configuration - read fresh each time
 function getGoogleConfig() {
+  // Must use the API URL for the callback, not frontend
+  const apiUrl = process.env.API_URL || process.env.FRONTEND_URL?.replace('-web', '-api');
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI || `${apiUrl}/api/auth/google/callback`;
+  
+  console.log('Google OAuth redirectUri:', redirectUri);
+  
   return {
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    redirectUri: process.env.GOOGLE_REDIRECT_URI || `${process.env.FRONTEND_URL}/api/auth/google/callback`
+    redirectUri
   };
 }
 
