@@ -779,10 +779,15 @@
             
             // Update nav
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            event.target.closest('.nav-item').classList.add('active');
+            if (event && event.target) {
+                event.target.closest('.nav-item').classList.add('active');
+            }
             
             // Load data
-            if (section === 'users') loadUsers();
+            if (section === 'users') {
+                console.log('Loading users...');
+                loadUsers();
+            }
             if (section === 'agents') loadAgents();
         }
 
@@ -851,18 +856,32 @@
 
         async function loadUsers() {
             try {
+                console.log('Fetching users from API...');
                 const response = await fetch(`${API_URL}/api/admin/users`, {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
                 
+                console.log('Users API response:', response.status);
+                
+                if (response.status === 401) {
+                    console.log('Unauthorized, logging out');
+                    logout();
+                    return;
+                }
+                
                 if (response.ok) {
                     const data = await response.json();
+                    console.log('Users loaded:', data.users?.length || 0);
                     allUsers = data.users || [];
                     renderUsersTable(allUsers);
+                } else {
+                    const error = await response.text();
+                    console.error('Failed to load users:', error);
+                    document.getElementById('usersTable').innerHTML = `<tr><td colspan="7">Error: ${error}</td></tr>`;
                 }
             } catch (err) {
                 console.error('Failed to load users:', err);
-                document.getElementById('usersTable').innerHTML = '<tr><td colspan="7">Error loading users</td></tr>';
+                document.getElementById('usersTable').innerHTML = '<tr><td colspan="7">Error loading users: ' + err.message + '</td></tr>';
             }
         }
 
