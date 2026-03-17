@@ -8,14 +8,15 @@ class User {
     
     console.log('Creating user with email:', normalizedEmail);
     
-    const hashedPassword = await bcrypt.hash(password, 12);
+    // Password is already hashed by the caller (auth.js)
+    // DO NOT hash it again here!
     const userId = require('crypto').randomUUID();
     
     try {
       await query(
         `INSERT INTO users (id, email, password, name, plan, credits, has_paid, api_providers, skills, default_provider) 
          VALUES ($1, $2, $3, $4, $5, $6, 0, '{}', '[]', 'openai')`,
-        [userId, normalizedEmail, hashedPassword, name, plan, credits]
+        [userId, normalizedEmail, password, name, plan, credits]
       );
       
       // Fetch the created user
