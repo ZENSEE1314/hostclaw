@@ -486,4 +486,28 @@ router.post('/announce', async (req, res, next) => {
   }
 });
 
+// Debug: Check what was stored for a user
+router.get('/debug/user-full/:email', async (req, res) => {
+  try {
+    const email = req.params.email.toLowerCase();
+    const userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    // Don't send full password hash, just first/last 10 chars
+    const maskedPassword = user.password.substring(0, 10) + '...' + user.password.substring(user.password.length - 10);
+    
+    res.json({
+      ...user,
+      password: maskedPassword,
+      passwordLength: user.password.length
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
