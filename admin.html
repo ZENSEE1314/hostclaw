@@ -487,6 +487,10 @@
                 </div>
                 <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
             </form>
+            <div style="margin-top: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.875rem;">
+                <p>Don't have an account? <a href="/signup.html" style="color: var(--primary-light);">Create one</a></p>
+                <p style="margin-top: 0.5rem;"><a href="/login.html" style="color: var(--text-muted);">Back to regular login →</a></p>
+            </div>
         </div>
     </div>
 
@@ -712,6 +716,9 @@
         if (authToken) {
             showAdminPanel();
             loadDashboard();
+        } else {
+            // Not logged in, show login screen
+            console.log('No token found, showing login screen');
         }
 
         // Login form
