@@ -4,8 +4,46 @@ const User = require('../models/user');
 const Agent = require('../models/agent');
 const { query } = require('../config/database');
 const EmailService = require('../services/email');
+const bcrypt = require('bcryptjs');
 
 const router = express.Router();
+
+// Setup endpoint - create first admin (no auth required, only works if no users exist)
+router.post('/setup', async (req, res) => {
+  try {
+    // Check if any users exist
+    const userCount = await query('SELECT COUNT(*) as count FROM users');
+    
+    if (userCount.rows[0].count > 0) {
+      return res.status(403).json({ error: 'Setup already complete. Users exist.' });
+    }
+    
+    const { email, password, name } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+    
+    // Create admin user
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const userId = require('crypto').randomUUID();
+    
+    await query(
+      `INSERT INTO users (id, email, password, name, plan, credits, has_paid, api_providers, skills, default_provider) 
+       VALUES ($1, $2, $3, $4, $5, $6, 1, '{}', '[]', 'openai')`,
+      [userId, email.toLowerCase(), hashedPassword, name || 'Admin', 'enterprise', 1000]
+    );
+    
+    res.json({ 
+      message: 'Admin user created successfully',
+      email: email,
+      userId: userId
+    });
+  } catch (err) {
+    console.error('Setup error:', err);
+    res.status(500).json({ error: 'Setup failed' });
+  }
+});
 
 // Admin middleware
 const requireAdmin = async (req, res, next) => {
