@@ -82,33 +82,53 @@ async function migrate() {
     `);
     console.log('✅ Invoices table ready');
     
-    // Add missing columns to existing users table
-    const columns = [
-      { name: 'has_paid', type: 'INTEGER DEFAULT 0' },
-      { name: 'api_providers', type: 'TEXT DEFAULT \'{}\'' },
-      { name: 'skills', type: 'TEXT DEFAULT \'[]\'' },
-      { name: 'platforms', type: 'TEXT DEFAULT \'{}\'' },
-      { name: 'default_provider', type: 'TEXT DEFAULT \'openai\'' },
-      { name: 'reset_token', type: 'TEXT' },
-      { name: 'reset_token_expires', type: 'TIMESTAMP' }
-    ];
+    // Add missing columns to existing users table (PostgreSQL syntax)
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS has_paid INTEGER DEFAULT 0`);
+      console.log('✅ Column has_paid ready');
+    } catch (e) { console.log('ℹ️ has_paid:', e.message); }
     
-    for (const col of columns) {
-      try {
-        await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS ${col.name} ${col.type}`);
-        console.log(`✅ Column ${col.name} ready`);
-      } catch (err) {
-        // Column might already exist, ignore error
-        console.log(`ℹ️ Column ${col.name} already exists or error:`, err.message);
-      }
-    }
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS api_providers TEXT DEFAULT '{}'`);
+      console.log('✅ Column api_providers ready');
+    } catch (e) { console.log('ℹ️ api_providers:', e.message); }
+    
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS skills TEXT DEFAULT '[]'`);
+      console.log('✅ Column skills ready');
+    } catch (e) { console.log('ℹ️ skills:', e.message); }
+    
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS platforms TEXT DEFAULT '{}'`);
+      console.log('✅ Column platforms ready');
+    } catch (e) { console.log('ℹ️ platforms:', e.message); }
+    
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS default_provider TEXT DEFAULT 'openai'`);
+      console.log('✅ Column default_provider ready');
+    } catch (e) { console.log('ℹ️ default_provider:', e.message); }
+    
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token TEXT`);
+      console.log('✅ Column reset_token ready');
+    } catch (e) { console.log('ℹ️ reset_token:', e.message); }
+    
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMP`);
+      console.log('✅ Column reset_token_expires ready');
+    } catch (e) { console.log('ℹ️ reset_token_expires:', e.message); }
     
     console.log('✅ All migrations complete!');
-    process.exit(0);
+    return true;
   } catch (err) {
     console.error('❌ Migration failed:', err);
-    process.exit(1);
+    throw err;
   }
 }
 
-migrate();
+// Run if called directly
+if (require.main === module) {
+  migrate().then(() => process.exit(0)).catch(() => process.exit(1));
+}
+
+module.exports = migrate;

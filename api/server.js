@@ -39,12 +39,28 @@ const PORT = process.env.PORT || 10000;
 // Trust proxy (required for Render)
 app.set('trust proxy', 1);
 
-// Initialize database before starting server
-initDb().then(() => {
-  console.log('✅ Database initialized');
-}).catch(err => {
-  console.error('❌ Database initialization failed:', err);
-});
+// Run migrations and initialize database
+async function startup() {
+  try {
+    // Run migrations first
+    console.log('🔄 Running migrations...');
+    const migrate = require('./config/migrate');
+    await migrate();
+    
+    // Initialize database connection
+    await initDb();
+    console.log('✅ Database ready');
+    
+    // Start server
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 HostClaw API server running on port ${PORT}`);
+      console.log(`📊 Health check: http://0.0.0.0:${PORT}/health`);
+    });
+  } catch (err) {
+    console.error('❌ Startup failed:', err);
+    process.exit(1);
+  }
+}
 
 // Security middleware
 app.use(helmet());
@@ -99,10 +115,7 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
 
-// Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 HostClaw API server running on port ${PORT}`);
-  console.log(`📊 Health check: http://0.0.0.0:${PORT}/health`);
-});
+// Start server with migrations
+startup();
 
 module.exports = app;
