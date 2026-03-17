@@ -58,6 +58,36 @@ router.get('/debug/users', async (req, res) => {
   }
 });
 
+// Reset user password (no auth for now, just needs email)
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    
+    if (!email || !newPassword) {
+      return res.status(400).json({ error: 'Email and newPassword required' });
+    }
+    
+    // Find user
+    const userResult = await query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Update password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    await query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, userResult.rows[0].id]);
+    
+    res.json({ 
+      message: 'Password reset successfully',
+      email: email
+    });
+  } catch (err) {
+    console.error('Reset password error:', err);
+    res.status(500).json({ error: 'Reset failed' });
+  }
+});
+
 // Admin middleware
 const requireAdmin = async (req, res, next) => {
   // In production, check if user has admin role
