@@ -31,9 +31,17 @@ const skillsRoutes = require('./routes/skills');
 const providersRoutes = require('./routes/providers');
 const platformsRoutes = require('./routes/platforms');
 const { errorHandler } = require('./middleware/error');
+const { initDb } = require('./config/database');
 
 const app = express();
 const PORT = process.env.PORT || 10000;
+
+// Initialize database before starting server
+initDb().then(() => {
+  console.log('✅ Database initialized');
+}).catch(err => {
+  console.error('❌ Database initialization failed:', err);
+});
 
 // Security middleware
 app.use(helmet());
