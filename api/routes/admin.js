@@ -28,7 +28,8 @@ router.get('/stats', async (req, res, next) => {
         COUNT(*) as total_users,
         COUNT(CASE WHEN plan = 'starter' THEN 1 END) as starter_users,
         COUNT(CASE WHEN plan = 'pro' THEN 1 END) as pro_users,
-        COUNT(CASE WHEN plan = 'enterprise' THEN 1 END) as enterprise_users
+        COUNT(CASE WHEN plan = 'enterprise' THEN 1 END) as enterprise_users,
+        COUNT(CASE WHEN has_paid = 1 THEN 1 END) as paid_users
       FROM users
     `);
 
@@ -104,7 +105,7 @@ router.get('/users', async (req, res, next) => {
     }
 
     const users = await query(`
-      SELECT id, name, email, plan, credits, created_at,
+      SELECT id, name, email, plan, credits, has_paid, created_at,
         (SELECT COUNT(*) FROM agents WHERE user_id = users.id) as agent_count
       FROM users
       ${whereClause}
@@ -178,6 +179,59 @@ router.patch('/users/:id', async (req, res, next) => {
 
     res.json({ message: 'User updated successfully' });
   } catch (error) {
+    next(error);
+  }
+});
+
+// Update user (PUT for full update including has_paid)
+router.put('/users/:id', async (req, res, next) => {
+  try {
+    const { name, plan, credits, has_paid } = req.body;
+    
+    console.log('Admin updating user:', req.params.id, { name, plan, credits, has_paid });
+    
+    // Update user fields
+    if (name || plan || credits !== undefined || has_paid !== undefined) {
+      const updates = [];
+      const params = [];
+      let paramCount = 1;
+      
+      if (name) {
+        updates.push(`name = $${paramCount}`);
+        params.push(name);
+        paramCount++;
+      }
+      
+      if (plan) {
+        updates.push(`plan = $${paramCount}`);
+        params.push(plan);
+        paramCount++;
+      }
+      
+      if (credits !== undefined) {
+        updates.push(`credits = $${paramCount}`);
+        params.push(credits);
+        paramCount++;
+      }
+      
+      if (has_paid !== undefined) {
+        updates.push(`has_paid = $${paramCount}`);
+        params.push(has_paid ? 1 : 0);
+        paramCount++;
+      }
+      
+      updates.push('updated_at = CURRENT_TIMESTAMP');
+      params.push(req.params.id);
+      
+      const sql = `UPDATE users SET ${updates.join(', ')} WHERE id = $${paramCount}`;
+      console.log('Update SQL:', sql);
+      
+      await query(sql, params);
+    }
+
+    res.json({ message: 'User updated successfully' });
+  } catch (error) {
+    console.error('Update user error:', error);
     next(error);
   }
 });
