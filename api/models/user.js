@@ -3,22 +3,40 @@ const bcrypt = require('bcryptjs');
 
 class User {
   static async createUser({ email, password, name, plan = 'starter', credits = 20 }) {
+    // Normalize email to lowercase
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    console.log('Creating user with email:', normalizedEmail);
+    
     const hashedPassword = await bcrypt.hash(password, 12);
     const result = await query(
       `INSERT INTO users (email, password, name, plan, credits, has_paid, api_providers, skills, default_provider) 
        VALUES ($1, $2, $3, $4, $5, false, '{}', '[]', 'openai') 
        RETURNING id, email, name, plan, credits, created_at`,
-      [email, hashedPassword, name, plan, credits]
+      [normalizedEmail, hashedPassword, name, plan, credits]
     );
+    
+    console.log('User created:', result.rows[0]?.id);
     return result.rows[0];
   }
 
   static async findByEmail(email) {
-    const result = await query(
-      'SELECT * FROM users WHERE email = $1',
-      [email]
+    if (!email) return null;
+    
+    // Normalize email to lowercase
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    console.log('Looking up user by email:', normalizedEmail);
+    
+    // Get all users and do case-insensitive comparison
+    const result = await query('SELECT * FROM users', []);
+    
+    const user = result.rows.find(u => 
+      u.email && u.email.toLowerCase().trim() === normalizedEmail
     );
-    return result.rows[0];
+    
+    console.log('User lookup result:', user ? `Found user ${user.id}` : 'Not found');
+    return user || null;
   }
 
   static async findById(id) {

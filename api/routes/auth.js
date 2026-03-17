@@ -259,12 +259,20 @@ router.get('/google', (req, res) => {
 // Google OAuth callback
 router.get('/google/callback', async (req, res, next) => {
   try {
-    const { code } = req.query;
+    const { code, error: oauthError } = req.query;
+    
+    if (oauthError) {
+      console.error('Google OAuth error from provider:', oauthError);
+      return res.redirect(`${process.env.FRONTEND_URL}/login.html?error=oauth_denied`);
+    }
     
     if (!code) {
+      console.error('Google OAuth: No code received');
       return res.redirect(`${process.env.FRONTEND_URL}/login.html?error=oauth_failed`);
     }
 
+    console.log('Google OAuth: Exchanging code for tokens...');
+    
     // Exchange code for tokens
     const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
       client_id: GOOGLE_CLIENT_ID,
@@ -275,6 +283,7 @@ router.get('/google/callback', async (req, res, next) => {
     });
 
     const { access_token } = tokenResponse.data;
+    console.log('Google OAuth: Got access token');
 
     // Get user info from Google
     const userResponse = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -282,11 +291,14 @@ router.get('/google/callback', async (req, res, next) => {
     });
 
     const { email, name, picture } = userResponse.data;
+    console.log('Google OAuth: User info received:', { email, name });
 
     // Check if user exists
     let user = await User.findByEmail(email);
+    console.log('Google OAuth: User lookup result:', user ? 'Found' : 'Not found');
     
     if (!user) {
+      console.log('Google OAuth: Creating new user...');
       // Create new user
       const randomPassword = crypto.randomBytes(32).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 12);
@@ -298,6 +310,7 @@ router.get('/google/callback', async (req, res, next) => {
         plan: 'starter',
         credits: 20
       });
+      console.log('Google OAuth: New user created:', user.id);
     }
 
     // Generate JWT
@@ -310,7 +323,8 @@ router.get('/google/callback', async (req, res, next) => {
     // Redirect to dashboard with token
     res.redirect(`${process.env.FRONTEND_URL}/dashboard.html?token=${token}&oauth=success`);
   } catch (error) {
-    console.error('Google OAuth error:', error);
+    console.error('Google OAuth error:', error.message);
+    console.error('Error details:', error.response?.data || error);
     res.redirect(`${process.env.FRONTEND_URL}/login.html?error=oauth_failed`);
   }
 });
