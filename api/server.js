@@ -8,9 +8,18 @@ const compression = require('compression');
 // Try to load .env, but don't fail if it doesn't exist
 try {
   require('dotenv').config();
+  console.log('✅ .env file loaded');
 } catch (e) {
   console.log('No .env file found, using environment variables');
 }
+
+// Debug: Log environment variables (without secrets)
+console.log('🔧 Environment Check:');
+console.log('  FRONTEND_URL:', process.env.FRONTEND_URL || 'NOT SET');
+console.log('  DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+console.log('  JWT_SECRET:', process.env.JWT_SECRET ? 'SET' : 'NOT SET');
+console.log('  GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? 'SET' : 'NOT SET');
+console.log('  STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY ? 'SET' : 'NOT SET');
 
 const authRoutes = require('./routes/auth');
 const agentRoutes = require('./routes/agents');

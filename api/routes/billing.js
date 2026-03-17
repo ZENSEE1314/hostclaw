@@ -5,15 +5,17 @@ const Invoice = require('../models/invoice');
 
 const router = express.Router();
 
-// Initialize Stripe if key exists
-let stripe = null;
-if (process.env.STRIPE_SECRET_KEY) {
-  try {
-    stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-    console.log('✅ Stripe initialized');
-  } catch (e) {
-    console.log('⚠️ Stripe not available:', e.message);
+// Get Stripe instance - checks env var fresh each time
+function getStripe() {
+  if (process.env.STRIPE_SECRET_KEY) {
+    try {
+      return require('stripe')(process.env.STRIPE_SECRET_KEY);
+    } catch (e) {
+      console.log('⚠️ Stripe not available:', e.message);
+      return null;
+    }
   }
+  return null;
 }
 
 router.use(authenticate);
@@ -33,7 +35,9 @@ router.post('/credits', async (req, res, next) => {
   try {
     const { amount } = req.body;
     
+    const stripe = getStripe();
     if (!stripe) {
+      console.log('Stripe not configured - STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY ? 'SET' : 'NOT SET');
       return res.status(503).json({ error: 'Stripe not configured. Please contact support.' });
     }
 
@@ -71,8 +75,10 @@ router.post('/credits', async (req, res, next) => {
 // One-time $500 payment for setup
 router.post('/setup-fee', async (req, res, next) => {
   try {
+    const stripe = getStripe();
     if (!stripe) {
-      return res.status(503).json({ error: 'Stripe not configured' });
+      console.log('Stripe not configured - STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY ? 'SET' : 'NOT SET');
+      return res.status(503).json({ error: 'Stripe not configured. Please set STRIPE_SECRET_KEY in environment variables.' });
     }
 
     const session = await stripe.checkout.sessions.create({

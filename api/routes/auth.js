@@ -10,10 +10,14 @@ const axios = require('axios');
 
 const router = express.Router();
 
-// Google OAuth configuration
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || `${process.env.FRONTEND_URL}/api/auth/google/callback`;
+// Google OAuth configuration - read fresh each time
+function getGoogleConfig() {
+  return {
+    clientId: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    redirectUri: process.env.GOOGLE_REDIRECT_URI || `${process.env.FRONTEND_URL}/api/auth/google/callback`
+  };
+}
 
 // Register
 router.post('/register', [
@@ -22,23 +26,30 @@ router.post('/register', [
   body('name').trim().notEmpty()
 ], async (req, res, next) => {
   try {
+    console.log('Register attempt:', req.body.email);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Register: Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
     const { email, password, name } = req.body;
 
     // Check if user exists
+    console.log('Register: Checking if user exists...');
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
+      console.log('Register: User already exists:', email);
       return res.status(400).json({ error: 'Email already registered' });
     }
 
     // Hash password
+    console.log('Register: Hashing password...');
     const hashedPassword = await bcrypt.hash(password, 12);
 
     // Create user
+    console.log('Register: Creating user...');
     const user = await User.createUser({
       email,
       password: hashedPassword,
@@ -46,6 +57,8 @@ router.post('/register', [
       plan: 'starter',
       credits: 20 // $20 free credits
     });
+
+    console.log('Register: User created:', user.id);
 
     // Generate JWT
     const token = jwt.sign(
@@ -61,6 +74,7 @@ router.post('/register', [
       console.log('Welcome email not sent:', e.message);
     }
 
+    console.log('Register: Success!');
     res.status(201).json({
       message: 'User created successfully',
       token,
@@ -73,6 +87,7 @@ router.post('/register', [
       }
     });
   } catch (error) {
+    console.error('Register error:', error);
     next(error);
   }
 });
@@ -80,16 +95,28 @@ router.post('/register', [
 // Login
 router.post('/login', async (req, res, next) => {
   try {
+    console.log('Login attempt:', req.body.email);
+    
     const { email, password } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
 
     // Find user
     const user = await User.findByEmail(email);
+    console.log('Login: User lookup result:', user ? 'Found' : 'Not found');
+    
     if (!user) {
+      console.log('Login: User not found for email:', email);
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
     // Check password
+    console.log('Login: Checking password...');
     const isValidPassword = await bcrypt.compare(password, user.password);
+    console.log('Login: Password valid:', isValidPassword);
+    
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -100,6 +127,8 @@ router.post('/login', async (req, res, next) => {
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
+
+    console.log('Login: Success for user:', user.id);
 
     res.json({
       token,
@@ -112,6 +141,7 @@ router.post('/login', async (req, res, next) => {
       }
     });
   } catch (error) {
+    console.error('Login error:', error);
     next(error);
   }
 });
@@ -241,18 +271,24 @@ router.post('/reset-password', async (req, res, next) => {
 
 // Google OAuth login URL
 router.get('/google', (req, res) => {
-  if (!GOOGLE_CLIENT_ID) {
-    return res.status(500).json({ error: 'Google OAuth not configured' });
+  const { clientId, redirectUri } = getGoogleConfig();
+  
+  console.log('Google OAuth Config:', { clientId: clientId ? 'SET' : 'NOT SET', redirectUri });
+  
+  if (!clientId) {
+    console.error('GOOGLE_CLIENT_ID not configured');
+    return res.status(500).json({ error: 'Google OAuth not configured. Please set GOOGLE_CLIENT_ID.' });
   }
 
   const url = `https://accounts.google.com/o/oauth2/v2/auth?` +
-    `client_id=${GOOGLE_CLIENT_ID}&` +
-    `redirect_uri=${GOOGLE_REDIRECT_URI}&` +
+    `client_id=${clientId}&` +
+    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
     `response_type=code&` +
     `scope=email profile&` +
     `access_type=offline&` +
     `prompt=consent`;
 
+  console.log('Redirecting to Google OAuth:', url.substring(0, 100) + '...');
   res.redirect(url);
 });
 
@@ -260,6 +296,18 @@ router.get('/google', (req, res) => {
 router.get('/google/callback', async (req, res, next) => {
   try {
     const { code, error: oauthError } = req.query;
+    const { clientId, clientSecret, redirectUri } = getGoogleConfig();
+    
+    console.log('Google OAuth Callback - Config:', { 
+      clientId: clientId ? 'SET' : 'NOT SET', 
+      clientSecret: clientSecret ? 'SET' : 'NOT SET',
+      redirectUri 
+    });
+    
+    if (!clientId || !clientSecret) {
+      console.error('Google OAuth not properly configured');
+      return res.redirect(`${process.env.FRONTEND_URL}/login.html?error=oauth_not_configured`);
+    }
     
     if (oauthError) {
       console.error('Google OAuth error from provider:', oauthError);
@@ -275,10 +323,10 @@ router.get('/google/callback', async (req, res, next) => {
     
     // Exchange code for tokens
     const tokenResponse = await axios.post('https://oauth2.googleapis.com/token', {
-      client_id: GOOGLE_CLIENT_ID,
-      client_secret: GOOGLE_CLIENT_SECRET,
+      client_id: clientId,
+      client_secret: clientSecret,
       code,
-      redirect_uri: GOOGLE_REDIRECT_URI,
+      redirect_uri: redirectUri,
       grant_type: 'authorization_code'
     });
 
