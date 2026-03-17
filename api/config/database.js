@@ -2,21 +2,32 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
-const DATA_DIR = path.join(__dirname, '../data');
+const DATA_DIR = process.env.SQLITE_PATH ? path.dirname(process.env.SQLITE_PATH) : path.join(__dirname, '../data');
 const DB_PATH = process.env.SQLITE_PATH || path.join(DATA_DIR, 'database.sqlite');
 
+console.log('🔧 Database Configuration:');
+console.log('  DATA_DIR:', DATA_DIR);
+console.log('  DB_PATH:', DB_PATH);
+console.log('  Directory exists:', fs.existsSync(DATA_DIR));
+
 // Ensure data directory exists
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    console.log('✅ Created data directory:', DATA_DIR);
+  }
+} catch (err) {
+  console.error('❌ Failed to create data directory:', err);
 }
 
 let db;
 
 function getDb() {
   if (!db) {
+    console.log('🔄 Creating new database connection to:', DB_PATH);
     db = new sqlite3.Database(DB_PATH, (err) => {
       if (err) {
-        console.error('SQLite connection error:', err);
+        console.error('❌ SQLite connection error:', err);
       } else {
         console.log('✅ Connected to SQLite database at', DB_PATH);
       }
@@ -30,58 +41,88 @@ function query(sql, params = []) {
   return new Promise((resolve, reject) => {
     const db = getDb();
     
-    console.log('SQL:', sql.substring(0, 100));
-    
     const sqlLower = sql.trim().toLowerCase();
+    const tableMatch = sql.match(/(?:FROM|INTO|UPDATE)\s+(\w+)/i);
+    const table = tableMatch ? tableMatch[1].toLowerCase() : 'unknown';
+    
+    console.log('📝 SQL:', sql.substring(0, 80), '| Table:', table);
     
     // For SELECT queries
     if (sqlLower.startsWith('select')) {
       db.all(sql, params, (err, rows) => {
         if (err) {
-          console.error('Query error:', err);
+          console.error('❌ SELECT error:', err.message);
           reject(err);
         } else {
-          console.log('Query returned', rows.length, 'rows');
+          console.log('✅ SELECT returned', rows.length, 'rows');
           resolve({ rows });
         }
       });
     } 
-    // For INSERT/UPDATE/DELETE with RETURNING clause
-    else if (sqlLower.includes('returning')) {
-      // SQLite doesn't support RETURNING, so we need to handle it differently
-      // First run the query, then fetch the last inserted row
+    // For INSERT queries
+    else if (sqlLower.startsWith('insert')) {
+      console.log('📥 INSERT params:', params.slice(0, 2));
+      
       db.run(sql, params, function(err) {
         if (err) {
-          console.error('Query error:', err);
+          console.error('❌ INSERT error:', err.message);
           reject(err);
         } else {
-          console.log('Insert/Update affected', this.changes, 'rows, lastID:', this.lastID);
+          console.log('✅ INSERT success - lastID:', this.lastID, 'changes:', this.changes);
           
-          // If it's an INSERT, fetch the row by rowid
-          if (sqlLower.startsWith('insert')) {
-            const lastId = this.lastID;
-            db.get('SELECT * FROM users WHERE rowid = ?', [lastId], (err, row) => {
+          // For users table, fetch the inserted row
+          if (table === 'users' && this.lastID) {
+            console.log('🔍 Fetching user by rowid:', this.lastID);
+            db.get('SELECT * FROM users WHERE rowid = ?', [this.lastID], (err, row) => {
               if (err) {
-                console.error('Fetch error:', err);
-                resolve({ rows: [{ id: lastId }] });
+                console.error('❌ Fetch error:', err.message);
+                resolve({ rowCount: this.changes, rows: [{ id: this.lastID }] });
+              } else if (row) {
+                console.log('✅ Fetched user:', row.id, row.email);
+                resolve({ rowCount: this.changes, rows: [row] });
               } else {
-                resolve({ rows: [row] });
+                console.error('❌ User not found after insert!');
+                resolve({ rowCount: this.changes, rows: [{ id: this.lastID }] });
               }
             });
           } else {
-            resolve({ rowCount: this.changes, rows: [] });
+            resolve({ rowCount: this.changes, rows: [{ id: this.lastID }] });
           }
         }
       });
     }
-    // For other queries (INSERT/UPDATE/DELETE without RETURNING)
+    // For UPDATE queries
+    else if (sqlLower.startsWith('update')) {
+      db.run(sql, params, function(err) {
+        if (err) {
+          console.error('❌ UPDATE error:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ UPDATE affected', this.changes, 'rows');
+          resolve({ rowCount: this.changes, rows: [] });
+        }
+      });
+    }
+    // For DELETE queries
+    else if (sqlLower.startsWith('delete')) {
+      db.run(sql, params, function(err) {
+        if (err) {
+          console.error('❌ DELETE error:', err.message);
+          reject(err);
+        } else {
+          console.log('✅ DELETE affected', this.changes, 'rows');
+          resolve({ rowCount: this.changes, rows: [] });
+        }
+      });
+    }
+    // Other queries
     else {
       db.run(sql, params, function(err) {
         if (err) {
-          console.error('Query error:', err);
+          console.error('❌ Query error:', err.message);
           reject(err);
         } else {
-          console.log('Query affected', this.changes, 'rows, lastID:', this.lastID);
+          console.log('✅ Query affected', this.changes, 'rows');
           resolve({ rowCount: this.changes, rows: [{ id: this.lastID }] });
         }
       });
@@ -116,7 +157,8 @@ async function initDb() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )`, (err) => {
-        if (err) console.error('Error creating users table:', err);
+        if (err) console.error('❌ Error creating users table:', err);
+        else console.log('✅ Users table ready');
       });
 
       // Agents table
@@ -138,7 +180,8 @@ async function initDb() {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
       )`, (err) => {
-        if (err) console.error('Error creating agents table:', err);
+        if (err) console.error('❌ Error creating agents table:', err);
+        else console.log('✅ Agents table ready');
       });
 
       // Chat messages table
@@ -153,7 +196,8 @@ async function initDb() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
       )`, (err) => {
-        if (err) console.error('Error creating chat_messages table:', err);
+        if (err) console.error('❌ Error creating chat_messages table:', err);
+        else console.log('✅ Chat messages table ready');
       });
 
       // Invoices table
@@ -169,9 +213,10 @@ async function initDb() {
         paid_at DATETIME,
         FOREIGN KEY (user_id) REFERENCES users(id)
       )`, (err) => {
-        if (err) console.error('Error creating invoices table:', err);
+        if (err) console.error('❌ Error creating invoices table:', err);
         else {
-          console.log('✅ Database tables initialized');
+          console.log('✅ Invoices table ready');
+          console.log('✅ Database initialization complete');
           resolve();
         }
       });
