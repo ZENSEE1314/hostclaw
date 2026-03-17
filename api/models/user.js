@@ -286,6 +286,24 @@ class User {
     const adminEmails = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim());
     return adminEmails.includes(user.email);
   }
+
+  // Add credits to user
+  static async addCredits(userId, amount) {
+    const result = await query(
+      'UPDATE users SET credits = credits + $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING credits',
+      [amount, userId]
+    );
+    return result.rows[0]?.credits;
+  }
+
+  // Update payment status
+  static async updatePaymentStatus(userId, status) {
+    const result = await query(
+      'UPDATE users SET has_paid = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+      [status === 'paid', userId]
+    );
+    return result.rows[0];
+  }
 }
 
 module.exports = User;

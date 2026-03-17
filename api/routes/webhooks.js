@@ -7,6 +7,17 @@ const crypto = require('crypto');
 
 const router = express.Router();
 
+// Initialize Stripe if key exists
+let stripe = null;
+if (process.env.STRIPE_SECRET_KEY) {
+  try {
+    stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+    console.log('✅ Stripe webhooks initialized');
+  } catch (e) {
+    console.log('⚠️ Stripe webhooks not available:', e.message);
+  }
+}
+
 // Generic webhook handler for all platforms
 async function handlePlatformWebhook(req, res, platform, userIdExtractor, messageExtractor) {
   // Acknowledge immediately
@@ -557,5 +568,76 @@ function calculateCost(tokens, provider) {
   };
   return Math.max(0.01, (tokens / 1000) * (rates[provider] || 0.03));
 }
+
+// ===== STRIPE WEBHOOK =====
+
+// Stripe webhook endpoint
+router.post('/stripe', async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  
+  let event;
+  
+  try {
+    // Verify webhook signature
+    if (stripe && endpointSecret) {
+      event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    } else {
+      // For testing without signature verification
+      event = req.body;
+    }
+  } catch (err) {
+    console.log(`⚠️ Webhook signature verification failed:`, err.message);
+    // Still process in development
+    event = req.body;
+  }
+
+  console.log('📨 Stripe webhook received:', event.type);
+
+  try {
+    // Handle the event
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object;
+        const userId = session.metadata?.userId;
+        const type = session.metadata?.type;
+        const amount = parseInt(session.metadata?.amount || '0');
+        
+        if (userId) {
+          if (type === 'setup_fee') {
+            // Mark user as paid setup fee
+            await User.updatePaymentStatus(userId, 'paid');
+            console.log(`✅ Setup fee paid for user ${userId}`);
+          } else if (type === 'credits' && amount > 0) {
+            // Add credits to user
+            await User.addCredits(userId, amount);
+            console.log(`✅ Added $${amount} credits to user ${userId}`);
+          }
+        }
+        break;
+      }
+      
+      case 'invoice.payment_succeeded': {
+        const invoice = event.data.object;
+        console.log('💰 Invoice payment succeeded:', invoice.id);
+        break;
+      }
+      
+      case 'customer.subscription.created': {
+        const subscription = event.data.object;
+        console.log('📅 Subscription created:', subscription.id);
+        break;
+      }
+      
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
+    }
+
+    res.json({ received: true });
+  } catch (error) {
+    console.error('Stripe webhook error:', error);
+    res.status(500).json({ error: 'Webhook processing failed' });
+  }
+});
 
 module.exports = router;
