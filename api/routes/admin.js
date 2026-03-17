@@ -121,6 +121,32 @@ router.post('/reset-all-passwords', async (req, res) => {
   }
 });
 
+// Debug: Check password for a user
+router.get('/debug/password/:email', async (req, res) => {
+  try {
+    const email = req.params.email.toLowerCase();
+    const userResult = await query('SELECT id, email, password FROM users WHERE email = $1', [email]);
+    
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const user = userResult.rows[0];
+    const testPassword = 'abc123';
+    const bcrypt = require('bcryptjs');
+    const isValid = await bcrypt.compare(testPassword, user.password);
+    
+    res.json({
+      email: user.email,
+      passwordHash: user.password.substring(0, 20) + '...',
+      hashLength: user.password.length,
+      testWithAbc123: isValid
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Admin middleware
 const requireAdmin = async (req, res, next) => {
   // In production, check if user has admin role
