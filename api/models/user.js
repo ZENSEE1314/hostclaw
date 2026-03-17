@@ -24,7 +24,12 @@ class User {
         [userId]
       );
       
-      console.log('User created:', result.rows[0]?.id);
+      if (!result.rows[0]) {
+        console.error('ERROR: User inserted but not found when fetching! ID:', userId);
+        throw new Error('User creation verification failed');
+      }
+      
+      console.log('User created successfully:', result.rows[0].id);
       return result.rows[0];
     } catch (err) {
       console.error('Error creating user:', err.message);

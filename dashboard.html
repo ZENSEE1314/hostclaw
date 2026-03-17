@@ -481,6 +481,18 @@
 
     <script>
         const API_URL = 'https://hostclaw-api.onrender.com';
+        
+        // Handle OAuth callback token from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const oauthToken = urlParams.get('token');
+        const oauthSuccess = urlParams.get('oauth');
+        
+        if (oauthToken) {
+            localStorage.setItem('token', oauthToken);
+            // Remove token from URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+        
         const token = localStorage.getItem('token');
         
         if (!token) {
