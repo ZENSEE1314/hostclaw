@@ -9,13 +9,19 @@ class User {
     console.log('Creating user with email:', normalizedEmail);
     
     const hashedPassword = await bcrypt.hash(password, 12);
+    const userId = require('crypto').randomUUID();
     
     try {
-      const result = await query(
+      await query(
         `INSERT INTO users (id, email, password, name, plan, credits, has_paid, api_providers, skills, default_provider) 
-         VALUES (lower(hex(randomblob(16))), $1, $2, $3, $4, $5, 0, '{}', '[]', 'openai') 
-         RETURNING id, email, name, plan, credits, created_at`,
-        [normalizedEmail, hashedPassword, name, plan, credits]
+         VALUES ($1, $2, $3, $4, $5, $6, 0, '{}', '[]', 'openai')`,
+        [userId, normalizedEmail, hashedPassword, name, plan, credits]
+      );
+      
+      // Fetch the created user
+      const result = await query(
+        'SELECT id, email, name, plan, credits, created_at FROM users WHERE id = $1',
+        [userId]
       );
       
       console.log('User created:', result.rows[0]?.id);

@@ -30,9 +30,12 @@ function query(sql, params = []) {
   return new Promise((resolve, reject) => {
     const db = getDb();
     
-    console.log('SQL:', sql.substring(0, 100), 'Params:', params);
+    console.log('SQL:', sql.substring(0, 100));
     
-    if (sql.trim().toLowerCase().startsWith('select')) {
+    const sqlLower = sql.trim().toLowerCase();
+    
+    // For SELECT queries
+    if (sqlLower.startsWith('select')) {
       db.all(sql, params, (err, rows) => {
         if (err) {
           console.error('Query error:', err);
@@ -42,7 +45,37 @@ function query(sql, params = []) {
           resolve({ rows });
         }
       });
-    } else {
+    } 
+    // For INSERT/UPDATE/DELETE with RETURNING clause
+    else if (sqlLower.includes('returning')) {
+      // SQLite doesn't support RETURNING, so we need to handle it differently
+      // First run the query, then fetch the last inserted row
+      db.run(sql, params, function(err) {
+        if (err) {
+          console.error('Query error:', err);
+          reject(err);
+        } else {
+          console.log('Insert/Update affected', this.changes, 'rows, lastID:', this.lastID);
+          
+          // If it's an INSERT, fetch the row by rowid
+          if (sqlLower.startsWith('insert')) {
+            const lastId = this.lastID;
+            db.get('SELECT * FROM users WHERE rowid = ?', [lastId], (err, row) => {
+              if (err) {
+                console.error('Fetch error:', err);
+                resolve({ rows: [{ id: lastId }] });
+              } else {
+                resolve({ rows: [row] });
+              }
+            });
+          } else {
+            resolve({ rowCount: this.changes, rows: [] });
+          }
+        }
+      });
+    }
+    // For other queries (INSERT/UPDATE/DELETE without RETURNING)
+    else {
       db.run(sql, params, function(err) {
         if (err) {
           console.error('Query error:', err);
