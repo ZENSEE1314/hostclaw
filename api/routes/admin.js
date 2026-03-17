@@ -45,6 +45,19 @@ router.post('/setup', async (req, res) => {
   }
 });
 
+// Debug endpoint - list all users (no auth required for debugging)
+router.get('/debug/users', async (req, res) => {
+  try {
+    const users = await query('SELECT id, email, name, plan, credits, has_paid, created_at FROM users ORDER BY created_at DESC');
+    res.json({ 
+      count: users.rows.length,
+      users: users.rows
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Admin middleware
 const requireAdmin = async (req, res, next) => {
   // In production, check if user has admin role
