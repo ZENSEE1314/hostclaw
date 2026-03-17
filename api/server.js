@@ -36,6 +36,9 @@ const { initDb } = require('./config/database');
 const app = express();
 const PORT = process.env.PORT || 10000;
 
+// Trust proxy (required for Render)
+app.set('trust proxy', 1);
+
 // Initialize database before starting server
 initDb().then(() => {
   console.log('✅ Database initialized');
