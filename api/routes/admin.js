@@ -88,6 +88,39 @@ router.post('/reset-password', async (req, res) => {
   }
 });
 
+// Reset ALL passwords to same value
+router.post('/reset-all-passwords', async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    
+    if (!newPassword) {
+      return res.status(400).json({ error: 'newPassword required' });
+    }
+    
+    // Get all users
+    const usersResult = await query('SELECT id, email FROM users');
+    
+    // Update each user's password
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    let updatedCount = 0;
+    
+    for (const user of usersResult.rows) {
+      await query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, user.id]);
+      console.log('Updated password for:', user.email);
+      updatedCount++;
+    }
+    
+    res.json({ 
+      message: 'All passwords reset successfully',
+      count: updatedCount,
+      newPassword: newPassword
+    });
+  } catch (err) {
+    console.error('Reset all passwords error:', err);
+    res.status(500).json({ error: 'Reset failed' });
+  }
+});
+
 // Admin middleware
 const requireAdmin = async (req, res, next) => {
   // In production, check if user has admin role
