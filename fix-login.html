@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix Login - HostClaw</title>
+    <style>
+        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .box { border: 1px solid #ccc; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; font-size: 16px; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        .result { background: #f0f0f0; padding: 10px; margin-top: 10px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>🔧 HostClaw Login Fix</h1>
+    
+    <div class="box">
+        <h3>1. Check User Exists</h3>
+        <input type="email" id="checkEmail" placeholder="Enter email to check">
+        <button onclick="checkUser()">Check User</button>
+        <div id="checkResult" class="result"></div>
+    </div>
+
+    <div class="box">
+        <h3>2. Reset Password</h3>
+        <input type="email" id="resetEmail" placeholder="Enter email">
+        <input type="password" id="newPassword" placeholder="New password" value="abc123">
+        <button onclick="resetPassword()">Reset Password</button>
+        <div id="resetResult" class="result"></div>
+    </div>
+
+    <div class="box">
+        <h3>3. Test Login</h3>
+        <input type="email" id="testEmail" placeholder="Email">
+        <input type="password" id="testPassword" placeholder="Password" value="abc123">
+        <button onclick="testLogin()">Test Login</button>
+        <div id="loginResult" class="result"></div>
+    </div>
+
+    <div class="box">
+        <h3>4. Create New User</h3>
+        <input type="text" id="newName" placeholder="Name">
+        <input type="email" id="newEmail" placeholder="Email">
+        <input type="password" id="newPass" placeholder="Password" value="abc123">
+        <button onclick="createUser()">Create User</button>
+        <div id="createResult" class="result"></div>
+    </div>
+
+    <script>
+        const API = 'https://hostclaw-api.onrender.com';
+
+        async function checkUser() {
+            const email = document.getElementById('checkEmail').value;
+            const res = await fetch(API + '/api/admin/debug/users');
+            const data = await res.json();
+            const user = data.users.find(u => u.email === email.toLowerCase());
+            document.getElementById('checkResult').textContent = user 
+                ? '✅ User found: ' + JSON.stringify(user, null, 2)
+                : '❌ User not found. Total users: ' + data.count;
+        }
+
+        async function resetPassword() {
+            const email = document.getElementById('resetEmail').value;
+            const password = document.getElementById('newPassword').value;
+            const res = await fetch(API + '/api/admin/reset-password', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email, newPassword: password})
+            });
+            const data = await res.json();
+            document.getElementById('resetResult').textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            const res = await fetch(API + '/api/auth/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({email, password})
+            });
+            const data = await res.json();
+            document.getElementById('loginResult').textContent = 
+                res.ok ? '✅ Login success! Token: ' + data.token.substring(0, 20) + '...' 
+                      : '❌ Login failed: ' + JSON.stringify(data, null, 2);
+        }
+
+        async function createUser() {
+            const name = document.getElementById('newName').value;
+            const email = document.getElementById('newEmail').value;
+            const password = document.getElementById('newPass').value;
+            const res = await fetch(API + '/api/auth/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name, email, password})
+            });
+            const data = await res.json();
+            document.getElementById('createResult').textContent = JSON.stringify(data, null, 2);
+        }
+    </script>
+</body>
+</html>
