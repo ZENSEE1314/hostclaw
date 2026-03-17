@@ -1006,6 +1006,7 @@
                 HostClaw.ai
             </div>
             <ul class="nav-links">
+                <li><a href="#quickstart">Quick Start</a></li>
                 <li><a href="#features">Features</a></li>
                 <li><a href="#how-it-works">How It Works</a></li>
                 <li><a href="#pricing">Pricing</a></li>
@@ -1023,27 +1024,27 @@
     <section class="hero" id="hero">
         <div class="hero-container">
             <div class="hero-content">
-                <h1 class="animate">Your OpenClaw Cloud,<br><span>Fully Automated</span></h1>
+                <h1 class="animate">OpenClaw on<br><span>WhatsApp & Telegram</span></h1>
                 <p class="hero-subtitle animate delay-1">
-                    HostClaw.ai deploys and manages your OpenClaw agents in the cloud. 
-                    Zero configuration, instant setup, 24/7 availability.
+                    Deploy your AI agent to WhatsApp or Telegram in 3 simple steps. 
+                    No coding required. Zero configuration. 24/7 cloud hosting.
                 </p>
                 <div class="hero-cta animate delay-2">
-                    <a href="/signup.html" class="btn btn-primary btn-glow">Get Started →</a>
-                    <a href="#how-it-works" class="btn btn-outline">How It Works</a>
+                    <a href="/signup.html" class="btn btn-primary btn-glow">🚀 Deploy Now →</a>
+                    <a href="#quickstart" class="btn btn-outline">See How It Works</a>
                 </div>
                 <div class="hero-stats animate delay-3">
                     <div class="stat">
-                        <div class="stat-value">&lt;3min</div>
-                        <div class="stat-label">Setup Time</div>
+                        <div class="stat-value">3 Steps</div>
+                        <div class="stat-label">To Deploy</div>
                     </div>
                     <div class="stat">
-                        <div class="stat-value">99.9%</div>
-                        <div class="stat-label">Uptime</div>
+                        <div class="stat-value">💬✈️</div>
+                        <div class="stat-label">WhatsApp + Telegram</div>
                     </div>
                     <div class="stat">
-                        <div class="stat-value">24/7</div>
-                        <div class="stat-label">Support</div>
+                        <div class="stat-value">Free</div>
+                        <div class="stat-label">To Start</div>
                     </div>
                 </div>
             </div>
@@ -1056,12 +1057,12 @@
                             <div class="terminal-dot green"></div>
                         </div>
                         <div class="terminal-content">
-                            <div class="terminal-line">$ hostclaw deploy --agent mybot</div>
-                            <div class="terminal-line highlight">→ Initializing cloud infrastructure...</div>
-                            <div class="terminal-line highlight">→ Provisioning OpenClaw environment...</div>
-                            <div class="terminal-line highlight">→ Setting up payment gateway...</div>
-                            <div class="terminal-line success">✓ Agent deployed successfully!</div>
-                            <div class="terminal-line success">✓ URL: https://mybot.hostclaw.ai</div>
+                            <div class="terminal-line">$ hostclaw create-agent --name "MyBot"</div>
+                            <div class="terminal-line highlight">→ Creating agent "MyBot"...</div>
+                            <div class="terminal-line highlight">→ Connecting to WhatsApp Cloud API...</div>
+                            <div class="terminal-line highlight">→ Webhook configured: https://api.hostclaw.ai/wa/...</div>
+                            <div class="terminal-line success">✓ Agent deployed to WhatsApp!</div>
+                            <div class="terminal-line success">✓ Ready to receive messages</div>
                             <div class="terminal-line">$ <span class="typing-cursor"></span></div>
                         </div>
                     </div>
@@ -1085,6 +1086,45 @@
                                 <div class="metric-label">Latency</div>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Guide -->
+    <section class="features" id="quickstart" style="padding-top: 4rem;">
+        <div class="section-header">
+            <div class="section-tag">⚡ Quick Start</div>
+            <h2 class="section-title">Get Started in 60 Seconds</h2>
+            <p class="section-subtitle">The fastest way to deploy an OpenClaw agent to WhatsApp or Telegram.</p>
+        </div>        
+        <div class="features-grid" style="max-width: 900px;">
+            <div class="feature-card" style="grid-column: span 2;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div>
+                        <div class="feature-icon" style="background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);">💬</div>
+                        <h3 class="feature-title">WhatsApp Setup</h3>
+                        <ol style="color: var(--text-muted); line-height: 2; padding-left: 1.2rem;">
+                            <li>Sign up for free at HostClaw.ai</li>
+                            <li>Create your agent with a name & personality</li>
+                            <li>Go to Channels → WhatsApp</li>
+                            <li>Scan QR code or connect WhatsApp Business API</li>
+                            <li>Click Deploy → Done! 🎉</li>
+                        </ol>
+                        <a href="/signup.html" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">Deploy to WhatsApp →</a>
+                    </div>
+                    <div>
+                        <div class="feature-icon" style="background: linear-gradient(135deg, #0088cc 0%, #005f8c 100%);">✈️</div>
+                        <h3 class="feature-title">Telegram Setup</h3>
+                        <ol style="color: var(--text-muted); line-height: 2; padding-left: 1.2rem;">
+                            <li>Sign up for free at HostClaw.ai</li>
+                            <li>Create your agent with a name & personality</li>
+                            <li>Go to Channels → Telegram</li>
+                            <li>Paste your Bot token from @BotFather</li>
+                            <li>Click Deploy → Done! 🎉</li>
+                        </ol>
+                        <a href="/signup.html" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">Deploy to Telegram →</a>
                     </div>
                 </div>
             </div>
@@ -1151,29 +1191,55 @@
     <section class="how-it-works" id="how-it-works">
         <div class="section-header">
             <div class="section-tag">📋 Simple Process</div>
-            <h2 class="section-title">Deploy in 3 Steps</h2>
-            <p class="section-subtitle">From zero to fully deployed AI agent in under 3 minutes.</p>
+            <h2 class="section-title">Use OpenClaw on WhatsApp or Telegram<br>in 3 Easy Steps</h2>
+            <p class="section-subtitle">Get your AI agent running on your favorite messaging platform in under 3 minutes.</p>
         </div>
         <div class="steps-container">
             <div class="step">
                 <div class="step-number">1</div>
                 <div class="step-content">
-                    <h3 class="step-title">Connect Your Account</h3>
-                    <p class="step-desc">Sign up with your email or GitHub. Link your preferred payment method securely through our Stripe integration. No upfront costs, pay only when you deploy.</p>
+                    <h3 class="step-title">Sign Up & Create Your Agent</h3>
+                    <p class="step-desc">Create your HostClaw account in seconds. No credit card required to start. Once logged in, click "Create Agent" and give it a name. Choose your AI model (OpenAI, Anthropic, or local models) and set your agent's personality.</p>
+                    <div style="margin-top: 1rem; padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 12px; border-left: 3px solid var(--primary);">
+                        <strong style="color: var(--primary-light);">💡 Pro Tip:</strong> <span style="color: var(--text-muted);">Start with our templates for common use cases like customer support, content creation, or personal assistants.</span>
+                    </div>
                 </div>
             </div>
             <div class="step">
                 <div class="step-number">2</div>
                 <div class="step-content">
-                    <h3 class="step-title">Configure Your Agent</h3>
-                    <p class="step-desc">Upload your OpenClaw configuration or use our visual editor. Set up channels (Telegram, Discord, etc.), configure AI models, and define agent capabilities. We handle the infrastructure.</p>
+                    <h3 class="step-title">Connect WhatsApp or Telegram</h3>
+                    <p class="step-desc">Go to the Channels tab and select your platform:</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0;">
+                        <div style="background: rgba(37, 211, 102, 0.1); padding: 1rem; border-radius: 12px; border: 1px solid rgba(37, 211, 102, 0.3);">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">💬</div>
+                            <strong style="color: #25D366;">WhatsApp</strong>
+                            <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;">Scan QR code with WhatsApp Business API or use our WhatsApp Cloud API integration</p>
+                        </div>
+                        <div style="background: rgba(0, 136, 204, 0.1); padding: 1rem; border-radius: 12px; border: 1px solid rgba(0, 136, 204, 0.3);">
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">✈️</div>
+                            <strong style="color: #0088cc;">Telegram</strong>
+                            <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.5rem;">Create a bot with @BotFather, paste your token, and you're connected!</p>
+                        </div>
+                    </div>
+                    <p class="step-desc">Both connections are instant - no complex setup required!</p>
                 </div>
             </div>
             <div class="step">
                 <div class="step-number">3</div>
                 <div class="step-content">
-                    <h3 class="step-title">Deploy & Go Live</h3>
-                    <p class="step-desc">Click deploy. Our platform automatically provisions servers, configures SSL, sets up monitoring, and launches your agent. You'll get a custom URL and dashboard access instantly.</p>
+                    <h3 class="step-title">Deploy & Start Chatting</h3>
+                    <p class="step-desc">Click "Deploy" and watch the magic happen. Our cloud infrastructure spins up instantly. You'll receive:</p>
+                    <ul style="color: var(--text-muted); margin: 1rem 0; padding-left: 1.5rem;">
+                        <li>A unique webhook URL for your platform</li>
+                        <li>Real-time status dashboard</li>
+                        <li>Message analytics and conversation history</li>
+                        <li>24/7 uptime monitoring</li>
+                    </ul>
+                    <p class="step-desc">That's it! Your OpenClaw agent is now live on WhatsApp or Telegram. Start messaging and see the AI respond intelligently with full context awareness.</p>
+                    <div style="margin-top: 1rem; padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: 12px; border-left: 3px solid var(--success);">
+                        <strong style="color: var(--success);">✓ Done!</strong> <span style="color: var(--text-muted);">Your agent remembers conversations, handles multiple users, and scales automatically.</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1300,6 +1366,24 @@
         <div class="faq-container">
             <div class="faq-item">
                 <div class="faq-question">
+                    How do I connect my OpenClaw agent to WhatsApp?
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    It's simple! After creating your agent in HostClaw, go to the Channels tab and select WhatsApp. You have two options: (1) Use WhatsApp Cloud API for business accounts - just scan a QR code, or (2) Use our WhatsApp Business API integration. Both methods take under 2 minutes to set up and your agent will be live immediately.
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">
+                    How do I connect my OpenClaw agent to Telegram?
+                    <span class="faq-icon">+</span>
+                </div>
+                <div class="faq-answer">
+                    Telegram setup is even easier! Message @BotFather on Telegram, create a new bot, and copy the API token. Paste that token into the Telegram channel settings in your HostClaw dashboard, click Deploy, and your agent is instantly connected. No QR codes or complex configuration needed.
+                </div>
+            </div>
+            <div class="faq-item">
+                <div class="faq-question">
                     What is OpenClaw and how does HostClaw help?
                     <span class="faq-icon">+</span>
                 </div>
@@ -1358,9 +1442,12 @@
     <!-- CTA Section -->
     <section class="cta">
         <div class="cta-container">
-            <h2 class="cta-title">Ready to Deploy Your Agent?</h2>
-            <p class="cta-subtitle">Get your OpenClaw agent running in under 3 minutes. No credit card required to start.</p>
-            <a href="/signup.html" class="btn cta-btn">Get Started Now →</a>
+            <h2 class="cta-title">Ready to Chat with Your AI Agent?</h2>
+            <p class="cta-subtitle">Deploy to WhatsApp or Telegram in 3 simple steps. No credit card required to start.</p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <a href="/signup.html" class="btn cta-btn">💬 Deploy to WhatsApp</a>
+                <a href="/signup.html" class="btn cta-btn" style="background: linear-gradient(135deg, #0088cc 0%, #005f8c 100%);">✈️ Deploy to Telegram</a>
+            </div>
         </div>
     </section>
 

@@ -1,228 +1,213 @@
-# HostClaw.ai Platform
+# 🚀 HostClaw.ai - Deploy OpenClaw to WhatsApp & Telegram
 
-A fully automated cloud platform for deploying OpenClaw AI agents with integrated payment processing.
+A complete cloud hosting platform for OpenClaw AI agents with instant deployment to WhatsApp and Telegram.
 
-## Features
+## ✨ Features
 
-- ⚡ **One-Click Deploy** - Deploy OpenClaw agents instantly
-- 💳 **Built-in Payments** - Stripe integration for monetization
-- 🔒 **Enterprise Security** - SSL, DDoS protection, encrypted storage
-- 📱 **Multi-Channel** - Telegram, Discord, WhatsApp, Slack support
-- 🧠 **Long-Term Memory** - Persistent agent memory
-- 📊 **Analytics Dashboard** - Real-time performance metrics
-- 🔄 **Auto-Scaling** - Elastic infrastructure
-- 🛠️ **Custom Integrations** - API and workflow support
+- **⚡ 3-Step Deployment** - Get your AI agent on WhatsApp/Telegram in under 3 minutes
+- **💬 WhatsApp Integration** - Connect via WhatsApp Cloud API or Business API
+- **✈️ Telegram Integration** - Simple bot token setup with @BotFather
+- **🔒 Enterprise Security** - SSL, DDoS protection, encrypted storage
+- **🧠 Long-Term Memory** - Persistent agent memory across conversations
+- **📊 Analytics Dashboard** - Real-time performance metrics
+- **🔄 Auto-Scaling** - Elastic cloud infrastructure
+- **💳 Built-in Payments** - Stripe integration for monetization
 
-## Tech Stack
+## 🚀 Quick Deploy to Render
 
-- **Frontend**: HTML5, CSS3, Vanilla JS
-- **Backend**: Node.js/Express (API)
-- **Database**: PostgreSQL
-- **Cache**: Redis
-- **Queue**: Bull/BullMQ
-- **Payments**: Stripe
-- **Infrastructure**: Docker, Kubernetes
-- **Monitoring**: Prometheus, Grafana
+### Step 1: Fork/Clone This Repository
 
-## Project Structure
-
-```
-hostclaw-website/
-├── index.html          # Landing page
-├── dashboard.html      # User dashboard
-├── api/               # Backend API
-│   ├── server.js      # Express server
-│   ├── routes/        # API routes
-│   ├── models/        # Database models
-│   ├── services/      # Business logic
-│   └── workers/       # Background jobs
-├── config/            # Configuration files
-├── scripts/           # Deployment scripts
-└── docs/             # Documentation
+```bash
+git clone https://github.com/yourusername/hostclaw.ai.git
+cd hostclaw.ai
 ```
 
-## Quick Start
+### Step 2: Push to GitHub
 
-### Prerequisites
+```bash
+git add .
+git commit -m "Initial deployment"
+git push origin main
+```
 
-- Node.js 18+
-- PostgreSQL 14+
-- Redis 7+
-- Stripe account
+### Step 3: Deploy to Render
 
-### Installation
+**Option A: One-Click Deploy (Recommended)**
+
+Click this button:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+**Option B: Manual Deploy**
+
+1. Go to [dashboard.render.com](https://dashboard.render.com)
+2. Click "New +" → "Blueprint"
+3. Connect your GitHub repository
+4. Render will automatically create:
+   - ✅ Static Site (Frontend) - Free tier
+   - ✅ Web Service (API) - Standard tier
+   - ✅ PostgreSQL Database - Free tier
+
+### Step 4: Configure Environment Variables
+
+After deployment, set these in your Render Dashboard:
+
+**For hostclaw-api service:**
+```
+STRIPE_SECRET_KEY=sk_live_...
+STRIPE_PUBLISHABLE_KEY=pk_live_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+### Step 5: Setup Stripe Webhook
+
+1. Go to Stripe Dashboard → Developers → Webhooks
+2. Add endpoint: `https://hostclaw-api.onrender.com/webhooks/stripe`
+3. Select events:
+   - `checkout.session.completed`
+   - `invoice.payment_succeeded`
+   - `customer.subscription.created`
+4. Copy webhook secret to `STRIPE_WEBHOOK_SECRET`
+
+### Step 6: Run Database Migrations
+
+In Render Dashboard → hostclaw-api → Shell:
+```bash
+cd api && npm run migrate
+```
+
+## 📱 Using Your Deployed Agent
+
+### Deploy to WhatsApp
+
+1. **Sign up** at your deployed URL (e.g., `https://hostclaw-web.onrender.com`)
+2. **Create an agent** - Give it a name and personality
+3. **Go to Channels → WhatsApp**
+4. **Choose your method:**
+   - **WhatsApp Cloud API**: Scan QR code with your WhatsApp
+   - **WhatsApp Business API**: Enter your API credentials
+5. **Click Deploy** - Your agent is now live on WhatsApp!
+
+### Deploy to Telegram
+
+1. **Sign up** at your deployed URL
+2. **Create an agent** - Configure name and AI model
+3. **Go to Channels → Telegram**
+4. **Get your bot token:**
+   - Message @BotFather on Telegram
+   - Create new bot with `/newbot`
+   - Copy the API token
+5. **Paste token** in HostClaw dashboard
+6. **Click Deploy** - Start chatting with your bot!
+
+## 🌐 Your Live URLs
+
+After deployment:
+
+| Service | URL | Purpose |
+|---------|-----|---------|
+| 🌐 Website | `https://hostclaw-web.onrender.com` | Landing page & dashboard |
+| ⚙️ API | `https://hostclaw-api.onrender.com` | Backend API |
+| 📊 Health | `https://hostclaw-api.onrender.com/health` | Status check |
+
+## 💰 Pricing on Render
+
+| Component | Free Tier | Paid Tier |
+|-----------|-----------|-----------|
+| Static Site | $0 | $0 |
+| Web Service | $0 (sleeps after 15min) | $7/month |
+| PostgreSQL | $0 (90 days) | $15/month |
+| **Total** | **$0** | **$22/month** |
+
+**For production:** Use paid tiers for 24/7 uptime.
+
+## 🛠️ Local Development
 
 ```bash
 # Clone repository
 git clone https://github.com/yourusername/hostclaw.ai.git
 cd hostclaw.ai
 
-# Install dependencies
-npm install
-
-# Setup environment
+# Setup API
+cd api
 cp .env.example .env
 # Edit .env with your credentials
-
-# Run migrations
+npm install
 npm run migrate
-
-# Start development server
 npm run dev
+
+# In another terminal, serve frontend
+# Use any static server, e.g.:
+npx serve ..
 ```
 
-### Environment Variables
+## 📁 Project Structure
 
-```env
-# Database
-DATABASE_URL=postgresql://user:pass@localhost:5432/hostclaw
-
-# Redis
-REDIS_URL=redis://localhost:6379
-
-# Stripe
-STRIPE_SECRET_KEY=sk_live_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-STRIPE_PRICE_STARTER=price_...
-STRIPE_PRICE_PRO=price_...
-STRIPE_PRICE_ENTERPRISE=price_...
-
-# JWT
-JWT_SECRET=your-secret-key
-JWT_EXPIRES_IN=7d
-
-# API Keys
-OPENAI_API_KEY=sk-...
-ANTHROPIC_API_KEY=sk-ant-...
-
-# Infrastructure
-DOCKER_REGISTRY=ghcr.io/yourusername
-KUBECONFIG_PATH=/path/to/kubeconfig
+```
+hostclaw-website/
+├── index.html              # Landing page (WhatsApp/Telegram focused)
+├── dashboard.html          # User dashboard
+├── login.html              # Login page
+├── signup.html             # Signup page
+├── api/                    # Backend API
+│   ├── server.js           # Express server
+│   ├── routes/             # API routes
+│   │   ├── auth.js         # Authentication
+│   │   ├── agents.js       # Agent management
+│   │   ├── billing.js      # Payments
+│   │   ├── webhooks.js     # Webhook handlers
+│   │   └── ...
+│   ├── services/           # Business logic
+│   └── package.json
+├── render.yaml             # Render deployment config
+└── static.json             # Static site config
 ```
 
-## API Endpoints
+## 🔧 API Endpoints
 
 ### Authentication
 - `POST /api/auth/register` - Register new user
 - `POST /api/auth/login` - Login user
-- `POST /api/auth/logout` - Logout user
-- `POST /api/auth/refresh` - Refresh token
 
 ### Agents
-- `GET /api/agents` - List user agents
-- `POST /api/agents` - Create new agent
-- `GET /api/agents/:id` - Get agent details
-- `PATCH /api/agents/:id` - Update agent
-- `DELETE /api/agents/:id` - Delete agent
-- `POST /api/agents/:id/deploy` - Deploy agent
+- `GET /api/agents` - List agents
+- `POST /api/agents` - Create agent
+- `POST /api/agents/:id/deploy` - Deploy to WhatsApp/Telegram
 - `POST /api/agents/:id/stop` - Stop agent
-- `GET /api/agents/:id/logs` - Get agent logs
 
 ### Billing
 - `GET /api/billing/credits` - Get credit balance
 - `POST /api/billing/credits` - Add credits
-- `GET /api/billing/invoices` - List invoices
-- `POST /api/billing/subscribe` - Subscribe to plan
-- `POST /api/billing/cancel` - Cancel subscription
 
 ### Webhooks
 - `POST /webhooks/stripe` - Stripe webhook handler
-- `POST /webhooks/github` - GitHub webhook handler
+- `POST /webhooks/whatsapp` - WhatsApp webhook
+- `POST /webhooks/telegram` - Telegram webhook
 
-## Deployment Automation
+## 🆘 Troubleshooting
 
-The platform uses a sophisticated deployment pipeline:
+| Issue | Solution |
+|-------|----------|
+| 502 Error | Check API service is running on Render |
+| DB errors | Run migrations in Render Shell |
+| WhatsApp not connecting | Verify WhatsApp Business API credentials |
+| Telegram not responding | Check bot token is correct |
+| Emails not sending | Verify SMTP credentials |
 
-1. **Build Phase**
-   - Clone user configuration
-   - Install dependencies
-   - Build Docker image
-   - Push to registry
+## 📞 Support
 
-2. **Deploy Phase**
-   - Create Kubernetes namespace
-   - Deploy agent pods
-   - Configure ingress
-   - Setup SSL certificates
-   - Configure monitoring
+- 📧 Email: support@hostclaw.ai
+- 💬 Discord: https://discord.gg/hostclaw
+- 📚 Docs: https://docs.hostclaw.ai
 
-3. **Connect Phase**
-   - Register webhooks
-   - Test channel connections
-   - Verify agent health
-   - Send confirmation
+## 📄 License
 
-## Payment Integration
+MIT License - see LICENSE file for details.
 
-### Stripe Setup
+---
 
-1. Create Stripe account
-2. Configure products and prices
-3. Add webhook endpoint: `https://api.hostclaw.ai/webhooks/stripe`
-4. Copy API keys to environment variables
-
-### Payment Flow
-
-1. User subscribes to plan
-2. Stripe creates subscription
-3. Webhook updates user credits
-4. Credits deducted based on usage
-5. Auto-recharge when low (optional)
-
-### Revenue Model
-
-- Platform fee: 10% of transactions
-- Monthly subscription plans
-- Usage-based overage charges
-- Enterprise custom pricing
-
-## Monitoring
-
-### Metrics Collected
-
-- Agent uptime/availability
-- Message volume and latency
-- API response times
-- Error rates
-- Resource utilization
-- Revenue metrics
-
-### Alerts
-
-- Agent downtime
-- High error rates
-- Low credit balance
-- Security incidents
-- Infrastructure issues
-
-## Security
-
-- All data encrypted at rest and in transit
-- SOC 2 Type II compliant infrastructure
-- Regular security audits
-- DDoS protection via Cloudflare
-- API rate limiting
-- IP whitelisting options
-- Audit logging
-
-## Support
-
-- Documentation: https://docs.hostclaw.ai
-- Community Discord: https://discord.gg/hostclaw
-- Email: support@hostclaw.ai
-- Status: https://status.hostclaw.ai
-
-## License
-
-MIT License - see LICENSE file for details
-
-## Roadmap
-
-- [ ] Custom domain support
-- [ ] Team collaboration features
-- [ ] Advanced analytics
-- [ ] Marketplace for agent templates
-- [ ] Mobile app
-- [ ] Enterprise SSO
-- [ ] Multi-region deployment
-- [ ] AI-powered agent optimization
+**Made with ❤️ for the OpenClaw community**

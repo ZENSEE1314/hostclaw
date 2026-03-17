@@ -1,4 +1,9 @@
-/api/* https://hostclaw-api.onrender.com/api/:splat 200
-/admin /admin.html 200
-/dashboard /dashboard.html 200
-/* /index.html 200
+# HostClaw Redirects Configuration
+# For Netlify, Render, or other static hosts
+
+# API redirects
+/api/*  https://hostclaw-api.onrender.com/api/:splat  200
+/webhooks/*  https://hostclaw-api.onrender.com/webhooks/:splat  200
+
+# SPA fallback - all routes serve index.html
+/*      /index.html   200

@@ -1,4 +1,23 @@
 services:
+  # Static Site (Frontend)
+  - type: static
+    name: hostclaw-web
+    runtime: static
+    region: singapore
+    plan: free
+    buildCommand: echo "Static site - no build needed"
+    staticPublishPath: ./
+    envVars:
+      - key: API_URL
+        value: https://hostclaw-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://hostclaw-api.onrender.com/api/:splat
+      - type: rewrite
+        source: /webhooks/*
+        destination: https://hostclaw-api.onrender.com/webhooks/:splat
+
   # Web Service (API)
   - type: web
     name: hostclaw-api
@@ -24,22 +43,6 @@ services:
         value: 7d
       - key: FRONTEND_URL
         value: https://hostclaw-web.onrender.com
-
-  # Web Server (Frontend)
-  - type: web
-    name: hostclaw-web
-    runtime: node
-    region: singapore
-    plan: free
-    buildCommand: npm install
-    startCommand: npm start
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: PORT
-        value: 10000
-      - key: API_URL
-        value: https://hostclaw-api.onrender.com
 
 databases:
   - name: hostclaw-db

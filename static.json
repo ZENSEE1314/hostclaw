@@ -2,9 +2,20 @@
   "root": ".",
   "clean_urls": true,
   "routes": {
-    "/api/**": "https://hostclaw-api.onrender.com/api/:splat",
-    "/dashboard": "/dashboard.html",
-    "/admin": "/admin.html",
-    "/": "/index.html"
+    "/api/*": {
+      "url": "https://hostclaw-api.onrender.com/api/:splat"
+    },
+    "/webhooks/*": {
+      "url": "https://hostclaw-api.onrender.com/webhooks/:splat"
+    },
+    "/**": "index.html"
+  },
+  "headers": {
+    "/**": {
+      "Cache-Control": "public, max-age=0, must-revalidate"
+    },
+    "/assets/**": {
+      "Cache-Control": "public, max-age=31536000, immutable"
+    }
   }
 }
