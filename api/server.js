@@ -46,10 +46,17 @@ async function startup() {
     console.log('🔄 Running migrations...');
     const migrate = require('./config/migrate');
     await migrate();
+    console.log('✅ Migrations complete');
     
     // Initialize database connection
     await initDb();
     console.log('✅ Database ready');
+    
+    // Test database connection
+    console.log('🧪 Testing database connection...');
+    const { query } = require('./config/database');
+    const testResult = await query('SELECT COUNT(*) as count FROM users');
+    console.log('✅ Database test passed. Users in DB:', testResult.rows[0]?.count || 0);
     
     // Start server
     app.listen(PORT, '0.0.0.0', () => {
@@ -58,6 +65,7 @@ async function startup() {
     });
   } catch (err) {
     console.error('❌ Startup failed:', err);
+    console.error('Error stack:', err.stack);
     process.exit(1);
   }
 }
@@ -88,12 +96,49 @@ app.use(compression());
 app.use(morgan('combined'));
 
 // Health check - THIS MUST RESPOND!
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
-    timestamp: new Date().toISOString(),
-    version: '1.0.0'
-  });
+app.get('/health', async (req, res) => {
+  try {
+    const { query } = require('./config/database');
+    const result = await query('SELECT COUNT(*) as count FROM users');
+    res.json({ 
+      status: 'ok', 
+      timestamp: new Date().toISOString(),
+      version: '1.0.0',
+      users: result.rows[0]?.count || 0
+    });
+  } catch (err) {
+    res.json({ 
+      status: 'error', 
+      timestamp: new Date().toISOString(),
+      error: err.message
+    });
+  }
+});
+
+// Debug endpoint - check database
+app.get('/debug/db', async (req, res) => {
+  try {
+    const { query } = require('./config/database');
+    
+    // Check users table
+    const usersResult = await query('SELECT id, email, name, created_at FROM users ORDER BY created_at DESC LIMIT 10');
+    
+    // Check if tables exist
+    const tablesResult = await query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public'
+    `);
+    
+    res.json({
+      database: 'PostgreSQL',
+      tables: tablesResult.rows.map(r => r.table_name),
+      userCount: usersResult.rows.length,
+      users: usersResult.rows
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message, stack: err.stack });
+  }
 });
 
 // API Routes
