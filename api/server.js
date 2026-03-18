@@ -30,8 +30,6 @@ const chatRoutes = require('./routes/chat');
 const skillsRoutes = require('./routes/skills');
 const providersRoutes = require('./routes/providers');
 const platformsRoutes = require('./routes/platforms');
-const providersRoutes = require('./routes/providers');
-const platformsRoutes = require('./routes/platforms');
 const { errorHandler } = require('./middleware/error');
 const { initDb } = require('./config/database');
 
