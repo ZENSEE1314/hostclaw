@@ -173,9 +173,21 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
             margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .stat-card {
@@ -183,34 +195,73 @@
             border: 1px solid var(--border);
             border-radius: 16px;
             padding: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
         }
 
         .stat-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 0.75rem;
+            align-items: center;
+            margin-bottom: 1rem;
         }
 
         .stat-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 1.5rem;
         }
 
         .stat-value {
-            font-size: 2rem;
+            font-size: 2.25rem;
             font-weight: 700;
             margin-bottom: 0.25rem;
+            background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .stat-label {
             color: var(--text-muted);
             font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .content-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .card {
             background: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 16px;
-            margin-bottom: 1.5rem;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .card-full {
+            grid-column: 1 / -1;
         }
 
         .card-header {
@@ -451,31 +502,33 @@
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Quick Actions</h3>
+            <div class="content-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Quick Actions</h3>
+                    </div>
+                    <div class="card-body" style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <a href="/chat.html" class="btn btn-primary">💬 Start Chat</a>
+                        <a href="/agents.html" class="btn btn-outline">🤖 Create Agent</a>
+                        <a href="/providers.html" class="btn btn-outline">🔑 Add AI Provider</a>
+                        <a href="/platforms.html" class="btn btn-outline">📱 Connect Platform</a>
+                    </div>
                 </div>
-                <div class="card-body" style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                    <a href="/chat.html" class="btn btn-primary">💬 Start Chat</a>
-                    <a href="/agents.html" class="btn btn-outline">🤖 Create Agent</a>
-                    <a href="/providers.html" class="btn btn-outline">🔑 Add AI Provider</a>
-                    <a href="/platforms.html" class="btn btn-outline">📱 Connect Platform</a>
-                </div>
-            </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Your Plan</h3>
-                </div>
-                <div class="card-body">
-                    <div id="planInfo">
-                        <p style="margin-bottom: 1rem;">Current Plan: <strong id="currentPlan">Starter</strong></p>
-                        <p style="color: var(--text-muted); font-size: 0.875rem;">
-                            Pay $500 one-time to unlock all features forever!
-                        </p>
-                        <a href="/billing.html" class="btn btn-primary" style="margin-top: 1rem;">
-                            Upgrade Now &rarr;
-                        </a>
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">Your Plan</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="planInfo">
+                            <p style="margin-bottom: 1rem;">Current Plan: <strong id="currentPlan">Starter</strong></p>
+                            <p style="color: var(--text-muted); font-size: 0.875rem;">
+                                Pay $500 one-time to unlock all features forever!
+                            </p>
+                            <a href="/billing.html" class="btn btn-primary" style="margin-top: 1rem;">
+                                Upgrade Now &rarr;
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
