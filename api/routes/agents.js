@@ -1,14 +1,7 @@
 const express = require('express');
-const { body, param } = require('express-validator');
+const { body } = require('express-validator');
 const { authenticate } = require('../middleware/auth');
-const {
-  createAgent,
-  getAgentsByUser,
-  getAgentById,
-  updateAgent,
-  deleteAgent,
-  updateAgentStatus
-} = require('../models/agent');
+const Agent = require('../models/agent');
 const { deployAgent, stopAgent, getAgentLogs } = require('../services/deployer');
 const { canCreateAgent } = require('../services/billing');
 
@@ -20,7 +13,7 @@ router.use(authenticate);
 // List user's agents
 router.get('/', async (req, res, next) => {
   try {
-    const agents = await getAgentsByUser(req.user.userId);
+    const agents = await Agent.findByUser(req.user.userId);
     res.json(agents);
   } catch (error) {
     next(error);
@@ -45,13 +38,14 @@ router.post('/', [
       });
     }
 
-    const agentData = {
-      ...req.body,
+    const agent = await Agent.create({
       userId: req.user.userId,
-      status: 'pending'
-    };
-
-    const agent = await createAgent(agentData);
+      name: req.body.name,
+      description: req.body.description,
+      model: req.body.model,
+      channels: req.body.channels,
+      config: req.body.config || {}
+    });
 
     res.status(201).json({
       message: 'Agent created successfully',
@@ -65,7 +59,7 @@ router.post('/', [
 // Get agent details
 router.get('/:id', async (req, res, next) => {
   try {
-    const agent = await getAgentById(req.params.id, req.user.userId);
+    const agent = await Agent.findById(req.params.id, req.user.userId);
     if (!agent) {
       return res.status(404).json({ error: 'Agent not found' });
     }
@@ -78,7 +72,7 @@ router.get('/:id', async (req, res, next) => {
 // Update agent
 router.patch('/:id', async (req, res, next) => {
   try {
-    const agent = await updateAgent(req.params.id, req.user.userId, req.body);
+    const agent = await Agent.update(req.params.id, req.user.userId, req.body);
     if (!agent) {
       return res.status(404).json({ error: 'Agent not found' });
     }
@@ -94,7 +88,7 @@ router.delete('/:id', async (req, res, next) => {
     // Stop agent first if running
     await stopAgent(req.params.id);
     
-    const deleted = await deleteAgent(req.params.id, req.user.userId);
+    const deleted = await Agent.delete(req.params.id, req.user.userId);
     if (!deleted) {
       return res.status(404).json({ error: 'Agent not found' });
     }
@@ -107,13 +101,13 @@ router.delete('/:id', async (req, res, next) => {
 // Deploy agent
 router.post('/:id/deploy', async (req, res, next) => {
   try {
-    const agent = await getAgentById(req.params.id, req.user.userId);
+    const agent = await Agent.findById(req.params.id, req.user.userId);
     if (!agent) {
       return res.status(404).json({ error: 'Agent not found' });
     }
 
     // Update status to deploying
-    await updateAgentStatus(req.params.id, 'deploying');
+    await Agent.updateStatus(req.params.id, 'deploying');
 
     // Trigger deployment
     const deployment = await deployAgent(agent);
@@ -128,7 +122,7 @@ router.post('/:id/deploy', async (req, res, next) => {
       }
     });
   } catch (error) {
-    await updateAgentStatus(req.params.id, 'error');
+    await Agent.updateStatus(req.params.id, 'error');
     next(error);
   }
 });
@@ -136,13 +130,13 @@ router.post('/:id/deploy', async (req, res, next) => {
 // Stop agent
 router.post('/:id/stop', async (req, res, next) => {
   try {
-    const agent = await getAgentById(req.params.id, req.user.userId);
+    const agent = await Agent.findById(req.params.id, req.user.userId);
     if (!agent) {
       return res.status(404).json({ error: 'Agent not found' });
     }
 
     await stopAgent(req.params.id);
-    await updateAgentStatus(req.params.id, 'stopped');
+    await Agent.updateStatus(req.params.id, 'stopped');
 
     res.json({ message: 'Agent stopped successfully' });
   } catch (error) {
