@@ -1,17 +1,53 @@
 const { OpenAI } = require('openai');
 const axios = require('axios');
+const crypto = require('crypto');
+
+// Get encryption key (same as providers.js)
+function getEncryptionKey() {
+  const envKey = process.env.ENCRYPTION_KEY;
+  if (envKey) {
+    const key = Buffer.from(envKey);
+    if (key.length === 32) return key;
+    return crypto.createHash('sha256').update(envKey).digest();
+  }
+  return crypto.createHash('sha256').update('hostclaw-default-key-change-in-production').digest();
+}
+
+function decrypt(text) {
+  const algorithm = 'aes-256-cbc';
+  const key = getEncryptionKey();
+  const parts = text.split(':');
+  const iv = Buffer.from(parts[0], 'hex');
+  const encrypted = parts[1];
+  const decipher = crypto.createDecipheriv(algorithm, key, iv);
+  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
+  return decrypted;
+}
 
 // Generate AI response using user's configured provider
 async function generateAIResponse({ message, provider, providerConfig, skills, user }) {
   if (!providerConfig || !providerConfig.apiKey) {
     return {
-      content: '⚠️ No AI provider configured. Please add your API keys at: /providers.html',
+      content: '⚠️ No AI provider configured. Please add your API keys in Settings.',
       model: 'none',
       tokens: 0
     };
   }
 
-  const decryptedKey = Buffer.from(providerConfig.apiKey, 'base64').toString();
+  // Decrypt the API key
+  let decryptedKey;
+  try {
+    decryptedKey = decrypt(providerConfig.apiKey);
+  } catch (e) {
+    console.error('Failed to decrypt API key:', e.message);
+    return {
+      content: '⚠️ Failed to decrypt API key. Please re-save your API key in Settings.',
+      model: 'none',
+      tokens: 0
+    };
+  }
+
   const model = providerConfig.model || getDefaultModel(provider);
 
   try {
