@@ -179,43 +179,38 @@
         // Load current settings
         async function loadSettings() {
             try {
-                const res = await fetch(`${API_URL}/api/auth/profile`, {
+                // Get providers
+                const res = await fetch(`${API_URL}/api/providers`, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 
                 if (res.ok) {
                     const data = await res.json();
-                    const user = data.user || data;
                     
-                    // Load providers (stored encrypted)
-                    if (user.api_providers) {
-                        const providers = typeof user.api_providers === 'string' 
-                            ? JSON.parse(user.api_providers) 
-                            : user.api_providers;
-                        
-                        // Update UI based on saved providers
-                        if (providers.openai) {
+                    // Update UI based on saved providers
+                    if (data.providers) {
+                        if (data.providers.openai) {
                             document.getElementById('openaiStatus').textContent = 'Connected';
                             document.getElementById('openaiStatus').className = 'provider-status status-connected';
-                            document.getElementById('openaiModel').value = providers.openai.model || 'gpt-4o';
+                            document.getElementById('openaiModel').value = data.providers.openai.model || 'gpt-4o';
                         }
                         
-                        if (providers.anthropic) {
+                        if (data.providers.anthropic) {
                             document.getElementById('anthropicStatus').textContent = 'Connected';
                             document.getElementById('anthropicStatus').className = 'provider-status status-connected';
-                            document.getElementById('anthropicModel').value = providers.anthropic.model || 'claude-3-5-sonnet-latest';
+                            document.getElementById('anthropicModel').value = data.providers.anthropic.model || 'claude-3-5-sonnet-latest';
                         }
                         
-                        if (providers.nvidia) {
+                        if (data.providers.nvidia) {
                             document.getElementById('nvidiaStatus').textContent = 'Connected';
                             document.getElementById('nvidiaStatus').className = 'provider-status status-connected';
-                            document.getElementById('nvidiaModel').value = providers.nvidia.model || 'nvidia/llama-3.1-nemotron-70b-instruct';
+                            document.getElementById('nvidiaModel').value = data.providers.nvidia.model || 'nvidia/llama-3.1-nemotron-70b-instruct';
                         }
                     }
                     
                     // Load default provider
-                    if (user.default_provider) {
-                        document.getElementById('defaultProvider').value = user.default_provider;
+                    if (data.defaultProvider) {
+                        document.getElementById('defaultProvider').value = data.defaultProvider;
                     }
                 }
             } catch (e) {
