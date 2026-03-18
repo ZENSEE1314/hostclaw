@@ -29,18 +29,6 @@ function encrypt(text) {
   return iv.toString('hex') + ':' + encrypted;
 }
 
-function decrypt(text) {
-  const algorithm = 'aes-256-cbc';
-  const key = getEncryptionKey();
-  const parts = text.split(':');
-  const iv = Buffer.from(parts[0], 'hex');
-  const encrypted = parts[1];
-  const decipher = crypto.createDecipheriv(algorithm, key, iv);
-  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-  decrypted += decipher.final('utf8');
-  return decrypted;
-}
-
 // Save provider API key
 router.post('/', authenticate, async (req, res) => {
   try {
@@ -119,6 +107,30 @@ router.put('/default', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Update default provider error:', error);
     res.status(500).json({ error: 'Failed to update default provider' });
+  }
+});
+
+// Remove a provider
+router.delete('/:provider', authenticate, async (req, res) => {
+  try {
+    const { provider } = req.params;
+    const user = await User.findById(req.user.userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    let providers = {};
+    if (user.api_providers) {
+      providers = typeof user.api_providers === 'string'
+        ? JSON.parse(user.api_providers)
+        : user.api_providers;
+    }
+
+    delete providers[provider];
+    await User.updateProviders(req.user.userId, providers);
+
+    res.json({ message: 'Provider removed', provider });
+  } catch (error) {
+    console.error('Remove provider error:', error);
+    res.status(500).json({ error: 'Failed to remove provider' });
   }
 });
 

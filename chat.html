@@ -499,6 +499,75 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Setup Banner */
+        .setup-banner {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.4);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin: 1rem 1.5rem;
+            display: none;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .setup-banner.show { display: flex; }
+
+        .setup-banner-text {
+            flex: 1;
+            font-size: 0.875rem;
+            color: var(--primary-light);
+            line-height: 1.5;
+        }
+
+        .setup-banner-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.8125rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            font-family: inherit;
+            transition: background 0.2s;
+        }
+
+        .setup-banner-btn:hover { background: var(--primary-dark); }
+
+        /* Code blocks in messages */
+        .message-content pre {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0.875rem 1rem;
+            overflow-x: auto;
+            margin: 0.75rem 0;
+            font-size: 0.8125rem;
+            line-height: 1.6;
+        }
+
+        .message-content code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.875em;
+            background: rgba(0,0,0,0.25);
+            padding: 0.125rem 0.375rem;
+            border-radius: 4px;
+        }
+
+        .message-content pre code {
+            background: none;
+            padding: 0;
+        }
+
+        .message-content strong { font-weight: 600; }
+
+        .message-content ul, .message-content ol {
+            margin: 0.5rem 0 0.5rem 1.25rem;
+            line-height: 1.7;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .sidebar {
@@ -551,6 +620,17 @@
             </div>
         </div>
 
+        <!-- Setup Banner (shown when no provider configured) -->
+        <div class="setup-banner" id="setupBanner">
+            <span>⚙️</span>
+            <div class="setup-banner-text">
+                No AI provider configured. Add your API key to start chatting.
+            </div>
+            <button class="setup-banner-btn" onclick="window.location.href='/settings.html'">
+                Configure Now →
+            </button>
+        </div>
+
         <div class="messages-container" id="messagesContainer">
             <div class="welcome-screen" id="welcomeScreen">
                 <div class="welcome-icon">🐾</div>
@@ -599,7 +679,7 @@
     <script>
         const API_URL = 'https://hostclaw-api.onrender.com';
         const token = localStorage.getItem('token');
-        
+
         if (!token) {
             window.location.href = '/login.html';
         }
@@ -613,13 +693,13 @@
                 const response = await fetch(`${API_URL}/api/auth/profile`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     user = data.user || data;
                     localStorage.setItem('user', JSON.stringify(user));
                     updateUserUI();
-                    
+
                     // Check payment status
                     if (user.credits <= 0 && !user.has_paid && user.plan === 'starter') {
                         document.getElementById('paymentWall').style.display = 'flex';
@@ -628,6 +708,34 @@
             } catch (error) {
                 console.error('Failed to load user:', error);
             }
+        }
+
+        // Simple markdown renderer
+        function renderMarkdown(text) {
+            let html = escapeHtml(text);
+            // Code blocks
+            html = html.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+                return `<pre><code>${code.trim()}</code></pre>`;
+            });
+            // Inline code
+            html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+            // Bold
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            // Italic
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            // Unordered lists
+            html = html.replace(/^[•\-\*] (.+)$/gm, '<li>$1</li>');
+            html = html.replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>');
+            // Ordered lists
+            html = html.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+            // Line breaks (but not inside pre blocks)
+            html = html.replace(/\n(?!.*<\/pre>)/g, (match, offset, str) => {
+                // Don't add <br> after pre/ul/li tags
+                const before = str.slice(0, offset);
+                if (/<\/(pre|ul|ol|li)>$/.test(before.trim())) return match;
+                return '<br>';
+            });
+            return html;
         }
 
         function updateUserUI() {
@@ -697,6 +805,12 @@
                     return;
                 }
 
+                if (response.status === 400 && data.setup_url) {
+                    // No provider configured — show setup banner
+                    document.getElementById('setupBanner').classList.add('show');
+                    return;
+                }
+
                 if (response.ok) {
                     addMessage('assistant', data.message, {
                         model: data.model,
@@ -704,14 +818,14 @@
                         cost: data.cost,
                         skills: data.skills_used
                     });
-                    
+
                     // Update credits
                     if (data.remaining_credits !== undefined) {
                         user.credits = data.remaining_credits;
                         updateUserUI();
                     }
                 } else {
-                    addMessage('assistant', 'Error: ' + (data.error || 'Failed to get response'));
+                    addMessage('assistant', '⚠️ ' + (data.message || data.error || 'Failed to get response'));
                 }
             } catch (error) {
                 hideTyping();
@@ -742,10 +856,12 @@
                     `</div>`;
             }
 
+            const renderedContent = role === 'assistant' ? renderMarkdown(content) : escapeHtml(content).replace(/\n/g, '<br>');
+
             messageDiv.innerHTML = `
                 <div class="message-avatar">${role === 'user' ? '👤' : '🐾'}</div>
                 <div class="message-content">
-                    ${escapeHtml(content).replace(/\n/g, '<br>')}
+                    ${renderedContent}
                     ${metaHtml ? `<div class="message-meta">${metaHtml}</div>` : ''}
                 </div>
             `;
@@ -806,8 +922,33 @@
             }
         }
 
+        // Load chat history
+        async function loadHistory() {
+            try {
+                const res = await fetch(`${API_URL}/api/chat/history`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    const messages = data.messages || [];
+                    if (messages.length > 0) {
+                        document.getElementById('welcomeScreen').style.display = 'none';
+                        messages.forEach(msg => {
+                            addMessage(msg.role, msg.content, {
+                                model: msg.model,
+                                tokens: msg.tokens
+                            });
+                        });
+                    }
+                }
+            } catch (e) {
+                // History load is non-critical
+            }
+        }
+
         // Load on start
         loadUser();
+        loadHistory();
     </script>
 </body>
 </html>

@@ -3,212 +3,843 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Settings - HostClaw</title>
+    <title>Settings - HostClaw.ai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --secondary: #06b6d4;
+            --dark: #0f0f23;
+            --darker: #0a0a1a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --card-bg2: #12121f;
+            --border: rgba(255, 255, 255, 0.1);
+            --border2: #2d2d3d;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a1a; color: #fff; min-height: 100vh; }
-        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
-        .header { margin-bottom: 40px; }
-        .header h1 { font-size: 32px; margin-bottom: 10px; }
-        .header p { color: #94a3b8; }
-        .card { background: #12121f; border: 1px solid #2d2d3d; border-radius: 16px; padding: 30px; margin-bottom: 20px; }
-        .card-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
-        .form-group { margin-bottom: 24px; }
-        .form-label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 8px; color: #94a3b8; }
-        .form-input { width: 100%; padding: 12px 16px; background: #1e1e2e; border: 1px solid #2d2d3d; border-radius: 8px; color: #fff; font-size: 14px; font-family: inherit; }
-        .form-input:focus { outline: none; border-color: #6366f1; }
-        .form-select { width: 100%; padding: 12px 16px; background: #1e1e2e; border: 1px solid #2d2d3d; border-radius: 8px; color: #fff; font-size: 14px; font-family: inherit; cursor: pointer; }
-        .form-select:focus { outline: none; border-color: #6366f1; }
-        .btn { padding: 12px 24px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
-        .btn-primary { background: #6366f1; color: white; }
-        .btn-primary:hover { background: #4f46e5; }
-        .btn-secondary { background: transparent; border: 1px solid #3d3d4d; color: #94a3b8; }
-        .btn-secondary:hover { border-color: #6366f1; color: #fff; }
-        .provider-card { background: #1e1e2e; border: 1px solid #2d2d3d; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-        .provider-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .provider-name { font-size: 16px; font-weight: 600; }
-        .provider-status { padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 500; }
-        .status-connected { background: rgba(16, 185, 129, 0.15); color: #10b981; }
-        .status-disconnected { background: rgba(100, 116, 139, 0.15); color: #64748b; }
-        .help-text { font-size: 13px; color: #64748b; margin-top: 6px; }
-        .nav { display: flex; gap: 20px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #2d2d3d; }
-        .nav a { color: #94a3b8; text-decoration: none; font-weight: 500; }
-        .nav a:hover { color: #fff; }
-        .nav a.active { color: #6366f1; }
-        .error { background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #ef4444; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; display: none; }
-        .success { background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; color: #10b981; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; display: none; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--darker);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--dark);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 1rem 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.625rem 0.875rem;
+            border-radius: 10px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .nav-item:hover {
+            background: var(--card-bg);
+            color: var(--text);
+        }
+
+        .nav-item.active {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary-light);
+        }
+
+        .nav-section-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            padding: 0.75rem 0.875rem 0.25rem;
+        }
+
+        .sidebar-footer {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 10px;
+            transition: background 0.2s;
+        }
+
+        .user-card:hover { background: var(--card-bg); }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .user-name { font-weight: 600; font-size: 0.875rem; }
+        .user-email { font-size: 0.75rem; color: var(--text-muted); }
+
+        /* Main */
+        .main {
+            margin-left: 260px;
+            flex: 1;
+            padding: 2rem;
+            max-width: calc(100% - 260px);
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.375rem;
+        }
+
+        .page-header p { color: var(--text-muted); font-size: 0.9375rem; }
+
+        /* Alert banners */
+        .alert {
+            padding: 0.875rem 1rem;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+            display: none;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .alert.show { display: flex; }
+        .alert-error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; }
+        .alert-success { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; }
+
+        .alert-icon { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+        .alert-body { flex: 1; line-height: 1.5; }
+        .alert-close { background: none; border: none; color: inherit; cursor: pointer; font-size: 1.25rem; opacity: 0.7; }
+        .alert-close:hover { opacity: 1; }
+
+        /* Section */
+        .section { margin-bottom: 2rem; }
+
+        .section-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Provider Cards */
+        .provider-grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .provider-card {
+            background: var(--card-bg2);
+            border: 1px solid var(--border2);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: border-color 0.2s;
+        }
+
+        .provider-card.connected {
+            border-color: rgba(16, 185, 129, 0.4);
+        }
+
+        .provider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+        }
+
+        .provider-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .provider-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .provider-name { font-size: 1rem; font-weight: 600; }
+        .provider-desc { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.125rem; }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-free { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .badge-connected { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+        .badge-disconnected { background: rgba(100, 116, 139, 0.15); color: #64748b; }
+
+        /* Form */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group { margin-bottom: 1rem; }
+        .form-group:last-child { margin-bottom: 0; }
+
+        .form-label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-input, .form-select {
+            width: 100%;
+            padding: 0.625rem 0.875rem;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.875rem;
+            font-family: inherit;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .form-input.has-toggle { padding-right: 2.75rem; }
+
+        .form-select { cursor: pointer; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            padding-right: 2.25rem;
+        }
+
+        .form-select option { background: #1e1e2e; }
+
+        .toggle-visibility {
+            position: absolute;
+            right: 0.75rem;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 0.25rem;
+            font-size: 0.875rem;
+            transition: color 0.2s;
+        }
+
+        .toggle-visibility:hover { color: var(--text); }
+
+        .help-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.375rem;
+        }
+
+        .help-text a { color: var(--primary-light); text-decoration: none; }
+        .help-text a:hover { text-decoration: underline; }
+
+        /* Provider Actions */
+        .provider-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.25rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.5rem 1.25rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            font-family: inherit;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover { background: var(--primary-dark); }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background: transparent;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: #ef4444;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: 1px solid var(--border2);
+            color: var(--text-muted);
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        .btn-sm { padding: 0.375rem 0.875rem; font-size: 0.8125rem; }
+
+        /* Default provider card */
+        .default-card {
+            background: var(--card-bg2);
+            border: 1px solid var(--border2);
+            border-radius: 16px;
+            padding: 1.5rem;
+        }
+
+        .default-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 1rem;
+        }
+
+        .default-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        /* Spinner */
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            .sidebar { transform: translateX(-100%); }
+            .main { margin-left: 0; max-width: 100%; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 640px) {
+            .main { padding: 1.25rem; }
+            .default-row { flex-direction: column; align-items: stretch; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="nav">
-            <a href="/dashboard.html">← Back to Dashboard</a>
-            <a href="/settings.html" class="active">Settings</a>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">🐾 HostClaw</div>
+        <nav class="sidebar-nav">
+            <span class="nav-section-label">Main</span>
+            <a href="/dashboard.html" class="nav-item">📊 Dashboard</a>
+            <a href="/chat.html" class="nav-item">💬 Chat</a>
+            <a href="/agents.html" class="nav-item">🤖 Agents</a>
+            <span class="nav-section-label">Configure</span>
+            <a href="/settings.html" class="nav-item active">⚙️ Settings</a>
+            <a href="/providers.html" class="nav-item">🔌 Providers</a>
+            <a href="/skills.html" class="nav-item">🧩 Skills</a>
+            <a href="/billing.html" class="nav-item">💳 Billing</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-card" onclick="window.location.href='/dashboard.html'">
+                <div class="user-avatar" id="userAvatar">--</div>
+                <div>
+                    <div class="user-name" id="userName">Loading...</div>
+                    <div class="user-email" id="userEmail"></div>
+                </div>
+            </div>
         </div>
+    </aside>
 
-        <div class="header">
-            <h1>⚙️ Settings</h1>
+    <!-- Main Content -->
+    <main class="main">
+        <div class="page-header">
+            <h1>Settings</h1>
             <p>Manage your AI providers and API keys</p>
         </div>
 
-        <div id="error" class="error"></div>
-        <div id="success" class="success"></div>
+        <div id="alertError" class="alert alert-error">
+            <span class="alert-icon">⚠️</span>
+            <span class="alert-body" id="alertErrorMsg"></span>
+            <button class="alert-close" onclick="hideAlert('alertError')">×</button>
+        </div>
+        <div id="alertSuccess" class="alert alert-success">
+            <span class="alert-icon">✓</span>
+            <span class="alert-body" id="alertSuccessMsg"></span>
+            <button class="alert-close" onclick="hideAlert('alertSuccess')">×</button>
+        </div>
 
         <!-- AI Providers -->
-        <div class="card">
-            <div class="card-title">🔑 AI Providers</div>
-            
-            <div class="help-text" style="margin-bottom: 20px;">
-                Add your own API keys to use AI models. Your keys are encrypted and stored securely.
-            </div>
+        <div class="section">
+            <div class="section-title">🔑 AI Providers</div>
+            <div class="provider-grid">
 
-            <!-- OpenAI -->
-            <div class="provider-card">
-                <div class="provider-header">
-                    <div class="provider-name">🤖 OpenAI</div>
-                    <div id="openaiStatus" class="provider-status status-disconnected">Not Connected</div>
+                <!-- OpenAI -->
+                <div class="provider-card" id="card-openai">
+                    <div class="provider-header">
+                        <div class="provider-info">
+                            <div class="provider-icon" style="background:rgba(16,163,127,0.15)">🤖</div>
+                            <div>
+                                <div class="provider-name">OpenAI</div>
+                                <div class="provider-desc">GPT-4o, GPT-4 Turbo, GPT-3.5</div>
+                            </div>
+                        </div>
+                        <span id="status-openai" class="badge badge-disconnected">Not Connected</span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">API Key</label>
+                            <div class="input-wrapper">
+                                <input type="password" id="key-openai" class="form-input has-toggle" placeholder="sk-...">
+                                <button class="toggle-visibility" onclick="toggleKey('key-openai', this)">👁</button>
+                            </div>
+                            <div class="help-text">Get from <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Model</label>
+                            <select id="model-openai" class="form-select">
+                                <option value="gpt-4o">GPT-4o</option>
+                                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="provider-actions">
+                        <button class="btn btn-primary btn-sm" onclick="saveProvider('openai')">
+                            <span id="saving-openai"></span> Save
+                        </button>
+                        <button class="btn btn-danger btn-sm" id="remove-openai" onclick="removeProvider('openai')" style="display:none">
+                            Remove
+                        </button>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">OpenAI API Key</label>
-                    <input type="password" id="openaiKey" class="form-input" placeholder="sk-...">
-                    <div class="help-text">Get your key from <a href="https://platform.openai.com/api-keys" target="_blank" style="color: #6366f1;">platform.openai.com</a></div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Default Model</label>
-                    <select id="openaiModel" class="form-select">
-                        <option value="gpt-4o">GPT-4o</option>
-                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                    </select>
-                </div>
-                
-                <button class="btn btn-primary" onclick="saveProvider('openai')">Save OpenAI</button>
-            </div>
 
-            <!-- Anthropic -->
-            <div class="provider-card">
-                <div class="provider-header">
-                    <div class="provider-name">🧠 Anthropic (Claude)</div>
-                    <div id="anthropicStatus" class="provider-status status-disconnected">Not Connected</div>
+                <!-- Anthropic -->
+                <div class="provider-card" id="card-anthropic">
+                    <div class="provider-header">
+                        <div class="provider-info">
+                            <div class="provider-icon" style="background:rgba(214,112,59,0.15)">🧠</div>
+                            <div>
+                                <div class="provider-name">Anthropic (Claude)</div>
+                                <div class="provider-desc">Claude 3.5 Sonnet, Opus, Haiku</div>
+                            </div>
+                        </div>
+                        <span id="status-anthropic" class="badge badge-disconnected">Not Connected</span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">API Key</label>
+                            <div class="input-wrapper">
+                                <input type="password" id="key-anthropic" class="form-input has-toggle" placeholder="sk-ant-...">
+                                <button class="toggle-visibility" onclick="toggleKey('key-anthropic', this)">👁</button>
+                            </div>
+                            <div class="help-text">Get from <a href="https://console.anthropic.com/" target="_blank">console.anthropic.com</a></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Model</label>
+                            <select id="model-anthropic" class="form-select">
+                                <option value="claude-3-5-sonnet-latest">Claude 3.5 Sonnet</option>
+                                <option value="claude-3-opus-latest">Claude 3 Opus</option>
+                                <option value="claude-3-haiku-latest">Claude 3 Haiku</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="provider-actions">
+                        <button class="btn btn-primary btn-sm" onclick="saveProvider('anthropic')">
+                            <span id="saving-anthropic"></span> Save
+                        </button>
+                        <button class="btn btn-danger btn-sm" id="remove-anthropic" onclick="removeProvider('anthropic')" style="display:none">
+                            Remove
+                        </button>
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Anthropic API Key</label>
-                    <input type="password" id="anthropicKey" class="form-input" placeholder="sk-ant-...">
-                    <div class="help-text">Get your key from <a href="https://console.anthropic.com/" target="_blank" style="color: #6366f1;">console.anthropic.com</a></div>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Default Model</label>
-                    <select id="anthropicModel" class="form-select">
-                        <option value="claude-3-5-sonnet-latest">Claude 3.5 Sonnet</option>
-                        <option value="claude-3-opus-latest">Claude 3 Opus</option>
-                        <option value="claude-3-haiku-latest">Claude 3 Haiku</option>
-                    </select>
-                </div>
-                
-                <button class="btn btn-primary" onclick="saveProvider('anthropic')">Save Anthropic</button>
-            </div>
 
-            <!-- NVIDIA -->
-            <div class="provider-card">
-                <div class="provider-header">
-                    <div class="provider-name">🎮 NVIDIA (Free)</div>
-                    <div id="nvidiaStatus" class="provider-status status-disconnected">Not Connected</div>
+                <!-- NVIDIA -->
+                <div class="provider-card" id="card-nvidia">
+                    <div class="provider-header">
+                        <div class="provider-info">
+                            <div class="provider-icon" style="background:rgba(118,185,0,0.15)">🎮</div>
+                            <div>
+                                <div class="provider-name">NVIDIA NIM</div>
+                                <div class="provider-desc">Llama, Nemotron — 1,000 req/day free</div>
+                            </div>
+                        </div>
+                        <div style="display:flex;gap:0.5rem;align-items:center">
+                            <span class="badge badge-free">FREE</span>
+                            <span id="status-nvidia" class="badge badge-disconnected">Not Connected</span>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">API Key</label>
+                            <div class="input-wrapper">
+                                <input type="password" id="key-nvidia" class="form-input has-toggle" placeholder="nvapi-...">
+                                <button class="toggle-visibility" onclick="toggleKey('key-nvidia', this)">👁</button>
+                            </div>
+                            <div class="help-text">Get free key from <a href="https://build.nvidia.com/" target="_blank">build.nvidia.com</a></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Model</label>
+                            <select id="model-nvidia" class="form-select">
+                                <option value="nvidia/llama-3.1-nemotron-70b-instruct">Nemotron-70B</option>
+                                <option value="meta/llama-3.1-70b-instruct">Llama 3.1 70B</option>
+                                <option value="meta/llama-3.1-405b-instruct">Llama 3.1 405B</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="provider-actions">
+                        <button class="btn btn-primary btn-sm" onclick="saveProvider('nvidia')">
+                            <span id="saving-nvidia"></span> Save
+                        </button>
+                        <button class="btn btn-danger btn-sm" id="remove-nvidia" onclick="removeProvider('nvidia')" style="display:none">
+                            Remove
+                        </button>
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label class="form-label">NVIDIA API Key</label>
-                    <input type="password" id="nvidiaKey" class="form-input" placeholder="nvapi-...">
-                    <div class="help-text">Get FREE key from <a href="https://build.nvidia.com/" target="_blank" style="color: #6366f1;">build.nvidia.com</a> (1,000 requests/day)</div>
+
+                <!-- Gemini -->
+                <div class="provider-card" id="card-gemini">
+                    <div class="provider-header">
+                        <div class="provider-info">
+                            <div class="provider-icon" style="background:rgba(66,133,244,0.15)">✨</div>
+                            <div>
+                                <div class="provider-name">Google Gemini</div>
+                                <div class="provider-desc">Gemini 1.5 Flash, Pro</div>
+                            </div>
+                        </div>
+                        <span id="status-gemini" class="badge badge-disconnected">Not Connected</span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">API Key</label>
+                            <div class="input-wrapper">
+                                <input type="password" id="key-gemini" class="form-input has-toggle" placeholder="AIza...">
+                                <button class="toggle-visibility" onclick="toggleKey('key-gemini', this)">👁</button>
+                            </div>
+                            <div class="help-text">Get from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Model</label>
+                            <select id="model-gemini" class="form-select">
+                                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                                <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                                <option value="gemini-pro">Gemini Pro</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="provider-actions">
+                        <button class="btn btn-primary btn-sm" onclick="saveProvider('gemini')">
+                            <span id="saving-gemini"></span> Save
+                        </button>
+                        <button class="btn btn-danger btn-sm" id="remove-gemini" onclick="removeProvider('gemini')" style="display:none">
+                            Remove
+                        </button>
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Default Model</label>
-                    <select id="nvidiaModel" class="form-select">
-                        <option value="nvidia/llama-3.1-nemotron-70b-instruct">Nemotron-70B (Free)</option>
-                        <option value="meta/llama-3.1-70b-instruct">Llama 3.1 70B (Free)</option>
-                        <option value="meta/llama-3.1-405b-instruct">Llama 3.1 405B (Free)</option>
-                    </select>
+
+                <!-- DeepSeek -->
+                <div class="provider-card" id="card-deepseek">
+                    <div class="provider-header">
+                        <div class="provider-info">
+                            <div class="provider-icon" style="background:rgba(99,102,241,0.15)">🔮</div>
+                            <div>
+                                <div class="provider-name">DeepSeek</div>
+                                <div class="provider-desc">DeepSeek-V3, DeepSeek-R1</div>
+                            </div>
+                        </div>
+                        <span id="status-deepseek" class="badge badge-disconnected">Not Connected</span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">API Key</label>
+                            <div class="input-wrapper">
+                                <input type="password" id="key-deepseek" class="form-input has-toggle" placeholder="sk-...">
+                                <button class="toggle-visibility" onclick="toggleKey('key-deepseek', this)">👁</button>
+                            </div>
+                            <div class="help-text">Get from <a href="https://platform.deepseek.com/" target="_blank">platform.deepseek.com</a></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Model</label>
+                            <select id="model-deepseek" class="form-select">
+                                <option value="deepseek-chat">DeepSeek-V3</option>
+                                <option value="deepseek-reasoner">DeepSeek-R1</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="provider-actions">
+                        <button class="btn btn-primary btn-sm" onclick="saveProvider('deepseek')">
+                            <span id="saving-deepseek"></span> Save
+                        </button>
+                        <button class="btn btn-danger btn-sm" id="remove-deepseek" onclick="removeProvider('deepseek')" style="display:none">
+                            Remove
+                        </button>
+                    </div>
                 </div>
-                
-                <button class="btn btn-primary" onclick="saveProvider('nvidia')">Save NVIDIA</button>
+
+                <!-- Groq -->
+                <div class="provider-card" id="card-groq">
+                    <div class="provider-header">
+                        <div class="provider-info">
+                            <div class="provider-icon" style="background:rgba(245,158,11,0.15)">⚡</div>
+                            <div>
+                                <div class="provider-name">Groq</div>
+                                <div class="provider-desc">Llama 3.1 — ultra-fast inference</div>
+                            </div>
+                        </div>
+                        <span id="status-groq" class="badge badge-disconnected">Not Connected</span>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">API Key</label>
+                            <div class="input-wrapper">
+                                <input type="password" id="key-groq" class="form-input has-toggle" placeholder="gsk_...">
+                                <button class="toggle-visibility" onclick="toggleKey('key-groq', this)">👁</button>
+                            </div>
+                            <div class="help-text">Get from <a href="https://console.groq.com/keys" target="_blank">console.groq.com</a></div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Model</label>
+                            <select id="model-groq" class="form-select">
+                                <option value="llama-3.1-70b-versatile">Llama 3.1 70B</option>
+                                <option value="llama-3.1-8b-instant">Llama 3.1 8B</option>
+                                <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="provider-actions">
+                        <button class="btn btn-primary btn-sm" onclick="saveProvider('groq')">
+                            <span id="saving-groq"></span> Save
+                        </button>
+                        <button class="btn btn-danger btn-sm" id="remove-groq" onclick="removeProvider('groq')" style="display:none">
+                            Remove
+                        </button>
+                    </div>
+                </div>
+
             </div>
         </div>
 
         <!-- Default Provider -->
-        <div class="card">
-            <div class="card-title">⭐ Default Provider</div>
-            
-            <div class="form-group">
-                <label class="form-label">Select your default AI provider for chat and agents</label>
-                <select id="defaultProvider" class="form-select">
-                    <option value="">-- Select Provider --</option>
-                    <option value="openai">OpenAI</option>
-                    <option value="anthropic">Anthropic</option>
-                    <option value="nvidia">NVIDIA (Free)</option>
-                </select>
+        <div class="section">
+            <div class="section-title">⭐ Default Provider</div>
+            <div class="default-card">
+                <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.25rem;">
+                    This provider will be used for all chat messages and agents unless overridden.
+                </p>
+                <div class="default-row">
+                    <div class="form-group">
+                        <label class="form-label">Default AI Provider</label>
+                        <select id="defaultProvider" class="form-select">
+                            <option value="">— Select Provider —</option>
+                            <option value="openai">OpenAI</option>
+                            <option value="anthropic">Anthropic (Claude)</option>
+                            <option value="nvidia">NVIDIA (Free)</option>
+                            <option value="gemini">Google Gemini</option>
+                            <option value="deepseek">DeepSeek</option>
+                            <option value="groq">Groq</option>
+                        </select>
+                    </div>
+                    <div style="padding-bottom:1rem">
+                        <button class="btn btn-primary" onclick="saveDefaultProvider()">
+                            <span id="saving-default"></span> Save Default
+                        </button>
+                    </div>
+                </div>
             </div>
-            
-            <button class="btn btn-primary" onclick="saveDefaultProvider()">Save Default</button>
         </div>
-    </div>
+    </main>
 
     <script>
         const API_URL = 'https://hostclaw-api.onrender.com';
         const token = localStorage.getItem('token');
-        
-        if (!token) {
-            window.location.href = '/login.html';
-        }
-        
-        // Check if coming from payment setup
+
+        if (!token) window.location.href = '/login.html';
+
+        // Check for setup param
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('setup') === '1') {
-            document.getElementById('success').innerHTML = `
-                <strong>🎉 Welcome! Payment successful!</strong><br>
-                Now add your AI API key below to start using chat and agents.
-                <br><br>
-                <strong>Recommended:</strong> Start with <a href="#nvidia" style="color: #10b981;">NVIDIA (FREE)</a>
-            `;
-            document.getElementById('success').style.display = 'block';
+            showSuccess('🎉 Payment successful! Now add an AI API key below to start chatting. Recommended: NVIDIA (free).');
             window.history.replaceState({}, '', '/settings.html');
         }
-        
-        // Load current settings
+
+        function showError(msg) {
+            document.getElementById('alertErrorMsg').innerHTML = msg;
+            document.getElementById('alertError').classList.add('show');
+            document.getElementById('alertSuccess').classList.remove('show');
+        }
+
+        function showSuccess(msg) {
+            document.getElementById('alertSuccessMsg').innerHTML = msg;
+            document.getElementById('alertSuccess').classList.add('show');
+            document.getElementById('alertError').classList.remove('show');
+        }
+
+        function hideAlert(id) {
+            document.getElementById(id).classList.remove('show');
+        }
+
+        function toggleKey(inputId, btn) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = '🙈';
+            } else {
+                input.type = 'password';
+                btn.textContent = '👁';
+            }
+        }
+
+        function setConnected(provider, model) {
+            const status = document.getElementById('status-' + provider);
+            const card = document.getElementById('card-' + provider);
+            const removeBtn = document.getElementById('remove-' + provider);
+            status.textContent = 'Connected';
+            status.className = 'badge badge-connected';
+            card.classList.add('connected');
+            if (removeBtn) removeBtn.style.display = 'inline-flex';
+            if (model) {
+                const modelEl = document.getElementById('model-' + provider);
+                if (modelEl) modelEl.value = model;
+            }
+        }
+
+        function setDisconnected(provider) {
+            const status = document.getElementById('status-' + provider);
+            const card = document.getElementById('card-' + provider);
+            const removeBtn = document.getElementById('remove-' + provider);
+            status.textContent = 'Not Connected';
+            status.className = 'badge badge-disconnected';
+            card.classList.remove('connected');
+            if (removeBtn) removeBtn.style.display = 'none';
+        }
+
         async function loadSettings() {
             try {
-                // Get providers
+                // Load user info
+                const userRes = await fetch(`${API_URL}/api/auth/profile`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (userRes.ok) {
+                    const data = await userRes.json();
+                    const user = data.user || data;
+                    if (user.name) {
+                        document.getElementById('userName').textContent = user.name;
+                        document.getElementById('userAvatar').textContent = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                    }
+                    if (user.email) document.getElementById('userEmail').textContent = user.email;
+                }
+
+                // Load providers
                 const res = await fetch(`${API_URL}/api/providers`, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
-                
+
                 if (res.ok) {
                     const data = await res.json();
-                    
-                    // Update UI based on saved providers
                     if (data.providers) {
-                        if (data.providers.openai) {
-                            document.getElementById('openaiStatus').textContent = 'Connected';
-                            document.getElementById('openaiStatus').className = 'provider-status status-connected';
-                            document.getElementById('openaiModel').value = data.providers.openai.model || 'gpt-4o';
-                        }
-                        
-                        if (data.providers.anthropic) {
-                            document.getElementById('anthropicStatus').textContent = 'Connected';
-                            document.getElementById('anthropicStatus').className = 'provider-status status-connected';
-                            document.getElementById('anthropicModel').value = data.providers.anthropic.model || 'claude-3-5-sonnet-latest';
-                        }
-                        
-                        if (data.providers.nvidia) {
-                            document.getElementById('nvidiaStatus').textContent = 'Connected';
-                            document.getElementById('nvidiaStatus').className = 'provider-status status-connected';
-                            document.getElementById('nvidiaModel').value = data.providers.nvidia.model || 'nvidia/llama-3.1-nemotron-70b-instruct';
-                        }
+                        ['openai', 'anthropic', 'nvidia', 'gemini', 'deepseek', 'groq', 'kimi'].forEach(p => {
+                            if (data.providers[p]) {
+                                setConnected(p, data.providers[p].model);
+                            }
+                        });
                     }
-                    
-                    // Load default provider
                     if (data.defaultProvider) {
                         document.getElementById('defaultProvider').value = data.defaultProvider;
                     }
@@ -217,34 +848,21 @@
                 console.error('Failed to load settings:', e);
             }
         }
-        
+
         async function saveProvider(provider) {
-            const keyInput = document.getElementById(provider + 'Key');
-            const modelInput = document.getElementById(provider + 'Model');
-            const errorDiv = document.getElementById('error');
-            const successDiv = document.getElementById('success');
-            
-            errorDiv.style.display = 'none';
-            successDiv.style.display = 'none';
-            
+            const keyInput = document.getElementById('key-' + provider);
+            const modelInput = document.getElementById('model-' + provider);
+            const savingEl = document.getElementById('saving-' + provider);
+
             const apiKey = keyInput.value.trim();
-            console.log('Saving provider:', provider, 'Key length:', apiKey.length);
-            
             if (!apiKey) {
-                errorDiv.textContent = 'Please enter an API key';
-                errorDiv.style.display = 'block';
+                showError('Please enter an API key for ' + provider);
                 return;
             }
-            
-            if (!token) {
-                errorDiv.textContent = 'Not logged in. Please login again.';
-                errorDiv.style.display = 'block';
-                console.error('No token found');
-                return;
-            }
-            
+
+            savingEl.innerHTML = '<span class="spinner"></span>';
+
             try {
-                console.log('Sending request to:', `${API_URL}/api/providers`);
                 const res = await fetch(`${API_URL}/api/providers`, {
                     method: 'POST',
                     headers: {
@@ -252,53 +870,63 @@
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        provider: provider,
-                        apiKey: apiKey,
+                        provider,
+                        apiKey,
                         model: modelInput.value
                     })
                 });
-                
-                console.log('Response status:', res.status);
+
                 const data = await res.json();
-                console.log('Response data:', data);
-                
+                savingEl.innerHTML = '';
+
                 if (res.ok) {
-                    // Clear input for security
                     keyInput.value = '';
-                    
-                    // Update status
-                    const statusEl = document.getElementById(provider + 'Status');
-                    statusEl.textContent = 'Connected';
-                    statusEl.className = 'provider-status status-connected';
-                    
-                    successDiv.textContent = provider.charAt(0).toUpperCase() + provider.slice(1) + ' API key saved!';
-                    successDiv.style.display = 'block';
+                    keyInput.type = 'password';
+                    const toggleBtn = keyInput.nextElementSibling;
+                    if (toggleBtn) toggleBtn.textContent = '👁';
+                    setConnected(provider, modelInput.value);
+                    showSuccess(`${capitalize(provider)} API key saved successfully.`);
                 } else {
-                    errorDiv.textContent = 'Error: ' + (data.error || 'Failed to save');
-                    errorDiv.style.display = 'block';
-                    console.error('Save error:', data);
+                    showError('Error: ' + (data.error || 'Failed to save key'));
                 }
             } catch (e) {
-                errorDiv.textContent = 'Network error: ' + e.message;
-                errorDiv.style.display = 'block';
-                console.error('Network error:', e);
+                savingEl.innerHTML = '';
+                showError('Network error: ' + e.message);
             }
         }
-        
+
+        async function removeProvider(provider) {
+            if (!confirm(`Remove ${capitalize(provider)} API key?`)) return;
+
+            try {
+                const res = await fetch(`${API_URL}/api/providers/${provider}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+
+                if (res.ok) {
+                    setDisconnected(provider);
+                    showSuccess(`${capitalize(provider)} removed.`);
+                } else {
+                    const data = await res.json().catch(() => ({}));
+                    showError('Failed to remove: ' + (data.error || res.status));
+                }
+            } catch (e) {
+                showError('Network error: ' + e.message);
+            }
+        }
+
         async function saveDefaultProvider() {
             const select = document.getElementById('defaultProvider');
-            const errorDiv = document.getElementById('error');
-            const successDiv = document.getElementById('success');
-            
-            errorDiv.style.display = 'none';
-            successDiv.style.display = 'none';
-            
+            const savingEl = document.getElementById('saving-default');
+
             if (!select.value) {
-                errorDiv.textContent = 'Please select a default provider';
-                errorDiv.style.display = 'block';
+                showError('Please select a default provider');
                 return;
             }
-            
+
+            savingEl.innerHTML = '<span class="spinner"></span>';
+
             try {
                 const res = await fetch(`${API_URL}/api/providers/default`, {
                     method: 'PUT',
@@ -306,26 +934,27 @@
                         'Authorization': 'Bearer ' + token,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        provider: select.value
-                    })
+                    body: JSON.stringify({ provider: select.value })
                 });
-                
+
+                savingEl.innerHTML = '';
+
                 if (res.ok) {
-                    successDiv.textContent = 'Default provider saved!';
-                    successDiv.style.display = 'block';
+                    showSuccess('Default provider set to ' + capitalize(select.value));
                 } else {
                     const data = await res.json();
-                    errorDiv.textContent = data.error || 'Failed to save';
-                    errorDiv.style.display = 'block';
+                    showError(data.error || 'Failed to save default provider');
                 }
             } catch (e) {
-                errorDiv.textContent = 'Network error: ' + e.message;
-                errorDiv.style.display = 'block';
+                savingEl.innerHTML = '';
+                showError('Network error: ' + e.message);
             }
         }
-        
-        // Load settings on page load
+
+        function capitalize(str) {
+            return str.charAt(0).toUpperCase() + str.slice(1);
+        }
+
         loadSettings();
     </script>
 </body>

@@ -277,10 +277,11 @@ function getDefaultModel(provider) {
   const models = {
     openai: 'gpt-4o',
     anthropic: 'claude-3-5-sonnet-20241022',
-    kimi: 'kimi-k2.5',
-    gemini: 'gemini-pro',
+    kimi: 'moonshot-v1-8k',
+    gemini: 'gemini-1.5-flash',
     deepseek: 'deepseek-chat',
-    groq: 'llama-3.1-70b-versatile'
+    groq: 'llama-3.1-70b-versatile',
+    nvidia: 'nvidia/llama-3.1-nemotron-70b-instruct'
   };
   return models[provider] || 'gpt-4o';
 }
