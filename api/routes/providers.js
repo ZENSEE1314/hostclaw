@@ -6,9 +6,22 @@ const crypto = require('crypto');
 const router = express.Router();
 
 // Simple encryption for API keys (in production, use proper key management)
+function getEncryptionKey() {
+  const envKey = process.env.ENCRYPTION_KEY;
+  if (envKey) {
+    // Ensure key is exactly 32 bytes for AES-256
+    const key = Buffer.from(envKey);
+    if (key.length === 32) return key;
+    // If not 32 bytes, hash it to get 32 bytes
+    return crypto.createHash('sha256').update(envKey).digest();
+  }
+  // Default key (only for development!)
+  return crypto.createHash('sha256').update('hostclaw-default-key-change-in-production').digest();
+}
+
 function encrypt(text) {
   const algorithm = 'aes-256-cbc';
-  const key = Buffer.from(process.env.ENCRYPTION_KEY || 'default-key-32-chars-long!!!!!');
+  const key = getEncryptionKey();
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(algorithm, key, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -18,7 +31,7 @@ function encrypt(text) {
 
 function decrypt(text) {
   const algorithm = 'aes-256-cbc';
-  const key = Buffer.from(process.env.ENCRYPTION_KEY || 'default-key-32-chars-long!!!!!');
+  const key = getEncryptionKey();
   const parts = text.split(':');
   const iv = Buffer.from(parts[0], 'hex');
   const encrypted = parts[1];
