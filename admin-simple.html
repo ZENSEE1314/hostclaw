@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - HostClaw</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: #0a0a1a; color: #fff; padding: 2rem; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        h1 { font-size: 1.5rem; }
+        .btn { padding: 0.5rem 1rem; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; }
+        .btn:hover { background: #4f46e5; }
+        table { width: 100%; border-collapse: collapse; background: #12121f; border-radius: 12px; overflow: hidden; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid #2d2d3d; }
+        th { background: #1e1e2e; font-size: 0.75rem; text-transform: uppercase; color: #94a3b8; }
+        tr:hover { background: rgba(255,255,255,0.03); }
+        .badge { padding: 0.25rem 0.75rem; border-radius: 100px; font-size: 0.75rem; }
+        .badge-success { background: rgba(16,185,129,0.2); color: #10b981; }
+        .badge-warning { background: rgba(245,158,11,0.2); color: #f59e0b; }
+        .badge-danger { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .debug { margin-top: 2rem; padding: 1rem; background: #1e1e2e; border-radius: 8px; font-family: monospace; font-size: 0.75rem; color: #94a3b8; }
+        input[type="text"], input[type="number"], select { 
+            background: #2d2d3d; border: 1px solid #3d3d4d; color: white; padding: 0.5rem; border-radius: 4px; width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>👥 User Management</h1>
+        <button class="btn" onclick="loadUsers()">🔄 Refresh</button>
+    </div>
+
+    <table id="usersTable">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Plan</th>
+                <th>Credits</th>
+                <th>Paid</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="7" style="text-align:center;padding:2rem;">Click Refresh to load users</td></tr>
+        </tbody>
+    </table>
+
+    <div class="debug" id="debug">Debug output will appear here...</div>
+
+    <script>
+        const API_URL = 'https://hostclaw-api.onrender.com';
+        const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
+
+        async function loadUsers() {
+            const tbody = document.querySelector('#usersTable tbody');
+            const debug = document.getElementById('debug');
+            
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;">Loading...</td></tr>';
+            
+            try {
+                debug.textContent = 'Fetching /api/admin/users...';
+                
+                const response = await fetch(`${API_URL}/api/admin/users`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                debug.textContent += '\nResponse status: ' + response.status;
+                
+                if (!response.ok) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:#ef4444;">Error ${response.status}</td></tr>`;
+                    return;
+                }
+                
+                const data = await response.json();
+                debug.textContent += '\nResponse data keys: ' + Object.keys(data).join(', ');
+                
+                const users = data.users;
+                
+                if (!users) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#ef4444;">No users field in response</td></tr>';
+                    debug.textContent += '\nFull response: ' + JSON.stringify(data, null, 2).substring(0, 500);
+                    return;
+                }
+                
+                if (!Array.isArray(users)) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#ef4444;">Users is not an array</td></tr>';
+                    debug.textContent += '\nType of users: ' + typeof users;
+                    return;
+                }
+                
+                if (users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;">No users found</td></tr>';
+                    return;
+                }
+                
+                // Build table
+                let html = '';
+                for (const user of users) {
+                    const planClass = user.plan === 'starter' ? 'badge-success' : user.plan === 'pro' ? 'badge-warning' : 'badge-danger';
+                    html += `
+                        <tr>
+                            <td>${user.name || 'N/A'}</td>
+                            <td>${user.email || 'N/A'}</td>
+                            <td><span class="badge ${planClass}">${user.plan || 'starter'}</span></td>
+                            <td>$${user.credits || 0}</td>
+                            <td>${user.has_paid ? 'Yes' : 'No'}</td>
+                            <td>${user.created_at ? user.created_at.split('T')[0] : 'N/A'}</td>
+                            <td><button class="btn" onclick="editUser('${user.id}')">Edit</button></td>
+                        </tr>
+                    `;
+                }
+                
+                tbody.innerHTML = html;
+                debug.textContent += '\nLoaded ' + users.length + ' users successfully';
+                
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:#ef4444;">Error: ${err.message}</td></tr>`;
+                debug.textContent += '\nError: ' + err.message;
+            }
+        }
+        
+        function editUser(id) {
+            alert('Edit user: ' + id);
+        }
+        
+        // Auto-load on page load
+        loadUsers();
+    </script>
+</body>
+</html>
