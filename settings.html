@@ -228,13 +228,23 @@
             successDiv.style.display = 'none';
             
             const apiKey = keyInput.value.trim();
+            console.log('Saving provider:', provider, 'Key length:', apiKey.length);
+            
             if (!apiKey) {
                 errorDiv.textContent = 'Please enter an API key';
                 errorDiv.style.display = 'block';
                 return;
             }
             
+            if (!token) {
+                errorDiv.textContent = 'Not logged in. Please login again.';
+                errorDiv.style.display = 'block';
+                console.error('No token found');
+                return;
+            }
+            
             try {
+                console.log('Sending request to:', `${API_URL}/api/providers`);
                 const res = await fetch(`${API_URL}/api/providers`, {
                     method: 'POST',
                     headers: {
@@ -248,6 +258,10 @@
                     })
                 });
                 
+                console.log('Response status:', res.status);
+                const data = await res.json();
+                console.log('Response data:', data);
+                
                 if (res.ok) {
                     // Clear input for security
                     keyInput.value = '';
@@ -260,7 +274,6 @@
                     successDiv.textContent = provider.charAt(0).toUpperCase() + provider.slice(1) + ' API key saved!';
                     successDiv.style.display = 'block';
                 } else {
-                    const data = await res.json();
                     errorDiv.textContent = 'Error: ' + (data.error || 'Failed to save');
                     errorDiv.style.display = 'block';
                     console.error('Save error:', data);
@@ -268,6 +281,7 @@
             } catch (e) {
                 errorDiv.textContent = 'Network error: ' + e.message;
                 errorDiv.style.display = 'block';
+                console.error('Network error:', e);
             }
         }
         

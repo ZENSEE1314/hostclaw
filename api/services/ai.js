@@ -70,6 +70,9 @@ async function generateAIResponse({ message, provider, providerConfig, skills, u
       case 'groq':
         return await callGroq(message, decryptedKey, model, skills);
       
+      case 'nvidia':
+        return await callNVIDIA(message, decryptedKey, model, skills);
+      
       default:
         return {
           content: 'Unsupported provider: ' + provider,
@@ -201,7 +204,31 @@ async function callGroq(message, apiKey, model, skills) {
       { role: 'system', content: buildSystemPrompt(skills) },
       { role: 'user', content: message }
     ],
-    temperature: 0.7
+    temperature: 0.7,
+    max_tokens: 2000
+  }, {
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  return {
+    content: response.data.choices[0].message.content,
+    model: response.data.model,
+    tokens: response.data.usage?.total_tokens || estimateTokens(message + response.data.choices[0].message.content)
+  };
+}
+
+async function callNVIDIA(message, apiKey, model, skills) {
+  const response = await axios.post('https://integrate.api.nvidia.com/v1/chat/completions', {
+    model: model,
+    messages: [
+      { role: 'system', content: buildSystemPrompt(skills) },
+      { role: 'user', content: message }
+    ],
+    temperature: 0.7,
+    max_tokens: 1024
   }, {
     headers: {
       'Authorization': `Bearer ${apiKey}`,
