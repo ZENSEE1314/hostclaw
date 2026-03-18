@@ -540,7 +540,10 @@
     <!-- Main Chat -->
     <main class="chat-container">
         <div class="chat-header">
-            <div class="chat-title">Chat</div>
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <button class="btn-icon" onclick="window.location.href='/dashboard.html'" title="Back to Dashboard">←</button>
+                <div class="chat-title">Chat</div>
+            </div>
             <div class="chat-actions">
                 <button class="btn-icon" onclick="clearChat()" title="Clear chat">🗑️</button>
                 <button class="btn-icon" onclick="window.location.href='/skills.html'" title="Manage skills">🧩</button>

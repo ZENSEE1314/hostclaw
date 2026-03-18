@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent Detail - HostClaw.ai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --secondary: #06b6d4;
+            --dark: #0f0f23;
+            --darker: #0a0a1a;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--darker); color: var(--text); min-height: 100vh; }
+        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        
+        .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+        .header h1 { font-size: 1.5rem; font-weight: 700; }
+        
+        .back-btn { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem 1rem; color: var(--text); text-decoration: none; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
+        
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-title {
+            font-weight: 600;
+            font-size: 1.125rem;
+            margin-bottom: 1rem;
+        }
+        
+        .form-group { margin-bottom: 1rem; }
+        .form-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-muted); }
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.875rem;
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-danger { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-running { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .status-pending { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+        .status-stopped { background: rgba(148, 163, 184, 0.1); color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="goBack()">← Back</button>
+            <h1 id="agentName">Agent Details</h1>
+        </div>
+
+        <div id="loading">Loading agent details...</div>
+        
+        <div id="agentContent" style="display: none;">
+            <div class="card">
+                <div class="card-title">Agent Information</div>
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input type="text" id="nameInput" class="form-input">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea id="descInput" class="form-input" rows="3"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">AI Model</label>
+                    <select id="modelInput" class="form-input">
+                        <option value="gpt-4o">GPT-4o</option>
+                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                        <option value="claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                        <option value="claude-3-opus">Claude 3 Opus</option>
+                        <option value="gemini-pro">Gemini Pro</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Status</label>
+                    <div id="statusDisplay"></div>
+                </div>
+                
+                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                    <button class="btn btn-primary" onclick="saveAgent()">Save Changes</button>
+                    <button class="btn btn-outline" id="deployBtn" onclick="deployAgent()">Deploy</button>
+                    <button class="btn btn-outline" id="stopBtn" onclick="stopAgent()" style="display: none;">Stop</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">Danger Zone</div>
+                <button class="btn btn-danger" onclick="deleteAgent()">🗑️ Delete Agent</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://hostclaw-api.onrender.com';
+        const token = localStorage.getItem('token');
+        
+        if (!token) window.location.href = '/login.html';
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const agentId = urlParams.get('id');
+        
+        if (!agentId) {
+            window.location.href = '/agents.html';
+        }
+        
+        let agent = {};
+        
+        async function loadAgent() {
+            try {
+                const res = await fetch(`${API_URL}/api/agents/${agentId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (res.ok) {
+                    agent = await res.json();
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('agentContent').style.display = 'block';
+                    
+                    document.getElementById('agentName').textContent = agent.name;
+                    document.getElementById('nameInput').value = agent.name;
+                    document.getElementById('descInput').value = agent.description || '';
+                    document.getElementById('modelInput').value = agent.model;
+                    
+                    const statusClass = agent.status === 'running' ? 'status-running' : 
+                                       agent.status === 'pending' ? 'status-pending' : 'status-stopped';
+                    document.getElementById('statusDisplay').innerHTML = `
+                        <span class="status-badge ${statusClass}">${agent.status}</span>
+                    `;
+                    
+                    // Show/hide deploy/stop buttons
+                    if (agent.status === 'running') {
+                        document.getElementById('deployBtn').style.display = 'none';
+                        document.getElementById('stopBtn').style.display = 'inline-flex';
+                    } else {
+                        document.getElementById('deployBtn').style.display = 'inline-flex';
+                        document.getElementById('stopBtn').style.display = 'none';
+                    }
+                } else {
+                    alert('Agent not found');
+                    window.location.href = '/agents.html';
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Failed to load agent');
+            }
+        }
+        
+        async function saveAgent() {
+            try {
+                const res = await fetch(`${API_URL}/api/agents/${agentId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: document.getElementById('nameInput').value,
+                        description: document.getElementById('descInput').value,
+                        model: document.getElementById('modelInput').value
+                    })
+                });
+                
+                if (res.ok) {
+                    alert('Agent saved!');
+                    loadAgent();
+                } else {
+                    alert('Failed to save');
+                }
+            } catch (e) {
+                alert('Network error');
+            }
+        }
+        
+        async function deployAgent() {
+            try {
+                const res = await fetch(`${API_URL}/api/agents/${agentId}/deploy`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (res.ok) {
+                    alert('Agent deployed!');
+                    loadAgent();
+                } else {
+                    const data = await res.json();
+                    alert(data.error || 'Failed to deploy');
+                }
+            } catch (e) {
+                alert('Network error');
+            }
+        }
+        
+        async function stopAgent() {
+            try {
+                const res = await fetch(`${API_URL}/api/agents/${agentId}/stop`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (res.ok) {
+                    alert('Agent stopped');
+                    loadAgent();
+                } else {
+                    alert('Failed to stop');
+                }
+            } catch (e) {
+                alert('Network error');
+            }
+        }
+        
+        async function deleteAgent() {
+            if (!confirm('Are you sure? This cannot be undone.')) return;
+            
+            try {
+                const res = await fetch(`${API_URL}/api/agents/${agentId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (res.ok) {
+                    window.location.href = '/agents.html';
+                } else {
+                    alert('Failed to delete');
+                }
+            } catch (e) {
+                alert('Network error');
+            }
+        }
+        
+        function goBack() {
+            window.location.href = '/agents.html';
+        }
+        
+        loadAgent();
+    </script>
+</body>
+</html>
