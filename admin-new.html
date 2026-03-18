@@ -26,6 +26,82 @@
         .error { color: #ef4444; }
         .success { color: #10b981; }
         .loading { color: #f59e0b; }
+        
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: #1a1a2e;
+            border: 1px solid #2d2d3d;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+        }
+        .modal h2 { margin-bottom: 20px; font-size: 18px; }
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; margin-bottom: 6px; font-size: 13px; color: #94a3b8; }
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            background: #252540;
+            border: 1px solid #3d3d4d;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 14px;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+        .form-select {
+            width: 100%;
+            padding: 10px 12px;
+            background: #252540;
+            border: 1px solid #3d3d4d;
+            border-radius: 6px;
+            color: #fff;
+            font-size: 14px;
+        }
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #6366f1;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid #3d3d4d;
+            color: #94a3b8;
+        }
+        .btn-secondary:hover {
+            border-color: #6366f1;
+            color: #fff;
+        }
+        .btn-success {
+            background: #10b981;
+        }
+        .btn-success:hover {
+            background: #059669;
+        }
     </style>
 </head>
 <body>
@@ -50,88 +126,82 @@
         </table>
         
         <div class="debug" id="debug">Loading...</div>
+        
+        <!-- Edit User Modal -->
+        <div class="modal-overlay" id="editModal">
+            <div class="modal">
+                <h2>✏️ Edit User</h2>
+                <input type="hidden" id="editUserId">
+                
+                <div class="form-group">
+                    <label class="form-label">Name</label>
+                    <input type="text" id="editName" class="form-input">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="editEmail" class="form-input" readonly style="background: #1a1a2e; cursor: not-allowed;">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Plan</label>
+                    <select id="editPlan" class="form-select">
+                        <option value="starter">Starter</option>
+                        <option value="pro">Pro</option>
+                        <option value="enterprise">Enterprise</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Credits ($)</label>
+                    <input type="number" id="editCredits" class="form-input" step="0.01">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label"></div>
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="editHasPaid">
+                        <span>Mark as Paid</span>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button class="btn btn-success" onclick="saveUser()">Save Changes</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script>
+        <script>
         const API_URL = 'https://hostclaw-api.onrender.com';
+        let allUsers = [];
         
         async function loadUsers() {
             const tbody = document.getElementById('usersTable');
             const debug = document.getElementById('debug');
             
-            debug.textContent = 'Step 1: Getting token...\n';
-            
-            // Get token from localStorage
             const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
-            
             if (!token) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:#ef4444;">Not logged in. Please login first.</td></tr>';
-                debug.innerHTML += '<span class="error">ERROR: No token found in localStorage</span>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:#ef4444;">Not logged in</td></tr>';
                 return;
             }
             
-            debug.innerHTML += 'Token found: ' + token.substring(0, 20) + '...\n';
-            debug.innerHTML += 'Step 2: Fetching from API...\n';
-            
             try {
-                const url = `${API_URL}/api/admin/users`;
-                debug.innerHTML += 'URL: ' + url + '\n';
-                
-                const response = await fetch(url, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': 'Bearer ' + token,
-                        'Content-Type': 'application/json'
-                    }
+                const response = await fetch(`${API_URL}/api/admin/users`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
                 });
                 
-                debug.innerHTML += 'Step 3: Response received\n';
-                debug.innerHTML += 'Status: ' + response.status + ' ' + response.statusText + '\n';
-                
-                if (response.status === 401) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:#ef4444;">Session expired. Please login again.</td></tr>';
-                    debug.innerHTML += '<span class="error">ERROR: Unauthorized (401)</span>';
-                    return;
-                }
-                
                 if (!response.ok) {
-                    const text = await response.text();
-                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:#ef4444;">API Error: ${response.status}</td></tr>`;
-                    debug.innerHTML += `<span class="error">ERROR: HTTP ${response.status}</span>\n`;
-                    debug.innerHTML += 'Response: ' + text.substring(0, 200) + '\n';
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:#ef4444;">Error: ${response.status}</td></tr>`;
                     return;
                 }
                 
                 const data = await response.json();
-                debug.innerHTML += '<span class="success">Step 4: Data received</span>\n';
-                debug.innerHTML += 'Data type: ' + typeof data + '\n';
-                debug.innerHTML += 'Has users property: ' + (data.hasOwnProperty('users') ? 'YES' : 'NO') + '\n';
+                allUsers = data.users || [];
                 
-                if (!data.users) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:#ef4444;">No users property in response</td></tr>';
-                    debug.innerHTML += '<span class="error">ERROR: data.users is undefined</span>\n';
-                    debug.innerHTML += 'Full response:\n' + JSON.stringify(data, null, 2).substring(0, 500) + '\n';
-                    return;
-                }
-                
-                if (!Array.isArray(data.users)) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px; color:#ef4444;">Users is not an array</td></tr>';
-                    debug.innerHTML += '<span class="error">ERROR: data.users is not an array, type: ' + typeof data.users + '</span>\n';
-                    return;
-                }
-                
-                const users = data.users;
-                debug.innerHTML += 'User count: ' + users.length + '\n';
-                
-                if (users.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:40px;">No users found in database</td></tr>';
-                    debug.innerHTML += 'Database has 0 users\n';
-                    return;
-                }
-                
-                // Build table
                 let html = '';
-                for (const user of users) {
+                for (const user of allUsers) {
                     const planClass = 'badge-' + (user.plan || 'starter');
                     html += `<tr>
                         <td>${user.name || 'N/A'}</td>
@@ -140,25 +210,73 @@
                         <td>$${user.credits || 0}</td>
                         <td class="${user.has_paid ? 'status-yes' : 'status-no'}">${user.has_paid ? '✓ Yes' : '✗ No'}</td>
                         <td>${user.created_at ? user.created_at.split('T')[0] : 'N/A'}</td>
-                        <td><button class="btn btn-primary" onclick="editUser('${user.id}')">Edit</button></td>
+                        <td><button class="btn btn-primary" onclick="openEditModal('${user.id}')">Edit</button></td>
                     </tr>`;
                 }
-                
                 tbody.innerHTML = html;
-                debug.innerHTML += '<span class="success">SUCCESS: Rendered ' + users.length + ' users</span>';
+                debug.innerHTML = '<span class="success">Loaded ' + allUsers.length + ' users</span>';
                 
             } catch (err) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:#ef4444;">Error: ${err.message}</td></tr>`;
-                debug.innerHTML += '<span class="error">CATCH ERROR: ' + err.message + '</span>\n';
-                debug.innerHTML += err.stack + '\n';
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:#ef4444;">${err.message}</td></tr>`;
             }
         }
         
-        function editUser(id) {
-            alert('Edit user: ' + id);
+        function openEditModal(userId) {
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) return;
+            
+            document.getElementById('editUserId').value = user.id;
+            document.getElementById('editName').value = user.name || '';
+            document.getElementById('editEmail').value = user.email || '';
+            document.getElementById('editPlan').value = user.plan || 'starter';
+            document.getElementById('editCredits').value = user.credits || 0;
+            document.getElementById('editHasPaid').checked = user.has_paid === 1 || user.has_paid === true;
+            
+            document.getElementById('editModal').classList.add('active');
         }
         
-        // Load on page load
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+        
+        async function saveUser() {
+            const userId = document.getElementById('editUserId').value;
+            const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
+            
+            const updates = {
+                name: document.getElementById('editName').value,
+                plan: document.getElementById('editPlan').value,
+                credits: parseFloat(document.getElementById('editCredits').value),
+                has_paid: document.getElementById('editHasPaid').checked
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/api/admin/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updates)
+                });
+                
+                if (response.ok) {
+                    closeModal();
+                    loadUsers();
+                    alert('User updated!');
+                } else {
+                    const data = await response.json();
+                    alert(data.error || 'Failed to update');
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+        
+        document.getElementById('editModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editModal') closeModal();
+        });
+        
         loadUsers();
     </script>
 </body>
