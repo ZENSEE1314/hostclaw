@@ -910,18 +910,49 @@
                     // Debug: Show raw response in debug div
                     const debugDiv = document.getElementById('usersDebug');
                     debugDiv.style.display = 'block';
-                    debugDiv.innerHTML = `<pre style="margin:0; font-size:11px; color:#94a3b8; overflow:auto; max-height:100px;">${JSON.stringify(data, null, 2)}</pre>`;
+                    debugDiv.innerHTML = `<pre style="margin:0; font-size:11px; color:#94a3b8; overflow:auto; max-height:150px;">${JSON.stringify(data, null, 2)}</pre>`;
                     
-                    // Handle different response structures
-                    allUsers = data.users || data.data || data || [];
+                    // Get users array - try multiple possible locations
+                    allUsers = data.users || data.data || (Array.isArray(data) ? data : []);
                     
                     console.log('Users array:', allUsers);
+                    console.log('Is Array:', Array.isArray(allUsers));
                     console.log('Number of users:', allUsers.length);
                     
-                    if (allUsers.length === 0) {
-                        document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">No users found in database</td></tr>';
+                    if (!Array.isArray(allUsers) || allUsers.length === 0) {
+                        document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">No users found. Response type: ' + typeof data + '</td></tr>';
                     } else {
-                        renderUsersTable(allUsers);
+                        // Direct render without function call
+                        let html = '';
+                        for (let i = 0; i < allUsers.length; i++) {
+                            const user = allUsers[i];
+                            console.log('User ' + i + ':', user);
+                            const initials = (user.name || user.email || '?').charAt(0).toUpperCase();
+                            const planClass = user.plan === 'starter' ? 'success' : user.plan === 'pro' ? 'warning' : 'danger';
+                            const credits = parseFloat(user.credits || 0).toFixed(2);
+                            const hasPaid = user.has_paid === 1 || user.has_paid === true ? '✅' : '❌';
+                            const createdDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
+                            
+                            html += `
+                            <tr>
+                                <td>
+                                    <div class="user-info">
+                                        <div class="user-avatar">${initials}</div>
+                                        <span>${user.name || 'Unknown'}</span>
+                                    </div>
+                                </td>
+                                <td>${user.email || 'N/A'}</td>
+                                <td><span class="badge badge-${planClass}">${user.plan || 'starter'}</span></td>
+                                <td>$${credits}</td>
+                                <td>${hasPaid}</td>
+                                <td>${createdDate}</td>
+                                <td>
+                                    <button class="btn btn-primary btn-sm" onclick="editUser('${user.id}')">Edit</button>
+                                </td>
+                            </tr>`;
+                        }
+                        document.getElementById('usersTable').innerHTML = html;
+                        console.log('Table rendered with ' + allUsers.length + ' rows');
                     }
                 } else {
                     const error = await response.text();
