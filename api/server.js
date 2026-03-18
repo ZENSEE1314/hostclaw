@@ -30,6 +30,7 @@ const chatRoutes = require('./routes/chat');
 const skillsRoutes = require('./routes/skills');
 const providersRoutes = require('./routes/providers');
 const platformsRoutes = require('./routes/platforms');
+const debugRoutes = require('./routes/debug');
 const { errorHandler } = require('./middleware/error');
 const { initDb } = require('./config/database');
 
@@ -150,6 +151,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/skills', skillsRoutes);
 app.use('/api/providers', providersRoutes);
 app.use('/api/platforms', platformsRoutes);
+app.use('/api/debug', debugRoutes);
 app.use('/webhooks', webhookRoutes);
 
 // Error handling
