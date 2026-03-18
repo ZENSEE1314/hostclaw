@@ -2,7 +2,7 @@ const express = require('express');
 const { body } = require('express-validator');
 const { authenticate } = require('../middleware/auth');
 const Agent = require('../models/agent');
-const { deployAgent, stopAgent, getAgentLogs } = require('../services/deployer');
+const { deployAgent, stopAgent, getAgentLogs } = require('../services/deployer-simple');
 const { canCreateAgent } = require('../services/billing');
 
 const router = express.Router();
