@@ -895,7 +895,7 @@
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
                 
-                console.log('Users API response:', response.status);
+                console.log('Users API response status:', response.status);
                 
                 if (response.status === 401) {
                     console.log('Unauthorized, logging out');
@@ -905,10 +905,19 @@
                 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('API Response data:', data);
-                    allUsers = data.users || [];
-                    console.log('Users loaded:', allUsers.length);
-                    renderUsersTable(allUsers);
+                    console.log('Full API Response:', JSON.stringify(data, null, 2));
+                    
+                    // Handle different response structures
+                    allUsers = data.users || data.data || [];
+                    
+                    console.log('Users array:', allUsers);
+                    console.log('Number of users:', allUsers.length);
+                    
+                    if (allUsers.length === 0) {
+                        document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">No users found in database</td></tr>';
+                    } else {
+                        renderUsersTable(allUsers);
+                    }
                 } else {
                     const error = await response.text();
                     console.error('Failed to load users:', response.status, error);
@@ -921,14 +930,31 @@
         }
 
         function renderUsersTable(users) {
-            console.log('Rendering users table:', users);
+            console.log('renderUsersTable called with:', users);
+            console.log('Type:', typeof users);
+            console.log('Is Array:', Array.isArray(users));
             
-            if (!users || users.length === 0) {
+            if (!users) {
+                console.error('Users is null/undefined');
+                document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">Error: No users data received</td></tr>';
+                return;
+            }
+            
+            if (!Array.isArray(users)) {
+                console.error('Users is not an array:', users);
+                document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">Error: Invalid users data format</td></tr>';
+                return;
+            }
+            
+            if (users.length === 0) {
                 document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">No users found</td></tr>';
                 return;
             }
             
-            const html = users.map(user => {
+            console.log('Rendering', users.length, 'users');
+            
+            const html = users.map((user, index) => {
+                console.log(`User ${index}:`, user);
                 const initials = (user.name || user.email || '?').charAt(0).toUpperCase();
                 const planClass = user.plan === 'starter' ? 'success' : user.plan === 'pro' ? 'warning' : 'danger';
                 const credits = parseFloat(user.credits || 0).toFixed(2);
@@ -956,6 +982,7 @@
             `}).join('');
             
             document.getElementById('usersTable').innerHTML = html;
+            console.log('Table rendered successfully');
         }
 
         function searchUsers() {
