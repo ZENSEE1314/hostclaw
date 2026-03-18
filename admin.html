@@ -862,23 +862,16 @@
             debugDiv.innerHTML = 'Testing API connection...';
             
             try {
-                // Test 1: Check if API is reachable
-                debugDiv.innerHTML += '<br>1. Checking API health...';
-                const healthResponse = await fetch(`${API_URL}/api/health`, {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
-                debugDiv.innerHTML += ` Health: ${healthResponse.status}`;
-                
-                // Test 2: Try debug endpoint (no auth needed)
-                debugDiv.innerHTML += '<br>2. Checking debug/users...';
+                // Test 1: Check debug endpoint (no auth needed)
+                debugDiv.innerHTML += '<br>1. Checking debug/users...';
                 const debugResponse = await fetch(`${API_URL}/api/admin/debug/users`);
                 const debugData = await debugResponse.json();
-                debugDiv.innerHTML += ` Found ${debugData.count || 0} users`;
+                debugDiv.innerHTML += ` Status: ${debugResponse.status}, Found: ${debugData.count || 0} users`;
                 
-                // Test 3: Load users with auth
-                debugDiv.innerHTML += '<br>3. Loading users with auth...';
+                // Test 2: Load users with auth
+                debugDiv.innerHTML += '<br>2. Loading users with auth...';
                 await loadUsers();
-                debugDiv.innerHTML += ' Done!';
+                debugDiv.innerHTML += ' Done! Check table below.';
                 
             } catch (err) {
                 debugDiv.innerHTML += `<br>Error: ${err.message}`;
@@ -910,50 +903,69 @@
                     // Debug: Show raw response in debug div
                     const debugDiv = document.getElementById('usersDebug');
                     debugDiv.style.display = 'block';
-                    debugDiv.innerHTML = `<pre style="margin:0; font-size:11px; color:#94a3b8; overflow:auto; max-height:150px;">${JSON.stringify(data, null, 2)}</pre>`;
+                    debugDiv.innerHTML = `<pre style="margin:0; font-size:11px; color:#94a3b8; overflow:auto; max-height:200px;">${JSON.stringify(data, null, 2)}</pre>`;
                     
-                    // Get users array - try multiple possible locations
-                    allUsers = data.users || data.data || (Array.isArray(data) ? data : []);
+                    // The API returns { users: [...], pagination: {...} }
+                    // users should be in data.users
+                    console.log('data.users:', data.users);
+                    console.log('Type of data.users:', typeof data.users);
+                    console.log('Is data.users an array:', Array.isArray(data.users));
                     
-                    console.log('Users array:', allUsers);
-                    console.log('Is Array:', Array.isArray(allUsers));
-                    console.log('Number of users:', allUsers.length);
-                    
-                    if (!Array.isArray(allUsers) || allUsers.length === 0) {
-                        document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">No users found. Response type: ' + typeof data + '</td></tr>';
-                    } else {
-                        // Direct render without function call
-                        let html = '';
-                        for (let i = 0; i < allUsers.length; i++) {
-                            const user = allUsers[i];
-                            console.log('User ' + i + ':', user);
-                            const initials = (user.name || user.email || '?').charAt(0).toUpperCase();
-                            const planClass = user.plan === 'starter' ? 'success' : user.plan === 'pro' ? 'warning' : 'danger';
-                            const credits = parseFloat(user.credits || 0).toFixed(2);
-                            const hasPaid = user.has_paid === 1 || user.has_paid === true ? '✅' : '❌';
-                            const createdDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
-                            
-                            html += `
-                            <tr>
-                                <td>
-                                    <div class="user-info">
-                                        <div class="user-avatar">${initials}</div>
-                                        <span>${user.name || 'Unknown'}</span>
-                                    </div>
-                                </td>
-                                <td>${user.email || 'N/A'}</td>
-                                <td><span class="badge badge-${planClass}">${user.plan || 'starter'}</span></td>
-                                <td>$${credits}</td>
-                                <td>${hasPaid}</td>
-                                <td>${createdDate}</td>
-                                <td>
-                                    <button class="btn btn-primary btn-sm" onclick="editUser('${user.id}')">Edit</button>
-                                </td>
-                            </tr>`;
-                        }
-                        document.getElementById('usersTable').innerHTML = html;
-                        console.log('Table rendered with ' + allUsers.length + ' rows');
+                    if (!data.users) {
+                        document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">API returned no users field. Check debug output.</td></tr>';
+                        return;
                     }
+                    
+                    if (!Array.isArray(data.users)) {
+                        document.getElementById('usersTable').innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">data.users is not an array. Type: ${typeof data.users}</td></tr>`;
+                        return;
+                    }
+                    
+                    allUsers = data.users;
+                    
+                    if (allUsers.length === 0) {
+                        document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">No users in database (empty array)</td></tr>';
+                        return;
+                    }
+                    
+                    // Build table HTML directly
+                    let html = '';
+                    for (let i = 0; i < allUsers.length; i++) {
+                        const user = allUsers[i];
+                        console.log('Processing user:', user);
+                        
+                        // Safe property access with defaults
+                        const name = user.name || 'Unknown';
+                        const email = user.email || 'N/A';
+                        const plan = user.plan || 'starter';
+                        const credits = (parseFloat(user.credits) || 0).toFixed(2);
+                        const hasPaid = (user.has_paid === 1 || user.has_paid === true) ? '✅' : '❌';
+                        const createdAt = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
+                        const id = user.id || '';
+                        const initials = (name.charAt(0) || '?').toUpperCase();
+                        const planClass = plan === 'starter' ? 'success' : plan === 'pro' ? 'warning' : 'danger';
+                        
+                        html += `
+                        <tr>
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar">${initials}</div>
+                                    <span>${name}</span>
+                                </div>
+                            </td>
+                            <td>${email}</td>
+                            <td><span class="badge badge-${planClass}">${plan}</span></td>
+                            <td>$${credits}</td>
+                            <td>${hasPaid}</td>
+                            <td>${createdAt}</td>
+                            <td>
+                                <button class="btn btn-primary btn-sm" onclick="editUser('${id}')">Edit</button>
+                            </td>
+                        </tr>`;
+                    }
+                    
+                    document.getElementById('usersTable').innerHTML = html;
+                    console.log('Table rendered with', allUsers.length, 'rows');
                 } else {
                     const error = await response.text();
                     console.error('Failed to load users:', response.status, error);
