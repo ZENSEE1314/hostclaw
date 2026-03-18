@@ -155,6 +155,31 @@ class User {
     return result.rows[0]?.default_provider;
   }
 
+  // Provider methods
+  static async updateProviders(userId, providers) {
+    const result = await query(
+      `UPDATE users 
+       SET api_providers = $1::jsonb,
+       updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $2 
+       RETURNING api_providers`,
+      [JSON.stringify(providers), userId]
+    );
+    return result.rows[0]?.api_providers;
+  }
+
+  static async updateDefaultProvider(userId, provider) {
+    const result = await query(
+      `UPDATE users 
+       SET default_provider = $1,
+       updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $2 
+       RETURNING default_provider`,
+      [provider, userId]
+    );
+    return result.rows[0]?.default_provider;
+  }
+
   // Skills methods
   static async addSkill(userId, skill) {
     const result = await query(
