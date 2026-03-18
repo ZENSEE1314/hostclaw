@@ -1,0 +1,212 @@
+{
+  "name": "hostclaw-skills",
+  "version": "1.0.0",
+  "description": "OpenClaw skills for HostClaw deployment",
+  "skills": [
+    {
+      "name": "weather",
+      "version": "1.0.0",
+      "description": "Get current weather and forecasts via wttr.in or Open-Meteo"
+    },
+    {
+      "name": "news-summary",
+      "version": "1.0.1",
+      "description": "Fetches news from trusted international RSS feeds"
+    },
+    {
+      "name": "stock-watcher",
+      "version": "1.0.0",
+      "description": "Manage and monitor a personal stock watchlist"
+    },
+    {
+      "name": "crypto-briefing",
+      "version": "1.0.0",
+      "description": "Generate crypto market briefing reports"
+    },
+    {
+      "name": "whale-alert",
+      "version": "1.0.0",
+      "description": "Monitor large crypto transfers and whale activity"
+    },
+    {
+      "name": "market-monitor",
+      "version": "0.1.0",
+      "description": "Monitor cryptocurrency and financial markets"
+    },
+    {
+      "name": "onchain",
+      "version": "0.3.0",
+      "description": "Crypto portfolio tracking and market data"
+    },
+    {
+      "name": "video-frames",
+      "version": "1.0.0",
+      "description": "Extract frames from videos using ffmpeg"
+    },
+    {
+      "name": "openai-whisper-api",
+      "version": "1.0.0",
+      "description": "Transcribe audio via OpenAI Whisper API"
+    },
+    {
+      "name": "ai-video-editor",
+      "version": "1.0.3",
+      "description": "AI-powered video editing and highlight generation"
+    },
+    {
+      "name": "api-gateway",
+      "version": "1.0.65",
+      "description": "Connect to 100+ APIs with managed OAuth"
+    },
+    {
+      "name": "stock-research-engine",
+      "version": "3.0.0",
+      "description": "Individual stock fundamental research engine"
+    },
+    {
+      "name": "fundamental-stock-analysis",
+      "version": "1.0.5",
+      "description": "Fundamental equity analysis and peer ranking"
+    },
+    {
+      "name": "binance-pro",
+      "version": "1.0.0",
+      "description": "Complete Binance integration for trading"
+    },
+    {
+      "name": "crypto-arb-cn",
+      "version": "1.0.1",
+      "description": "Cryptocurrency arbitrage monitoring"
+    },
+    {
+      "name": "crypto-cog",
+      "version": "1.0.1",
+      "description": "Crypto deep research and analysis"
+    },
+    {
+      "name": "crypto-trading-bot",
+      "version": "1.0.0",
+      "description": "Automated crypto trading bot development"
+    },
+    {
+      "name": "feed-watcher",
+      "version": "0.0.1",
+      "description": "Monitor RSS/Atom feeds and send notifications"
+    },
+    {
+      "name": "flyworks-avatar-video",
+      "version": "1.0.0",
+      "description": "Generate videos using Flyworks Digital Humans"
+    },
+    {
+      "name": "seeddance-ai-video",
+      "version": "1.0.0",
+      "description": "ByteDance SeedDance AI video generation"
+    },
+    {
+      "name": "realtime-crypto-price-api",
+      "version": "1.0.0",
+      "description": "Real-time cryptocurrency price data API"
+    },
+    {
+      "name": "whale-watcher",
+      "version": "1.0.2",
+      "description": "Smart money and whale tracking"
+    },
+    {
+      "name": "stock-monitor-skill",
+      "version": "0.1.0",
+      "description": "Full-featured intelligent stock monitoring"
+    },
+    {
+      "name": "video-watcher",
+      "version": "1.0.0",
+      "description": "Analyze video content by extracting frames"
+    },
+    {
+      "name": "news-feeds",
+      "version": "1.0.1",
+      "description": "Fetch latest news from major RSS feeds"
+    },
+    {
+      "name": "news-sentiment",
+      "version": "1.0.2",
+      "description": "News sentiment analysis and alerts"
+    },
+    {
+      "name": "bbc-news",
+      "version": "1.0.0",
+      "description": "Fetch BBC News stories from RSS feeds"
+    },
+    {
+      "name": "crypto-signals-daily",
+      "version": "1.0.0",
+      "description": "Daily crypto trading signals"
+    },
+    {
+      "name": "crypto-trader",
+      "version": "1.0.0",
+      "description": "Professional crypto trading tools"
+    },
+    {
+      "name": "manus-stock-analysis",
+      "version": "1.0.0",
+      "description": "Stock analysis with financial market data"
+    },
+    {
+      "name": "capcut-mate-skill",
+      "version": "0.1.1",
+      "description": "CapCut video editing automation"
+    },
+    {
+      "name": "evomap-fetch-capsule",
+      "version": "1.0.0",
+      "description": "Search EvoMap network capsules"
+    },
+    {
+      "name": "demo-video",
+      "version": "1.0.0",
+      "description": "Create product demo videos"
+    },
+    {
+      "name": "skill-finder",
+      "version": "1.1.4",
+      "description": "Find and compare agent skills"
+    },
+    {
+      "name": "freeride",
+      "version": "1.0.0",
+      "description": "Free AI models from OpenRouter"
+    },
+    {
+      "name": "freeride-opencode",
+      "version": "1.0.0",
+      "description": "Configure OpenCode Zen free models"
+    },
+    {
+      "name": "self-improving-agent",
+      "version": "1.0.0",
+      "description": "Self-improving agent system"
+    },
+    {
+      "name": "whale-shark",
+      "version": "0.1.0",
+      "description": "Whale and shark tracking"
+    },
+    {
+      "name": "memos",
+      "version": "0.1.1",
+      "description": "Note-taking and memo management"
+    },
+    {
+      "name": "xiucheng-self-improving-agent",
+      "version": "1.0.0",
+      "description": "Self-improving agent with quality analysis"
+    },
+    {
+      "name": "openclaw-aisa-image-video-models",
+      "version": "1.0.0",
+      "description": "Asia image and video models integration"
+    }
+  ]
+}
