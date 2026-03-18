@@ -516,7 +516,9 @@
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 
-                if (!response.ok) throw new Error('Failed to load stats');
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
                 
                 const data = await response.json();
                 
@@ -542,7 +544,7 @@
                 document.getElementById('statsGrid').innerHTML = statsHtml;
                 
                 // Update recent users
-                if (data.recent?.users) {
+                if (data.recent?.users && data.recent.users.length > 0) {
                     let recentHtml = '<table><thead><tr><th>User</th><th>Plan</th><th>Joined</th></tr></thead><tbody>';
                     for (const user of data.recent.users.slice(0, 5)) {
                         const planClass = 'badge-' + (user.plan || 'starter');
@@ -556,24 +558,32 @@
                     }
                     recentHtml += '</tbody></table>';
                     document.getElementById('recentUsers').innerHTML = recentHtml;
+                } else {
+                    document.getElementById('recentUsers').innerHTML = '<div class="loading">No recent users</div>';
                 }
             } catch (err) {
-                document.getElementById('statsGrid').innerHTML = `<div class="error">Error: ${err.message}</div>`;
+                document.getElementById('statsGrid').innerHTML = `
+                    <div class="stat-card" style="grid-column: 1 / -1;">
+                        <div class="error">Failed to load stats: ${err.message}</div>
+                    </div>
+                `;
             }
         }
         
         // Load Sales
         async function loadSales() {
             try {
-                const response = await fetch(`${API_URL}/api/admin/stats`, {
+                // Get stats for revenue
+                const statsResponse = await fetch(`${API_URL}/api/admin/stats`, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 
-                if (!response.ok) throw new Error('Failed to load sales');
-                
-                const data = await response.json();
-                
-                document.getElementById('totalRevenue').textContent = '$' + (data.revenue?.total_revenue || 0).toFixed(2);
+                if (statsResponse.ok) {
+                    const data = await statsResponse.json();
+                    document.getElementById('totalRevenue').textContent = '$' + (data.revenue?.total_revenue || 0).toFixed(2);
+                } else {
+                    document.getElementById('totalRevenue').textContent = '$0.00';
+                }
                 
                 // Load paid users
                 const usersResponse = await fetch(`${API_URL}/api/admin/users`, {
@@ -585,7 +595,7 @@
                     const paidUsers = (usersData.users || []).filter(u => u.has_paid);
                     
                     if (paidUsers.length === 0) {
-                        document.getElementById('paidUsersList').innerHTML = '<div class="loading">No paid users yet</div>';
+                        document.getElementById('paidUsersList').innerHTML = '<div style="text-align: center; padding: 40px; color: #64748b;">No paid users yet</div>';
                     } else {
                         let html = '<table><thead><tr><th>User</th><th>Email</th><th>Plan</th><th>Joined</th></tr></thead><tbody>';
                         for (const user of paidUsers) {
@@ -602,9 +612,12 @@
                         html += '</tbody></table>';
                         document.getElementById('paidUsersList').innerHTML = html;
                     }
+                } else {
+                    document.getElementById('paidUsersList').innerHTML = '<div class="error">Failed to load paid users</div>';
                 }
             } catch (err) {
-                document.getElementById('totalRevenue').textContent = 'Error';
+                document.getElementById('totalRevenue').textContent = '$0.00';
+                document.getElementById('paidUsersList').innerHTML = `<div class="error">Error: ${err.message}</div>`;
             }
         }
         
