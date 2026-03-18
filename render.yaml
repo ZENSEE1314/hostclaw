@@ -1,29 +1,13 @@
-services:
-  # Static Site (Frontend)
-  - type: static
-    name: hostclaw-web
-    runtime: static
-    region: singapore
-    plan: free
-    buildCommand: echo "Static site - no build needed"
-    staticPublishPath: ./
-    envVars:
-      - key: API_URL
-        value: https://hostclaw-api.onrender.com
-    routes:
-      - type: rewrite
-        source: /api/*
-        destination: https://hostclaw-api.onrender.com/api/:splat
-      - type: rewrite
-        source: /webhooks/*
-        destination: https://hostclaw-api.onrender.com/webhooks/:splat
+# Render Blueprint for HostClaw
+# Deploy with: New + → Blueprint → Connect GitHub
 
+services:
   # Web Service (API)
   - type: web
     name: hostclaw-api
     runtime: node
     region: singapore
-    plan: standard
+    plan: starter
     rootDir: api
     buildCommand: npm install
     startCommand: npm start
@@ -43,6 +27,17 @@ services:
         value: 7d
       - key: FRONTEND_URL
         value: https://hostclaw-web.onrender.com
+
+  # Web Service (Frontend) - using nginx to serve static files
+  - type: web
+    name: hostclaw-web
+    runtime: docker
+    region: singapore
+    plan: starter
+    dockerfilePath: ./Dockerfile.web
+    envVars:
+      - key: API_URL
+        value: https://hostclaw-api.onrender.com
 
 databases:
   - name: hostclaw-db
