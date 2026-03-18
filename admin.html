@@ -365,6 +365,32 @@
 
     <!-- Main Content -->
     <div class="main">
+        <!-- Login Section -->
+        <div id="loginSection" class="section" style="display: none;">
+            <div style="max-width: 400px; margin: 100px auto; background: #12121f; border: 1px solid #2d2d3d; border-radius: 16px; padding: 40px;">
+                <h2 style="text-align: center; margin-bottom: 10px;">🔐 Admin Login</h2>
+                <p style="text-align: center; color: #94a3b8; margin-bottom: 30px;">Sign in to access admin panel</p>
+                
+                <div id="loginError" style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; color: #ef4444; padding: 12px; border-radius: 8px; margin-bottom: 20px; display: none;"></div>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #94a3b8; font-size: 14px;">Email</label>
+                    <input type="email" id="loginEmail" style="width: 100%; padding: 12px 16px; background: #1e1e2e; border: 1px solid #2d2d3d; border-radius: 8px; color: #fff; font-size: 14px;">
+                </div>
+                
+                <div style="margin-bottom: 30px;">
+                    <label style="display: block; margin-bottom: 8px; color: #94a3b8; font-size: 14px;">Password</label>
+                    <input type="password" id="loginPassword" style="width: 100%; padding: 12px 16px; background: #1e1e2e; border: 1px solid #2d2d3d; border-radius: 8px; color: #fff; font-size: 14px;">
+                </div>
+                
+                <button class="btn btn-primary" onclick="doLogin()" style="width: 100%;">Sign In</button>
+                
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="/login.html" style="color: #64748b; text-decoration: none;">← Back to regular login</a>
+                </div>
+            </div>
+        </div>
+
         <!-- Dashboard Section -->
         <div id="dashboardSection" class="section active">
             <div class="header">
@@ -486,21 +512,47 @@
 
     <script>
         const API_URL = 'https://hostclaw-api.onrender.com';
-        const token = localStorage.getItem('adminToken') || localStorage.getItem('token');
+        let token = localStorage.getItem('adminToken') || localStorage.getItem('token');
         let allUsers = [];
         let allAgents = [];
         
+        // If no token, show login section
         if (!token) {
-            window.location.href = '/login.html';
+            document.getElementById('dashboardSection').classList.add('hidden');
+            document.getElementById('loginSection').classList.remove('hidden');
         }
         
         // Navigation
         function showSection(sectionName) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            // If not logged in and trying to access other sections, redirect to login
+            if (!token && sectionName !== 'login') {
+                sectionName = 'login';
+            }
+            
+            document.querySelectorAll('.section').forEach(s => {
+                s.classList.remove('active');
+                if (sectionName === 'login') {
+                    s.style.display = 'none';
+                }
+            });
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             
-            document.getElementById(sectionName + 'Section').classList.add('active');
-            event.target.classList.add('active');
+            const section = document.getElementById(sectionName + 'Section');
+            if (section) {
+                section.classList.add('active');
+                section.style.display = 'block';
+            }
+            
+            if (event && event.target) {
+                event.target.classList.add('active');
+            }
+            
+            // Load data for section
+            if (sectionName === 'dashboard') loadDashboard();
+            if (sectionName === 'sales') loadSales();
+            if (sectionName === 'users') loadUsers();
+            if (sectionName === 'agents') loadAgents();
+        }
             
             // Load data for section
             if (sectionName === 'dashboard') loadDashboard();
@@ -795,7 +847,38 @@
         function logout() {
             localStorage.removeItem('adminToken');
             localStorage.removeItem('token');
-            window.location.href = '/login.html';
+            token = null;
+            location.reload();
+        }
+        
+        async function doLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            errorDiv.style.display = 'none';
+            
+            try {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    token = data.token;
+                    localStorage.setItem('adminToken', token);
+                    location.reload();
+                } else {
+                    errorDiv.textContent = data.error || 'Login failed';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Network error';
+                errorDiv.style.display = 'block';
+            }
         }
         
         // Close modal on backdrop
@@ -803,8 +886,10 @@
             if (e.target.id === 'editModal') closeModal();
         });
         
-        // Load dashboard on page load
-        loadDashboard();
+        // Load dashboard on page load if logged in
+        if (token) {
+            loadDashboard();
+        }
     </script>
 </body>
 </html>
