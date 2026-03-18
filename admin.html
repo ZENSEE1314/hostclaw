@@ -928,7 +928,7 @@
                             <td>$${user.credits || 0}</td>
                             <td>${user.has_paid ? 'Yes' : 'No'}</td>
                             <td>${user.created_at ? user.created_at.split('T')[0] : 'N/A'}</td>
-                            <td><button class="btn btn-primary btn-sm">Edit</button></td>
+                            <td><button class="btn btn-primary btn-sm" onclick="editUser('${user.id}')">Edit</button></td>
                         </tr>`;
                     }
                     
