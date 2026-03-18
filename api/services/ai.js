@@ -26,7 +26,7 @@ function decrypt(text) {
 }
 
 // Generate AI response using user's configured provider
-async function generateAIResponse({ message, provider, providerConfig, skills, user }) {
+async function generateAIResponse({ message, provider, providerConfig, skills }) {
   if (!providerConfig || !providerConfig.apiKey) {
     return {
       content: '⚠️ No AI provider configured. Please add your API keys in Settings.',
@@ -82,10 +82,22 @@ async function generateAIResponse({ message, provider, providerConfig, skills, u
     }
   } catch (error) {
     console.error(`Error calling ${provider}:`, error.message);
+    const status = error.response?.status || error.status;
+    let userMessage;
+    if (status === 401 || (error.message && error.message.includes('401'))) {
+      userMessage = `⚠️ Invalid API key for ${provider}. Please go to **Settings** and re-enter your ${provider} API key.`;
+    } else if (status === 429 || (error.message && error.message.includes('429'))) {
+      userMessage = `⚠️ Rate limit reached for ${provider}. Wait a moment and try again.`;
+    } else if (status === 402 || (error.message && error.message.includes('insufficient_quota'))) {
+      userMessage = `⚠️ Your ${provider} account has no remaining quota/credits. Please top up your ${provider} account.`;
+    } else {
+      userMessage = `⚠️ ${provider} error: ${error.message}`;
+    }
     return {
-      content: `Error: ${error.message}. Please check your API key configuration.`,
+      content: userMessage,
       model: provider,
-      tokens: 0
+      tokens: 0,
+      error: true
     };
   }
 }

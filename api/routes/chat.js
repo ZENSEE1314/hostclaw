@@ -98,8 +98,7 @@ router.post('/message', async (req, res, next) => {
         message,
         provider: defaultProvider,
         providerConfig,
-        skills: activeSkills,
-        user
+        skills: activeSkills
       });
     } catch (aiError) {
       console.error('AI generation error:', aiError);

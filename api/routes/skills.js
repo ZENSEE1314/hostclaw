@@ -31,14 +31,23 @@ router.get('/catalog', authenticate, async (req, res, next) => {
 router.get('/my', authenticate, async (req, res, next) => {
   try {
     const user = await User.findById(req.user.userId);
-    const installedSkills = user.skills || [];
-    
+
+    // user.skills is TEXT in DB — parse it safely
+    let installedSkills = [];
+    if (user.skills) {
+      if (Array.isArray(user.skills)) {
+        installedSkills = user.skills;
+      } else {
+        try { installedSkills = JSON.parse(user.skills); } catch (e) { installedSkills = []; }
+      }
+    }
+
     // Merge with catalog info
     const enrichedSkills = installedSkills.map(skill => {
-      const catalogSkill = AVAILABLE_SKILLS.find(s => s.id === skill.id);
+      const catalogSkill = AVAILABLE_SKILLS.find(s => s.id === skill.id) || {};
       return { ...catalogSkill, ...skill };
     });
-    
+
     res.json({ skills: enrichedSkills });
   } catch (error) {
     next(error);
