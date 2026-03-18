@@ -26,9 +26,9 @@ class BillingService {
   }
 
   static async canCreateAgent(userId) {
-    // With single plan, users can create unlimited agents after setup
+    // Allow agent creation for any paid user (regardless of plan)
     const user = await User.findById(userId);
-    return user && user.plan === 'professional';
+    return user && (user.has_paid === 1 || user.has_paid === true);
   }
 
   static async calculateUsageCost(type, quantity) {

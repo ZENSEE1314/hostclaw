@@ -907,8 +907,13 @@
                     const data = await response.json();
                     console.log('Full API Response:', JSON.stringify(data, null, 2));
                     
+                    // Debug: Show raw response in debug div
+                    const debugDiv = document.getElementById('usersDebug');
+                    debugDiv.style.display = 'block';
+                    debugDiv.innerHTML = `<pre style="margin:0; font-size:11px; color:#94a3b8; overflow:auto; max-height:100px;">${JSON.stringify(data, null, 2)}</pre>`;
+                    
                     // Handle different response structures
-                    allUsers = data.users || data.data || [];
+                    allUsers = data.users || data.data || data || [];
                     
                     console.log('Users array:', allUsers);
                     console.log('Number of users:', allUsers.length);
