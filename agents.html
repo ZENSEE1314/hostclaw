@@ -60,14 +60,44 @@
         <div class="header">
             <a href="/dashboard.html" class="back-btn">← Back</a>
             <h1>My Agents</h1>
-            <button class="btn btn-primary" onclick="alert('Coming soon!')">+ Create Agent</button>
+            <button class="btn btn-primary" onclick="showCreateModal()">+ Create Agent</button>
         </div>
 
-        <div class="empty-state">
-            <div class="empty-icon">🤖</div>
-            <div class="empty-title">No Agents Yet</div>
-            <div class="empty-desc">Create your first AI agent to get started</div>
-            <button class="btn btn-primary" onclick="alert('Coming soon!')">+ Create Agent</button>
+        <div id="agentsList">
+            <div class="empty-state">
+                <div class="empty-icon">🤖</div>
+                <div class="empty-title">No Agents Yet</div>
+                <div class="empty-desc">Create your first AI agent to get started</div>
+                <button class="btn btn-primary" onclick="showCreateModal()">+ Create Agent</button>
+            </div>
+        </div>
+
+        <!-- Create Agent Modal -->
+        <div id="createModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
+            <div style="background: var(--dark); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; width: 90%; max-width: 500px;">
+                <h2 style="margin-bottom: 1.5rem;">Create Agent</h2>
+                <div id="createError" style="color: var(--danger); margin-bottom: 1rem; display: none;"></div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">Agent Name</label>
+                    <input type="text" id="agentName" style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text);" placeholder="My AI Assistant">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">Description</label>
+                    <textarea id="agentDesc" style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text);" placeholder="What does this agent do?"></textarea>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">AI Model</label>
+                    <select id="agentModel" style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
+                        <option value="gpt-4o">GPT-4o</option>
+                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                        <option value="claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                    <button class="btn" onclick="hideCreateModal()" style="background: transparent; border: 1px solid var(--border);">Cancel</button>
+                    <button class="btn btn-primary" onclick="createAgent()">Create</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -85,12 +115,114 @@
                 if (res.ok) {
                     const data = await res.json();
                     const user = data.user || data;
+                    // Allow if user has paid or is on pro/enterprise plan
                     if (!user.has_paid && user.plan === 'starter') {
                         document.getElementById('paymentWall').style.display = 'flex';
+                    } else {
+                        // User can create agents - hide payment wall
+                        document.getElementById('paymentWall').style.display = 'none';
+                        // Load their agents
+                        loadAgents();
                     }
                 }
             } catch(e) { console.error(e); }
         }
+
+        async function loadAgents() {
+            try {
+                const res = await fetch(`${API_URL}/api/agents`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const agents = await res.json();
+                    if (agents.length > 0) {
+                        renderAgents(agents);
+                    }
+                }
+            } catch(e) { console.error('Failed to load agents:', e); }
+        }
+
+        function renderAgents(agents) {
+            const list = document.getElementById('agentsList');
+            let html = '<div style="display: grid; gap: 1rem;">';
+            for (const agent of agents) {
+                html += `
+                    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600; font-size: 1.1rem;">${agent.name}</div>
+                            <div style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem;">${agent.description || 'No description'}</div>
+                            <div style="margin-top: 0.5rem;">
+                                <span style="background: rgba(99,102,241,0.1); color: var(--primary-light); padding: 0.25rem 0.75rem; border-radius: 100px; font-size: 0.75rem;">${agent.model}</span>
+                                <span style="background: ${agent.status === 'running' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)'}; color: ${agent.status === 'running' ? 'var(--success)' : 'var(--warning)'}; padding: 0.25rem 0.75rem; border-radius: 100px; font-size: 0.75rem; margin-left: 0.5rem;">${agent.status}</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="viewAgent('${agent.id}')">View</button>
+                    </div>
+                `;
+            }
+            html += '</div>';
+            list.innerHTML = html;
+        }
+
+        function showCreateModal() {
+            document.getElementById('createModal').style.display = 'flex';
+        }
+
+        function hideCreateModal() {
+            document.getElementById('createModal').style.display = 'none';
+            document.getElementById('createError').style.display = 'none';
+        }
+
+        async function createAgent() {
+            const name = document.getElementById('agentName').value.trim();
+            const description = document.getElementById('agentDesc').value.trim();
+            const model = document.getElementById('agentModel').value;
+            const errorDiv = document.getElementById('createError');
+
+            if (!name) {
+                errorDiv.textContent = 'Agent name is required';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/api/agents`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name,
+                        description,
+                        model,
+                        channels: ['web'] // Default channel
+                    })
+                });
+
+                if (res.ok) {
+                    hideCreateModal();
+                    loadAgents();
+                } else {
+                    const data = await res.json();
+                    errorDiv.textContent = data.error || data.message || 'Failed to create agent';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (e) {
+                errorDiv.textContent = 'Network error. Please try again.';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function viewAgent(id) {
+            window.location.href = `/agent-detail.html?id=${id}`;
+        }
+
+        // Close modal on backdrop click
+        document.getElementById('createModal').addEventListener('click', (e) => {
+            if (e.target.id === 'createModal') hideCreateModal();
+        });
+
         checkPayment();
     </script>
 </body>

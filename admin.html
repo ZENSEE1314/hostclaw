@@ -900,72 +900,35 @@
                     const data = await response.json();
                     console.log('Full API Response:', JSON.stringify(data, null, 2));
                     
-                    // Debug: Show raw response in debug div
+                    // Debug: Show raw response
                     const debugDiv = document.getElementById('usersDebug');
                     debugDiv.style.display = 'block';
                     debugDiv.innerHTML = `<pre style="margin:0; font-size:11px; color:#94a3b8; overflow:auto; max-height:200px;">${JSON.stringify(data, null, 2)}</pre>`;
                     
-                    // The API returns { users: [...], pagination: {...} }
-                    // users should be in data.users
-                    console.log('data.users:', data.users);
-                    console.log('Type of data.users:', typeof data.users);
-                    console.log('Is data.users an array:', Array.isArray(data.users));
+                    // Get users from data.users
+                    const users = data.users;
                     
-                    if (!data.users) {
-                        document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">API returned no users field. Check debug output.</td></tr>';
+                    if (!users || !Array.isArray(users) || users.length === 0) {
+                        document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">No users found in database.</td></tr>';
                         return;
                     }
                     
-                    if (!Array.isArray(data.users)) {
-                        document.getElementById('usersTable').innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">data.users is not an array. Type: ${typeof data.users}</td></tr>`;
-                        return;
-                    }
-                    
-                    allUsers = data.users;
-                    
-                    if (allUsers.length === 0) {
-                        document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">No users in database (empty array)</td></tr>';
-                        return;
-                    }
-                    
-                    // Build table HTML directly
+                    // Simple bulletproof rendering
                     let html = '';
-                    for (let i = 0; i < allUsers.length; i++) {
-                        const user = allUsers[i];
-                        console.log('Processing user:', user);
-                        
-                        // Safe property access with defaults
-                        const name = user.name || 'Unknown';
-                        const email = user.email || 'N/A';
-                        const plan = user.plan || 'starter';
-                        const credits = (parseFloat(user.credits) || 0).toFixed(2);
-                        const hasPaid = (user.has_paid === 1 || user.has_paid === true) ? '✅' : '❌';
-                        const createdAt = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
-                        const id = user.id || '';
-                        const initials = (name.charAt(0) || '?').toUpperCase();
-                        const planClass = plan === 'starter' ? 'success' : plan === 'pro' ? 'warning' : 'danger';
-                        
+                    for (const user of users) {
                         html += `
                         <tr>
-                            <td>
-                                <div class="user-info">
-                                    <div class="user-avatar">${initials}</div>
-                                    <span>${name}</span>
-                                </div>
-                            </td>
-                            <td>${email}</td>
-                            <td><span class="badge badge-${planClass}">${plan}</span></td>
-                            <td>$${credits}</td>
-                            <td>${hasPaid}</td>
-                            <td>${createdAt}</td>
-                            <td>
-                                <button class="btn btn-primary btn-sm" onclick="editUser('${id}')">Edit</button>
-                            </td>
+                            <td>${user.name || 'Unknown'}</td>
+                            <td>${user.email || 'N/A'}</td>
+                            <td>${user.plan || 'starter'}</td>
+                            <td>$${user.credits || 0}</td>
+                            <td>${user.has_paid ? 'Yes' : 'No'}</td>
+                            <td>${user.created_at ? user.created_at.split('T')[0] : 'N/A'}</td>
+                            <td><button class="btn btn-primary btn-sm">Edit</button></td>
                         </tr>`;
                     }
                     
                     document.getElementById('usersTable').innerHTML = html;
-                    console.log('Table rendered with', allUsers.length, 'rows');
                 } else {
                     const error = await response.text();
                     console.error('Failed to load users:', response.status, error);
