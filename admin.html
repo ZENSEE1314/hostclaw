@@ -516,42 +516,41 @@
         let allUsers = [];
         let allAgents = [];
         
-        // If no token, show login section
-        if (!token) {
-            document.getElementById('dashboardSection').classList.add('hidden');
-            document.getElementById('loginSection').classList.remove('hidden');
-        }
-        
-        // Navigation
+        // Navigation - simplified
         function showSection(sectionName) {
-            // If not logged in and trying to access other sections, redirect to login
-            if (!token && sectionName !== 'login') {
-                sectionName = 'login';
-            }
+            // Hide all sections first
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('dashboardSection').style.display = 'none';
+            document.getElementById('salesSection').style.display = 'none';
+            document.getElementById('usersSection').style.display = 'none';
+            document.getElementById('agentsSection').style.display = 'none';
             
-            document.querySelectorAll('.section').forEach(s => {
-                s.classList.remove('active');
-                if (sectionName === 'login') {
-                    s.style.display = 'none';
-                }
-            });
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            
+            // Show requested section
             const section = document.getElementById(sectionName + 'Section');
             if (section) {
-                section.classList.add('active');
                 section.style.display = 'block';
             }
             
+            // Update nav items
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             if (event && event.target) {
                 event.target.classList.add('active');
             }
             
-            // Load data for section
+            // Load data
             if (sectionName === 'dashboard') loadDashboard();
             if (sectionName === 'sales') loadSales();
             if (sectionName === 'users') loadUsers();
             if (sectionName === 'agents') loadAgents();
+        }
+        
+        // Show login if no token, else show dashboard
+        function init() {
+            if (!token) {
+                showSection('login');
+            } else {
+                showSection('dashboard');
+            }
         }
             
             // Load data for section
@@ -886,10 +885,8 @@
             if (e.target.id === 'editModal') closeModal();
         });
         
-        // Load dashboard on page load if logged in
-        if (token) {
-            loadDashboard();
-        }
+        // Initialize
+        init();
     </script>
 </body>
 </html>
