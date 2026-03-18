@@ -24,8 +24,8 @@ router.get('/history', async (req, res, next) => {
 // Send message and get AI response
 router.post('/message', async (req, res, next) => {
   try {
-    const { message, sessionId } = req.body;
-    
+    const { message, sessionId, provider: requestedProvider, model: requestedModel } = req.body;
+
     if (!message || message.trim().length === 0) {
       return res.status(400).json({ error: 'Message is required' });
     }
@@ -58,25 +58,35 @@ router.post('/message', async (req, res, next) => {
       console.log('No skills configured');
     }
     
-    // Get user's preferred AI provider
-    const defaultProvider = user.default_provider || 'openai';
-    
-    let providerConfig = null;
+    // Resolve provider: use requested provider, fall back to user's default
+    let allProviders = {};
     if (user.api_providers) {
-      const providers = typeof user.api_providers === 'string' 
-        ? JSON.parse(user.api_providers) 
+      allProviders = typeof user.api_providers === 'string'
+        ? JSON.parse(user.api_providers)
         : user.api_providers;
-      providerConfig = providers[defaultProvider];
     }
-    
-    console.log('Using provider:', defaultProvider, 'Config exists:', !!providerConfig);
-    
+
+    // Pick the provider: requested > default > first available
+    const defaultProvider = user.default_provider || 'openai';
+    const resolvedProvider = (requestedProvider && allProviders[requestedProvider])
+      ? requestedProvider
+      : (allProviders[defaultProvider] ? defaultProvider : Object.keys(allProviders)[0]);
+
+    const providerConfig = resolvedProvider ? allProviders[resolvedProvider] : null;
+
+    console.log('Using provider:', resolvedProvider, 'Config exists:', !!providerConfig);
+
     if (!providerConfig) {
       return res.status(400).json({
         error: 'No AI provider configured',
         message: 'Please add your API key in Settings first',
         setup_url: '/settings.html'
       });
+    }
+
+    // Allow model override from request
+    if (requestedModel) {
+      providerConfig = { ...providerConfig, model: requestedModel };
     }
 
     // Save user message
@@ -96,7 +106,7 @@ router.post('/message', async (req, res, next) => {
     try {
       aiResponse = await generateAIResponse({
         message,
-        provider: defaultProvider,
+        provider: resolvedProvider,
         providerConfig,
         skills: activeSkills
       });
@@ -109,7 +119,7 @@ router.post('/message', async (req, res, next) => {
     }
 
     // Deduct credits based on tokens used
-    const cost = calculateCost(aiResponse.tokens || 0, defaultProvider);
+    const cost = calculateCost(aiResponse.tokens || 0, resolvedProvider);
     
     try {
       await User.deductCredits(req.user.userId, cost);
