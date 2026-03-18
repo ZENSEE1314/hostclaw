@@ -604,10 +604,12 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">All Users</h3>
-                        <div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary btn-sm" onclick="testUsersAPI()">🔄 Test API</button>
                             <input type="text" class="form-input" placeholder="Search users..." id="userSearch" onkeyup="searchUsers()" style="width: 200px; display: inline-block;">
                         </div>
                     </div>
+                    <div id="usersDebug" style="padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 10px; font-size: 12px; display: none;"></div>
                     <div class="table-container">
                         <table>
                             <thead>
@@ -622,7 +624,7 @@
                                 </tr>
                             </thead>
                             <tbody id="usersTable">
-                                <tr><td colspan="7">Loading...</td></tr>
+                                <tr><td colspan="7">Click "Test API" or navigate here to load users</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -854,9 +856,41 @@
             }
         }
 
+        async function testUsersAPI() {
+            const debugDiv = document.getElementById('usersDebug');
+            debugDiv.style.display = 'block';
+            debugDiv.innerHTML = 'Testing API connection...';
+            
+            try {
+                // Test 1: Check if API is reachable
+                debugDiv.innerHTML += '<br>1. Checking API health...';
+                const healthResponse = await fetch(`${API_URL}/api/health`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                debugDiv.innerHTML += ` Health: ${healthResponse.status}`;
+                
+                // Test 2: Try debug endpoint (no auth needed)
+                debugDiv.innerHTML += '<br>2. Checking debug/users...';
+                const debugResponse = await fetch(`${API_URL}/api/admin/debug/users`);
+                const debugData = await debugResponse.json();
+                debugDiv.innerHTML += ` Found ${debugData.count || 0} users`;
+                
+                // Test 3: Load users with auth
+                debugDiv.innerHTML += '<br>3. Loading users with auth...';
+                await loadUsers();
+                debugDiv.innerHTML += ' Done!';
+                
+            } catch (err) {
+                debugDiv.innerHTML += `<br>Error: ${err.message}`;
+                console.error('API Test failed:', err);
+            }
+        }
+
         async function loadUsers() {
             try {
                 console.log('Fetching users from API...');
+                document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;"><div class="loading" style="margin: 0 auto 10px;"></div>Loading users...</td></tr>';
+                
                 const response = await fetch(`${API_URL}/api/admin/users`, {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
@@ -871,39 +905,55 @@
                 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('Users loaded:', data.users?.length || 0);
+                    console.log('API Response data:', data);
                     allUsers = data.users || [];
+                    console.log('Users loaded:', allUsers.length);
                     renderUsersTable(allUsers);
                 } else {
                     const error = await response.text();
-                    console.error('Failed to load users:', error);
-                    document.getElementById('usersTable').innerHTML = `<tr><td colspan="7">Error: ${error}</td></tr>`;
+                    console.error('Failed to load users:', response.status, error);
+                    document.getElementById('usersTable').innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">Error ${response.status}: ${error || 'Failed to load users'}</td></tr>`;
                 }
             } catch (err) {
                 console.error('Failed to load users:', err);
-                document.getElementById('usersTable').innerHTML = '<tr><td colspan="7">Error loading users: ' + err.message + '</td></tr>';
+                document.getElementById('usersTable').innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">Error loading users: ${err.message}</td></tr>`;
             }
         }
 
         function renderUsersTable(users) {
-            const html = users.map(user => `
+            console.log('Rendering users table:', users);
+            
+            if (!users || users.length === 0) {
+                document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">No users found</td></tr>';
+                return;
+            }
+            
+            const html = users.map(user => {
+                const initials = (user.name || user.email || '?').charAt(0).toUpperCase();
+                const planClass = user.plan === 'starter' ? 'success' : user.plan === 'pro' ? 'warning' : 'danger';
+                const credits = parseFloat(user.credits || 0).toFixed(2);
+                const hasPaid = user.has_paid === 1 || user.has_paid === true ? '✅' : '❌';
+                const createdDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
+                const userId = user.id || '';
+                
+                return `
                 <tr>
                     <td>
                         <div class="user-info">
-                            <div class="user-avatar">${user.name?.charAt(0).toUpperCase() || '?'}</div>
-                            <span>${user.name}</span>
+                            <div class="user-avatar">${initials}</div>
+                            <span>${user.name || 'Unknown'}</span>
                         </div>
                     </td>
-                    <td>${user.email}</td>
-                    <td><span class="badge badge-${user.plan === 'starter' ? 'success' : user.plan === 'pro' ? 'warning' : 'danger'}">${user.plan}</span></td>
-                    <td>$${user.credits?.toFixed(2) || '0.00'}</td>
-                    <td>${user.has_paid ? '✅' : '❌'}</td>
-                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                    <td>${user.email || 'N/A'}</td>
+                    <td><span class="badge badge-${planClass}">${user.plan || 'starter'}</span></td>
+                    <td>$${credits}</td>
+                    <td>${hasPaid}</td>
+                    <td>${createdDate}</td>
                     <td>
-                        <button class="btn btn-primary btn-sm" onclick="editUser('${user.id}')">Edit</button>
+                        <button class="btn btn-primary btn-sm" onclick="editUser('${userId}')">Edit</button>
                     </td>
                 </tr>
-            `).join('') || '<tr><td colspan="7">No users found</td></tr>';
+            `}).join('');
             
             document.getElementById('usersTable').innerHTML = html;
         }

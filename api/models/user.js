@@ -2,7 +2,7 @@ const { query } = require('../config/database');
 const bcrypt = require('bcryptjs');
 
 class User {
-  static async createUser({ email, password, name, plan = 'starter', credits = 20 }) {
+  static async createUser({ email, password, name, plan = 'starter', credits = 20, has_paid = false, referral_code = null, applied_coupon = null }) {
     // Normalize email to lowercase
     const normalizedEmail = email.toLowerCase().trim();
     
@@ -14,14 +14,14 @@ class User {
     
     try {
       await query(
-        `INSERT INTO users (id, email, password, name, plan, credits, has_paid, api_providers, skills, default_provider) 
-         VALUES ($1, $2, $3, $4, $5, $6, 0, '{}', '[]', 'openai')`,
-        [userId, normalizedEmail, password, name, plan, credits]
+        `INSERT INTO users (id, email, password, name, plan, credits, has_paid, referral_code, applied_coupon, api_providers, skills, default_provider) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '{}', '[]', 'openai')`,
+        [userId, normalizedEmail, password, name, plan, credits, has_paid ? 1 : 0, referral_code, applied_coupon]
       );
       
       // Fetch the created user
       const result = await query(
-        'SELECT id, email, name, plan, credits, created_at FROM users WHERE id = $1',
+        'SELECT id, email, name, plan, credits, has_paid, created_at FROM users WHERE id = $1',
         [userId]
       );
       

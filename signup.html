@@ -255,6 +255,22 @@
                     <input type="password" class="form-input" id="password" placeholder="••••••••" required minlength="8">
                 </div>
 
+                <div class="form-group">
+                    <label class="form-label">Referral Code (optional)</label>
+                    <input type="text" class="form-input" id="referralCode" placeholder="Enter friend's referral code" style="text-transform: uppercase;">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Coupon Code (optional)</label>
+                    <input type="text" class="form-input" id="couponCode" placeholder="Try: HALFPRICE or FREETRIAL" style="text-transform: uppercase;">
+                    <div id="couponMessage" style="margin-top: 8px; font-size: 13px; display: none;"></div>
+                </div>
+
+                <div class="pricing-highlight" id="pricingBox">
+                    <div class="price" id="priceDisplay">$500</div>
+                    <div class="desc" id="priceDesc">One-time payment for full access</div>
+                </div>
+
                 <button type="submit" class="btn btn-primary" id="submitBtn">
                     Create Account
                 </button>
@@ -284,6 +300,72 @@
 
     <script>
         const API_URL = 'https://hostclaw-api.onrender.com';
+
+        // Valid coupon codes
+        const COUPONS = {
+            'HALFPRICE': { discount: 0.5, type: 'percent', description: '50% off - Pay only $250' },
+            'FREETRIAL': { discount: 1.0, type: 'percent', description: '100% free - Full access!' }
+        };
+
+        const BASE_PRICE = 500;
+        let currentPrice = BASE_PRICE;
+        let appliedCoupon = null;
+
+        // Handle coupon input
+        document.getElementById('couponCode').addEventListener('input', function(e) {
+            const code = e.target.value.toUpperCase().trim();
+            const couponMsg = document.getElementById('couponMessage');
+            
+            if (!code) {
+                couponMsg.style.display = 'none';
+                updatePrice(BASE_PRICE, null);
+                return;
+            }
+            
+            if (COUPONS[code]) {
+                const coupon = COUPONS[code];
+                appliedCoupon = code;
+                
+                if (coupon.type === 'percent') {
+                    const newPrice = BASE_PRICE * (1 - coupon.discount);
+                    updatePrice(newPrice, coupon.description);
+                }
+                
+                couponMsg.textContent = '✓ ' + coupon.description;
+                couponMsg.style.color = 'var(--success)';
+                couponMsg.style.display = 'block';
+            } else {
+                appliedCoupon = null;
+                updatePrice(BASE_PRICE, null);
+                couponMsg.textContent = 'Invalid coupon code';
+                couponMsg.style.color = 'var(--danger)';
+                couponMsg.style.display = 'block';
+            }
+        });
+
+        function updatePrice(price, description) {
+            currentPrice = price;
+            const priceDisplay = document.getElementById('priceDisplay');
+            const priceDesc = document.getElementById('priceDesc');
+            
+            if (price === 0) {
+                priceDisplay.textContent = 'FREE';
+                priceDisplay.style.background = 'linear-gradient(135deg, #10b981 0%, #34d399 100%)';
+                priceDisplay.style.webkitBackgroundClip = 'text';
+                priceDisplay.style.webkitTextFillColor = 'transparent';
+            } else {
+                priceDisplay.textContent = '$' + price;
+                priceDisplay.style.background = 'linear-gradient(135deg, #6366f1 0%, #06b6d4 100%)';
+                priceDisplay.style.webkitBackgroundClip = 'text';
+                priceDisplay.style.webkitTextFillColor = 'transparent';
+            }
+            
+            if (description) {
+                priceDesc.textContent = description;
+            } else {
+                priceDesc.textContent = 'One-time payment for full access';
+            }
+        }
 
         // Handle Google OAuth
         document.getElementById('googleBtn').addEventListener('click', (e) => {
@@ -316,6 +398,8 @@
             const name = document.getElementById('name').value;
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const referralCode = document.getElementById('referralCode').value.trim().toUpperCase();
+            const couponCode = document.getElementById('couponCode').value.trim().toUpperCase();
             const submitBtn = document.getElementById('submitBtn');
             const errorMsg = document.getElementById('errorMessage');
             const successMsg = document.getElementById('successMessage');
@@ -334,7 +418,14 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ name, email, password })
+                    body: JSON.stringify({ 
+                        name, 
+                        email, 
+                        password,
+                        referralCode,
+                        couponCode,
+                        price: currentPrice
+                    })
                 });
 
                 const data = await response.json();
@@ -344,13 +435,28 @@
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
                     
-                    successMsg.textContent = 'Account created! Redirecting to payment...';
-                    successMsg.classList.add('show');
-                    
-                    // Redirect to dashboard (payment will be handled there)
-                    setTimeout(() => {
-                        window.location.href = '/dashboard.html';
-                    }, 1500);
+                    // Handle different payment flows
+                    if (currentPrice === 0) {
+                        // Free trial - no payment needed
+                        successMsg.textContent = 'Account created with free trial! Redirecting...';
+                        successMsg.classList.add('show');
+                        setTimeout(() => {
+                            window.location.href = '/dashboard.html?coupon=applied';
+                        }, 1500);
+                    } else if (data.requiresPayment) {
+                        // Redirect to Stripe payment
+                        successMsg.textContent = 'Account created! Redirecting to payment...';
+                        successMsg.classList.add('show');
+                        setTimeout(() => {
+                            window.location.href = data.paymentUrl || '/payment.html?amount=' + currentPrice;
+                        }, 1500);
+                    } else {
+                        successMsg.textContent = 'Account created! Redirecting...';
+                        successMsg.classList.add('show');
+                        setTimeout(() => {
+                            window.location.href = '/dashboard.html';
+                        }, 1500);
+                    }
                 } else {
                     errorMsg.textContent = data.error || 'Failed to create account';
                     errorMsg.classList.add('show');

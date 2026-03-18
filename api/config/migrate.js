@@ -14,6 +14,8 @@ async function migrate() {
         plan TEXT DEFAULT 'starter',
         credits REAL DEFAULT 20.00,
         has_paid INTEGER DEFAULT 0,
+        referral_code TEXT,
+        applied_coupon TEXT,
         api_providers TEXT DEFAULT '{}',
         skills TEXT DEFAULT '[]',
         platforms TEXT DEFAULT '{}',
@@ -117,6 +119,17 @@ async function migrate() {
       await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMP`);
       console.log('✅ Column reset_token_expires ready');
     } catch (e) { console.log('ℹ️ reset_token_expires:', e.message); }
+
+    // Add coupon and referral columns
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referral_code TEXT`);
+      console.log('✅ Column referral_code ready');
+    } catch (e) { console.log('ℹ️ referral_code:', e.message); }
+    
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS applied_coupon TEXT`);
+      console.log('✅ Column applied_coupon ready');
+    } catch (e) { console.log('ℹ️ applied_coupon:', e.message); }
     
     console.log('✅ All migrations complete!');
     return true;

@@ -25,6 +25,12 @@ function getGoogleConfig() {
   };
 }
 
+// Valid coupon codes (store these in env or DB in production)
+const VALID_COUPONS = {
+  'HALFPRICE': { discount: 0.5, type: 'percent', price: 250 },
+  'FREETRIAL': { discount: 1.0, type: 'percent', price: 0, setPaid: true }
+};
+
 // Register
 router.post('/register', [
   body('email').isEmail().normalizeEmail(),
@@ -40,7 +46,35 @@ router.post('/register', [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, name } = req.body;
+    const { email, password, name, referralCode, couponCode } = req.body;
+    
+    // Process coupon
+    let userPlan = 'starter';
+    let userCredits = 20;
+    let requiresPayment = true;
+    let paymentAmount = 500;
+    let hasPaid = false;
+    let appliedCoupon = null;
+
+    if (couponCode) {
+      const coupon = VALID_COUPONS[couponCode.toUpperCase()];
+      if (coupon) {
+        appliedCoupon = couponCode.toUpperCase();
+        paymentAmount = coupon.price;
+        
+        if (coupon.price === 0) {
+          // Free trial
+          requiresPayment = false;
+          hasPaid = true;
+          userPlan = 'pro';
+          userCredits = 100;
+        } else {
+          // Discounted price - still needs payment
+          requiresPayment = true;
+          hasPaid = false;
+        }
+      }
+    }
 
     // Check if user exists
     console.log('Register: Checking if user exists...');
@@ -60,8 +94,11 @@ router.post('/register', [
       email,
       password: hashedPassword,
       name,
-      plan: 'starter',
-      credits: 20 // $20 free credits
+      plan: userPlan,
+      credits: userCredits,
+      has_paid: hasPaid ? 1 : 0,
+      referral_code: referralCode || null,
+      applied_coupon: appliedCoupon
     });
 
     console.log('Register: User created:', user.id);
@@ -89,8 +126,12 @@ router.post('/register', [
         email: user.email,
         name: user.name,
         plan: user.plan,
-        credits: user.credits
-      }
+        credits: user.credits,
+        has_paid: hasPaid
+      },
+      requiresPayment,
+      paymentAmount,
+      appliedCoupon
     });
   } catch (error) {
     console.error('Register error:', error);
