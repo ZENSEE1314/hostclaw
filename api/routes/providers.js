@@ -33,6 +33,8 @@ router.post('/', authenticate, async (req, res) => {
   try {
     const { provider, apiKey, model } = req.body;
     
+    console.log('Save provider request:', { provider, model, userId: req.user.userId });
+    
     if (!provider || !apiKey) {
       return res.status(400).json({ error: 'Provider and API key required' });
     }
@@ -43,13 +45,22 @@ router.post('/', authenticate, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     
+    console.log('User found:', user.id);
+    
     // Parse existing providers
     let providers = {};
     if (user.api_providers) {
-      providers = typeof user.api_providers === 'string' 
-        ? JSON.parse(user.api_providers) 
-        : user.api_providers;
+      try {
+        providers = typeof user.api_providers === 'string' 
+          ? JSON.parse(user.api_providers) 
+          : user.api_providers;
+      } catch (e) {
+        console.log('Failed to parse providers, starting fresh');
+        providers = {};
+      }
     }
+    
+    console.log('Current providers:', Object.keys(providers));
     
     // Encrypt and save API key
     providers[provider] = {
@@ -58,8 +69,12 @@ router.post('/', authenticate, async (req, res) => {
       addedAt: new Date().toISOString()
     };
     
+    console.log('Saving providers...');
+    
     // Update user
     await User.updateProviders(req.user.userId, providers);
+    
+    console.log('Providers saved successfully');
     
     res.json({ 
       message: 'Provider saved successfully',
@@ -68,7 +83,7 @@ router.post('/', authenticate, async (req, res) => {
     
   } catch (error) {
     console.error('Save provider error:', error);
-    res.status(500).json({ error: 'Failed to save provider' });
+    res.status(500).json({ error: 'Failed to save provider: ' + error.message });
   }
 });
 

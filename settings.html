@@ -266,8 +266,9 @@
                     successDiv.style.display = 'block';
                 } else {
                     const data = await res.json();
-                    errorDiv.textContent = data.error || 'Failed to save';
+                    errorDiv.textContent = 'Error: ' + (data.error || 'Failed to save');
                     errorDiv.style.display = 'block';
+                    console.error('Save error:', data);
                 }
             } catch (e) {
                 errorDiv.textContent = 'Network error: ' + e.message;
