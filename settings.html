@@ -163,6 +163,19 @@
             window.location.href = '/login.html';
         }
         
+        // Check if coming from payment setup
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('setup') === '1') {
+            document.getElementById('success').innerHTML = `
+                <strong>🎉 Welcome! Payment successful!</strong><br>
+                Now add your AI API key below to start using chat and agents.
+                <br><br>
+                <strong>Recommended:</strong> Start with <a href="#nvidia" style="color: #10b981;">NVIDIA (FREE)</a>
+            `;
+            document.getElementById('success').style.display = 'block';
+            window.history.replaceState({}, '', '/settings.html');
+        }
+        
         // Load current settings
         async function loadSettings() {
             try {
@@ -227,7 +240,7 @@
             }
             
             try {
-                const res = await fetch(`${API_URL}/api/users/providers`, {
+                const res = await fetch(`${API_URL}/api/providers`, {
                     method: 'POST',
                     headers: {
                         'Authorization': 'Bearer ' + token,
@@ -277,7 +290,7 @@
             }
             
             try {
-                const res = await fetch(`${API_URL}/api/users/default-provider`, {
+                const res = await fetch(`${API_URL}/api/providers/default`, {
                     method: 'PUT',
                     headers: {
                         'Authorization': 'Bearer ' + token,

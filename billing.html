@@ -111,8 +111,8 @@
         // Check for payment success
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('paid') === 'success') {
-            alert('Payment successful! Thank you!');
-            window.history.replaceState({}, '', '/billing.html');
+            alert('Payment successful! Now let\'s set up your AI provider.');
+            window.location.href = '/settings.html?setup=1';
         }
 
         async function loadCredits() {
