@@ -612,14 +612,21 @@
     </div>
 
     <script>
+        console.log('Admin page loading...');
+        
         const API_URL = 'https://hostclaw-api.onrender.com';
         let authToken = localStorage.getItem('adminToken') || localStorage.getItem('token');
         let allUsers = [];
+        
+        console.log('Token found:', authToken ? 'Yes' : 'No');
 
         // Check login
         if (authToken) {
+            console.log('Showing admin panel');
             document.getElementById('loginScreen').classList.add('hidden');
             document.getElementById('adminPanel').classList.remove('hidden');
+        } else {
+            console.log('Showing login screen');
         }
 
         // Login form
