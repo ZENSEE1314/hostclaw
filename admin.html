@@ -334,23 +334,36 @@
                 has_paid: document.getElementById('editHasPaid').checked
             };
             
+            console.log('Saving user:', userId, updates);
+            console.log('Token:', token ? 'Present' : 'Missing');
+            
             try {
-                const res = await fetch(`${API_URL}/api/admin/users/${userId}`, {
+                const url = `${API_URL}/api/admin/users/${userId}`;
+                console.log('Fetching:', url);
+                
+                const res = await fetch(url, {
                     method: 'PUT',
-                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Authorization': 'Bearer ' + token, 
+                        'Content-Type': 'application/json' 
+                    },
                     body: JSON.stringify(updates)
                 });
+                
+                console.log('Response status:', res.status);
                 
                 if (res.ok) {
                     closeModal();
                     loadUsers();
                     alert('User updated!');
                 } else {
-                    const data = await res.json();
-                    alert(data.error || 'Failed to update');
+                    const text = await res.text();
+                    console.error('Error response:', text);
+                    alert('Failed to update: ' + res.status + ' - ' + text.substring(0, 100));
                 }
             } catch (e) {
-                alert('Error: ' + e.message);
+                console.error('Fetch error:', e);
+                alert('Network error: ' + e.message + '\n\nCheck console for details');
             }
         }
         
