@@ -216,21 +216,42 @@
         }
         
         async function deployAgent() {
+            const btn = document.getElementById('deployBtn');
+            btn.textContent = 'Deploying...';
+            btn.disabled = true;
+            
             try {
+                console.log('Deploying agent:', agentId);
+                console.log('API URL:', `${API_URL}/api/agents/${agentId}/deploy`);
+                
                 const res = await fetch(`${API_URL}/api/agents/${agentId}/deploy`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 
+                console.log('Deploy response status:', res.status);
+                
                 if (res.ok) {
-                    alert('Agent deployed!');
+                    const data = await res.json();
+                    console.log('Deploy success:', data);
+                    alert('Agent deployed! URL: ' + (data.deployment?.url || 'N/A'));
                     loadAgent();
                 } else {
-                    const data = await res.json();
-                    alert(data.error || 'Failed to deploy');
+                    const text = await res.text();
+                    console.error('Deploy failed:', res.status, text);
+                    try {
+                        const data = JSON.parse(text);
+                        alert(data.error || data.message || 'Failed to deploy: ' + res.status);
+                    } catch {
+                        alert('Failed to deploy: ' + res.status + ' - ' + text.substring(0, 200));
+                    }
                 }
             } catch (e) {
-                alert('Network error');
+                console.error('Deploy error:', e);
+                alert('Network error: ' + e.message);
+            } finally {
+                btn.textContent = 'Deploy';
+                btn.disabled = false;
             }
         }
         
