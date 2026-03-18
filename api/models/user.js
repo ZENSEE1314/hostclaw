@@ -64,7 +64,7 @@ class User {
 
   static async findById(id) {
     const result = await query(
-      'SELECT id, email, name, plan, credits, has_paid, api_providers, default_provider, stripe_customer_id, gateway_config, created_at FROM users WHERE id = $1',
+      'SELECT id, email, name, plan, credits, has_paid, api_providers, skills, default_provider, stripe_customer_id, gateway_config, created_at FROM users WHERE id = $1',
       [id]
     );
     return result.rows[0];
@@ -158,10 +158,10 @@ class User {
   // Provider methods
   static async updateProviders(userId, providers) {
     const result = await query(
-      `UPDATE users 
-       SET api_providers = $1::jsonb,
-       updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $2 
+      `UPDATE users
+       SET api_providers = $1,
+       updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2
        RETURNING api_providers`,
       [JSON.stringify(providers), userId]
     );
@@ -180,70 +180,57 @@ class User {
     return result.rows[0]?.default_provider;
   }
 
-  // Skills methods
+  // Helper: parse skills from user row (handles TEXT or object)
+  static _parseSkills(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw;
+    try { return JSON.parse(raw); } catch (e) { return []; }
+  }
+
+  // Skills methods — all manipulate JSON in JS to avoid JSONB/TEXT type mismatch in PostgreSQL
   static async addSkill(userId, skill) {
+    const user = await this.findById(userId);
+    const skills = this._parseSkills(user.skills);
+    if (!skills.find(s => s.id === skill.id)) {
+      skills.push(skill);
+    }
     const result = await query(
-      `UPDATE users 
-       SET skills = COALESCE(skills, '[]'::jsonb) || $1::jsonb,
-       updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $2 
-       RETURNING skills`,
-      [JSON.stringify([skill]), userId]
+      `UPDATE users SET skills = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING skills`,
+      [JSON.stringify(skills), userId]
     );
     return result.rows[0]?.skills;
   }
 
   static async removeSkill(userId, skillId) {
+    const user = await this.findById(userId);
+    const skills = this._parseSkills(user.skills).filter(s => s.id !== skillId);
     const result = await query(
-      `UPDATE users 
-       SET skills = COALESCE(
-         (SELECT jsonb_agg(elem) FROM jsonb_array_elements(skills) elem WHERE elem->>'id' != $1),
-         '[]'::jsonb
-       ),
-       updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $2 
-       RETURNING skills`,
-      [skillId, userId]
+      `UPDATE users SET skills = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING skills`,
+      [JSON.stringify(skills), userId]
     );
     return result.rows[0]?.skills;
   }
 
   static async toggleSkill(userId, skillId) {
+    const user = await this.findById(userId);
+    const skills = this._parseSkills(user.skills).map(s =>
+      s.id === skillId ? { ...s, active: !s.active } : s
+    );
     const result = await query(
-      `UPDATE users 
-       SET skills = (
-         SELECT jsonb_agg(
-           CASE 
-             WHEN elem->>'id' = $1 THEN elem || '{"active": "false"}'::jsonb
-             ELSE elem
-           END
-         )
-         FROM jsonb_array_elements(skills) elem
-       ),
-       updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $2 
-       RETURNING skills`,
-      [skillId, userId]
+      `UPDATE users SET skills = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING skills`,
+      [JSON.stringify(skills), userId]
     );
     return result.rows[0]?.skills;
   }
 
   static async updateSkillConfig(userId, skillId, config) {
+    const user = await this.findById(userId);
+    const skills = this._parseSkills(user.skills).map(s =>
+      s.id === skillId ? { ...s, config } : s
+    );
     const result = await query(
-      `UPDATE users 
-       SET skills = (
-         SELECT jsonb_agg(
-           CASE 
-             WHEN elem->>'id' = $1 THEN elem || jsonb_build_object('config', $2::jsonb)
-             ELSE elem
-           END
-         )
-         FROM jsonb_array_elements(skills) elem
-       ),
-       updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $3 
-       RETURNING skills`,
-      [skillId, JSON.stringify(config), userId]
+      `UPDATE users SET skills = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING skills`,
+      [JSON.stringify(skills), userId]
     );
     return result.rows[0]?.skills;
   }
