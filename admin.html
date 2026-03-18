@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - HostClaw.ai</title>
+    <title>Admin - HostClaw</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -11,7 +11,6 @@
             --primary-dark: #4f46e5;
             --primary-light: #818cf8;
             --secondary: #06b6d4;
-            --accent: #f59e0b;
             --dark: #0f0f23;
             --darker: #0a0a1a;
             --card-bg: rgba(255, 255, 255, 0.03);
@@ -19,21 +18,15 @@
             --text: #f8fafc;
             --text-muted: #94a3b8;
             --success: #10b981;
-            --warning: #f59e0b;
             --danger: #ef4444;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--darker);
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--darker); 
             color: var(--text);
-            line-height: 1.6;
+            min-height: 100vh;
         }
 
         .admin-layout {
@@ -78,10 +71,7 @@
             margin-left: auto;
         }
 
-        .nav-section {
-            margin-bottom: 1.5rem;
-        }
-
+        .nav-section { margin-bottom: 1.5rem; }
         .nav-section-title {
             font-size: 0.75rem;
             text-transform: uppercase;
@@ -142,103 +132,25 @@
             font-size: 0.875rem;
         }
 
-        /* Stats Grid */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-        }
-
-        .stat-icon {
-            width: 48px;
-            height: 48px;
-            background: rgba(99, 102, 241, 0.1);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.25rem;
-        }
-
-        .stat-label {
-            color: var(--text-muted);
-            font-size: 0.875rem;
-        }
-
-        /* Content Grid */
-        .content-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 1.5rem;
-        }
-
+        /* Card */
         .card {
             background: var(--card-bg);
             border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 1.5rem;
+            overflow: hidden;
         }
 
         .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 1.5rem;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
         }
 
         .card-title {
             font-size: 1.125rem;
             font-weight: 600;
-        }
-
-        .btn {
-            padding: 0.625rem 1rem;
-            border-radius: 8px;
-            font-weight: 500;
-            font-size: 0.875rem;
-            cursor: pointer;
-            border: none;
-            transition: all 0.2s;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-sm {
-            padding: 0.375rem 0.75rem;
-            font-size: 0.75rem;
         }
 
         /* Table */
@@ -253,17 +165,17 @@
 
         th {
             text-align: left;
-            padding: 0.75rem;
+            padding: 1rem 1.5rem;
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.05em;
             color: var(--text-muted);
-            font-weight: 500;
+            font-weight: 600;
             border-bottom: 1px solid var(--border);
         }
 
         td {
-            padding: 0.75rem;
+            padding: 1rem 1.5rem;
             border-bottom: 1px solid var(--border);
             font-size: 0.875rem;
         }
@@ -272,73 +184,118 @@
             background: rgba(255, 255, 255, 0.02);
         }
 
-        .user-info {
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* User Cell */
+        .user-cell {
             display: flex;
             align-items: center;
             gap: 0.75rem;
         }
 
         .user-avatar {
-            width: 32px;
-            height: 32px;
-            background: var(--primary);
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600;
-            font-size: 0.75rem;
+            font-size: 0.875rem;
         }
 
+        /* Badge */
         .badge {
-            padding: 0.25rem 0.5rem;
+            padding: 0.375rem 0.75rem;
             border-radius: 100px;
             font-size: 0.75rem;
-            font-weight: 500;
+            font-weight: 600;
         }
 
-        .badge-success {
-            background: rgba(16, 185, 129, 0.2);
+        .badge-starter {
+            background: rgba(16, 185, 129, 0.15);
             color: var(--success);
         }
 
-        .badge-warning {
-            background: rgba(245, 158, 11, 0.2);
-            color: var(--warning);
+        .badge-pro {
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
         }
 
-        .badge-danger {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--danger);
+        .badge-enterprise {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--primary-light);
         }
+
+        /* Button */
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--text);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        /* Status */
+        .status-yes { color: var(--success); }
+        .status-no { color: var(--text-muted); }
 
         /* Modal */
         .modal-overlay {
+            display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
             background: rgba(0, 0, 0, 0.8);
-            display: flex;
+            z-index: 1000;
             align-items: center;
             justify-content: center;
-            z-index: 1000;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s;
+            padding: 1rem;
         }
 
         .modal-overlay.active {
-            opacity: 1;
-            visibility: visible;
+            display: flex;
         }
 
         .modal {
             background: var(--dark);
             border: 1px solid var(--border);
             border-radius: 16px;
-            width: 90%;
+            width: 100%;
             max-width: 500px;
             max-height: 90vh;
             overflow-y: auto;
@@ -347,22 +304,11 @@
         .modal-header {
             padding: 1.5rem;
             border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
 
         .modal-title {
             font-size: 1.25rem;
-            font-weight: 600;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-size: 1.5rem;
-            cursor: pointer;
+            font-weight: 700;
         }
 
         .modal-body {
@@ -370,13 +316,14 @@
         }
 
         .modal-footer {
-            padding: 1.5rem;
+            padding: 1rem 1.5rem;
             border-top: 1px solid var(--border);
             display: flex;
-            justify-content: flex-end;
             gap: 0.75rem;
+            justify-content: flex-end;
         }
 
+        /* Form */
         .form-group {
             margin-bottom: 1rem;
         }
@@ -386,49 +333,63 @@
             font-size: 0.875rem;
             font-weight: 500;
             margin-bottom: 0.5rem;
+            color: var(--text-muted);
         }
 
-        .form-input, .form-select {
+        .form-input {
             width: 100%;
-            padding: 0.625rem 0.875rem;
+            padding: 0.75rem 1rem;
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid var(--border);
             border-radius: 8px;
             color: var(--text);
             font-size: 0.875rem;
+            font-family: inherit;
         }
 
-        .form-input:focus, .form-select:focus {
+        .form-input:focus {
             outline: none;
             border-color: var(--primary);
         }
 
-        /* Loading */
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s linear infinite;
+        .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 0.875rem;
+            font-family: inherit;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--primary);
+            cursor: pointer;
         }
 
         .hidden {
             display: none !important;
         }
 
-        /* Login Screen */
+        /* Login */
         .login-screen {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            inset: 0;
             background: var(--darker);
             display: flex;
             align-items: center;
@@ -466,6 +427,11 @@
             border-radius: 8px;
             margin-bottom: 1rem;
             font-size: 0.875rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
         }
     </style>
 </head>
@@ -475,21 +441,24 @@
         <div class="login-card">
             <div class="login-title">🔐 Admin Login</div>
             <div class="login-subtitle">Sign in to access admin panel</div>
-            <div id="loginError" class="error-message hidden"></div>
+            <div id="loginError" class="error-message"></div>
+            
             <form id="loginForm">
                 <div class="form-group">
                     <label class="form-label">Email</label>
                     <input type="email" class="form-input" id="loginEmail" required>
                 </div>
+                
                 <div class="form-group">
                     <label class="form-label">Password</label>
                     <input type="password" class="form-input" id="loginPassword" required>
                 </div>
+                
                 <button type="submit" class="btn btn-primary" style="width: 100%;">Sign In</button>
             </form>
+            
             <div style="margin-top: 1.5rem; text-align: center; color: var(--text-muted); font-size: 0.875rem;">
-                <p>Don't have an account? <a href="/signup.html" style="color: var(--primary-light);">Create one</a></p>
-                <p style="margin-top: 0.5rem;"><a href="/login.html" style="color: var(--text-muted);">Back to regular login →</a></p>
+                <a href="/login.html" style="color: var(--text-muted);">← Back to regular login</a>
             </div>
         </div>
     </div>
@@ -499,29 +468,31 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="logo">
-                <span>🐾</span> HostClaw.ai
+                <span>🐾</span> HostClaw
                 <span class="admin-badge">Admin</span>
             </div>
             
-            <div class="nav-section">
-                <div class="nav-section-title">Management</div>
-                <button class="nav-item active" onclick="showSection('dashboard')">
-                    <span>📊</span> Dashboard
-                </button>
-                <button class="nav-item" onclick="showSection('users')">
-                    <span>👥</span> Users
-                </button>
-                <button class="nav-item" onclick="showSection('agents')">
-                    <span>🤖</span> Agents
-                </button>
-            </div>
-            
-            <div class="nav-section">
-                <div class="nav-section-title">Account</div>
-                <button class="nav-item" onclick="logout()">
-                    <span>🚪</span> Logout
-                </button>
-            </div>
+            <nav>
+                <div class="nav-section">
+                    <div class="nav-section-title">Management</div>
+                    <button class="nav-item active" onclick="showSection('dashboard')">
+                        <span>📊</span> Dashboard
+                    </button>
+                    <button class="nav-item" onclick="showSection('users')">
+                        <span>👥</span> Users
+                    </button>
+                    <button class="nav-item" onclick="showSection('agents')">
+                        <span>🤖</span> Agents
+                    </button>
+                </div>
+                
+                <div class="nav-section">
+                    <div class="nav-section-title">Account</div>
+                    <button class="nav-item" onclick="logout()">
+                        <span>🚪</span> Logout
+                    </button>
+                </div>
+            </nav>
         </aside>
 
         <!-- Main Content -->
@@ -535,60 +506,8 @@
                     </div>
                 </div>
 
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon">👥</div>
-                        <div class="stat-value" id="totalUsers">-</div>
-                        <div class="stat-label">Total Users</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">🤖</div>
-                        <div class="stat-value" id="totalAgents">-</div>
-                        <div class="stat-label">Total Agents</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">💰</div>
-                        <div class="stat-value" id="totalRevenue">-</div>
-                        <div class="stat-label">Total Revenue</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">💳</div>
-                        <div class="stat-value" id="paidUsers">-</div>
-                        <div class="stat-label">Paid Users</div>
-                    </div>
-                </div>
-
-                <div class="content-grid">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Recent Users</h3>
-                            <button class="btn btn-primary btn-sm" onclick="showSection('users')">View All</button>
-                        </div>
-                        <div class="table-container">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>User</th>
-                                        <th>Plan</th>
-                                        <th>Status</th>
-                                        <th>Joined</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="recentUsersTable">
-                                    <tr><td colspan="4">Loading...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">System Health</h3>
-                        </div>
-                        <div id="systemHealth">
-                            <p>Loading...</p>
-                        </div>
-                    </div>
+                <div style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                    Dashboard content here
                 </div>
             </div>
 
@@ -604,12 +523,8 @@
                 <div class="card">
                     <div class="card-header">
                         <h3 class="card-title">All Users</h3>
-                        <div style="display: flex; gap: 10px;">
-                            <button class="btn btn-primary btn-sm" onclick="testUsersAPI()">🔄 Test API</button>
-                            <input type="text" class="form-input" placeholder="Search users..." id="userSearch" onkeyup="searchUsers()" style="width: 200px; display: inline-block;">
-                        </div>
                     </div>
-                    <div id="usersDebug" style="padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 10px; font-size: 12px; display: none;"></div>
+                    
                     <div class="table-container">
                         <table>
                             <thead>
@@ -619,12 +534,12 @@
                                     <th>Plan</th>
                                     <th>Credits</th>
                                     <th>Paid</th>
-                                    <th>Joined</th>
+                                    <th>Created</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="usersTable">
-                                <tr><td colspan="7">Click "Test API" or navigate here to load users</td></tr>
+                                <tr><td colspan="7" style="text-align: center; padding: 40px;">Loading users...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -640,69 +555,57 @@
                     </div>
                 </div>
 
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">All Agents</h3>
-                    </div>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>User</th>
-                                    <th>Model</th>
-                                    <th>Status</th>
-                                    <th>Messages</th>
-                                    <th>Created</th>
-                                </tr>
-                            </thead>
-                            <tbody id="agentsTable">
-                                <tr><td colspan="6">Loading...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div style="text-align: center; padding: 4rem; color: var(--text-muted);">
+                    Agents content here
                 </div>
             </div>
         </main>
     </div>
 
     <!-- Edit User Modal -->
-    <div class="modal-overlay" id="editUserModal">
+    <div class="modal-overlay" id="editModal">
         <div class="modal">
             <div class="modal-header">
-                <h2 class="modal-title">✏️ Edit User</h2>
-                <button class="modal-close" onclick="closeEditModal()">×</button>
+                <h3 class="modal-title">✏️ Edit User</h3>
             </div>
+            
             <div class="modal-body">
                 <input type="hidden" id="editUserId">
+                
                 <div class="form-group">
                     <label class="form-label">Name</label>
-                    <input type="text" class="form-input" id="editUserName">
+                    <input type="text" class="form-input" id="editName">
                 </div>
+                
                 <div class="form-group">
                     <label class="form-label">Email</label>
-                    <input type="email" class="form-input" id="editUserEmail" readonly>
+                    <input type="text" class="form-input" id="editEmail" readonly style="background: rgba(255,255,255,0.02); cursor: not-allowed;">
                 </div>
+                
                 <div class="form-group">
                     <label class="form-label">Plan</label>
-                    <select class="form-select" id="editUserPlan">
+                    <select class="form-select" id="editPlan">
                         <option value="starter">Starter</option>
                         <option value="pro">Pro</option>
                         <option value="enterprise">Enterprise</option>
                     </select>
                 </div>
+                
                 <div class="form-group">
                     <label class="form-label">Credits ($)</label>
-                    <input type="number" class="form-input" id="editUserCredits" step="0.01">
+                    <input type="number" class="form-input" id="editCredits" step="0.01">
                 </div>
+                
                 <div class="form-group">
-                    <label class="form-label">
-                        <input type="checkbox" id="editUserPaid"> Mark as Paid
-                    </label>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="editHasPaid">
+                        <label for="editHasPaid">Mark as Paid</label>
+                    </div>
                 </div>
             </div>
+            
             <div class="modal-footer">
-                <button class="btn" onclick="closeEditModal()" style="background: var(--card-bg); color: var(--text);">Cancel</button>
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
                 <button class="btn btn-success" onclick="saveUser()">Save Changes</button>
             </div>
         </div>
@@ -710,17 +613,13 @@
 
     <script>
         const API_URL = 'https://hostclaw-api.onrender.com';
-        let authToken = localStorage.getItem('adminToken');
-        let currentUser = null;
+        let authToken = localStorage.getItem('adminToken') || localStorage.getItem('token');
         let allUsers = [];
 
-        // Check if already logged in
+        // Check login
         if (authToken) {
-            showAdminPanel();
-            loadDashboard();
-        } else {
-            // Not logged in, show login screen
-            console.log('No token found, showing login screen');
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('adminPanel').classList.remove('hidden');
         }
 
         // Login form
@@ -729,9 +628,6 @@
             
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
-            const errorDiv = document.getElementById('loginError');
-            
-            errorDiv.classList.add('hidden');
             
             try {
                 const response = await fetch(`${API_URL}/api/auth/login`, {
@@ -744,327 +640,112 @@
                 
                 if (response.ok) {
                     authToken = data.token;
-                    currentUser = data.user;
                     localStorage.setItem('adminToken', authToken);
-                    localStorage.setItem('adminUser', JSON.stringify(currentUser));
-                    showAdminPanel();
-                    loadDashboard();
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('adminPanel').classList.remove('hidden');
                 } else {
-                    errorDiv.textContent = data.error || 'Login failed';
-                    errorDiv.classList.remove('hidden');
+                    document.getElementById('loginError').textContent = data.error || 'Login failed';
+                    document.getElementById('loginError').classList.add('show');
                 }
             } catch (err) {
-                errorDiv.textContent = 'Network error. Please try again.';
-                errorDiv.classList.remove('hidden');
+                document.getElementById('loginError').textContent = 'Network error';
+                document.getElementById('loginError').classList.add('show');
             }
         });
 
-        function showAdminPanel() {
-            document.getElementById('loginScreen').classList.add('hidden');
-            document.getElementById('adminPanel').classList.remove('hidden');
-        }
-
         function logout() {
             localStorage.removeItem('adminToken');
-            localStorage.removeItem('adminUser');
+            localStorage.removeItem('token');
             location.reload();
         }
 
         function showSection(section) {
-            // Hide all sections
             document.getElementById('dashboardSection').classList.add('hidden');
             document.getElementById('usersSection').classList.add('hidden');
             document.getElementById('agentsSection').classList.add('hidden');
             
-            // Show selected section
             document.getElementById(section + 'Section').classList.remove('hidden');
             
-            // Update nav
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-            if (event && event.target) {
-                event.target.closest('.nav-item').classList.add('active');
-            }
+            event.target.closest('.nav-item').classList.add('active');
             
-            // Load data
-            if (section === 'users') {
-                console.log('Loading users...');
-                loadUsers();
-            }
-            if (section === 'agents') loadAgents();
-        }
-
-        async function loadDashboard() {
-            try {
-                const response = await fetch(`${API_URL}/api/admin/stats`, {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
-                
-                if (response.status === 401) {
-                    // Token invalid, logout
-                    logout();
-                    return;
-                }
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    
-                    document.getElementById('totalUsers').textContent = data.users?.total_users || 0;
-                    document.getElementById('totalAgents').textContent = data.agents?.total_agents || 0;
-                    document.getElementById('totalRevenue').textContent = '$' + (data.revenue?.total_revenue || 0).toFixed(2);
-                    
-                    // Count paid users
-                    const paidUsers = data.recent?.users?.filter(u => u.has_paid).length || 0;
-                    document.getElementById('paidUsers').textContent = paidUsers;
-                    
-                    // Recent users table
-                    const recentUsersHtml = data.recent?.users?.map(user => `
-                        <tr>
-                            <td>
-                                <div class="user-info">
-                                    <div class="user-avatar">${user.name?.charAt(0).toUpperCase() || '?'}</div>
-                                    <span>${user.name}</span>
-                                </div>
-                            </td>
-                            <td><span class="badge badge-${user.plan === 'starter' ? 'success' : user.plan === 'pro' ? 'warning' : 'danger'}">${user.plan}</span></td>
-                            <td>${user.has_paid ? '✅ Paid' : '❌ Unpaid'}</td>
-                            <td>${new Date(user.created_at).toLocaleDateString()}</td>
-                        </tr>
-                    `).join('') || '<tr><td colspan="4">No users yet</td></tr>';
-                    
-                    document.getElementById('recentUsersTable').innerHTML = recentUsersHtml;
-                    
-                    // System health
-                    document.getElementById('systemHealth').innerHTML = `
-                        <div style="display: flex; flex-direction: column; gap: 1rem;">
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <div style="width: 12px; height: 12px; background: var(--success); border-radius: 50%;"></div>
-                                <span>API Server: Running</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <div style="width: 12px; height: 12px; background: var(--success); border-radius: 50%;"></div>
-                                <span>Database: Connected</span>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 0.75rem;">
-                                <div style="width: 12px; height: 12px; background: var(--success); border-radius: 50%;"></div>
-                                <span>Stripe: ${data.revenue ? 'Connected' : 'Not Configured'}</span>
-                            </div>
-                        </div>
-                    `;
-                }
-            } catch (err) {
-                console.error('Failed to load dashboard:', err);
-            }
-        }
-
-        async function testUsersAPI() {
-            const debugDiv = document.getElementById('usersDebug');
-            debugDiv.style.display = 'block';
-            debugDiv.innerHTML = 'Testing API connection...';
-            
-            try {
-                // Test 1: Check debug endpoint (no auth needed)
-                debugDiv.innerHTML += '<br>1. Checking debug/users...';
-                const debugResponse = await fetch(`${API_URL}/api/admin/debug/users`);
-                const debugData = await debugResponse.json();
-                debugDiv.innerHTML += ` Status: ${debugResponse.status}, Found: ${debugData.count || 0} users`;
-                
-                // Test 2: Load users with auth
-                debugDiv.innerHTML += '<br>2. Loading users with auth...';
-                await loadUsers();
-                debugDiv.innerHTML += ' Done! Check table below.';
-                
-            } catch (err) {
-                debugDiv.innerHTML += `<br>Error: ${err.message}`;
-                console.error('API Test failed:', err);
-            }
+            if (section === 'users') loadUsers();
         }
 
         async function loadUsers() {
+            const tbody = document.getElementById('usersTable');
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">Loading users...</td></tr>';
+            
             try {
-                console.log('Fetching users from API...');
-                document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;"><div class="loading" style="margin: 0 auto 10px;"></div>Loading users...</td></tr>';
-                
                 const response = await fetch(`${API_URL}/api/admin/users`, {
                     headers: { 'Authorization': `Bearer ${authToken}` }
                 });
                 
-                console.log('Users API response status:', response.status);
-                
-                if (response.status === 401) {
-                    console.log('Unauthorized, logging out');
-                    logout();
+                if (!response.ok) {
+                    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">Error: ${response.status}</td></tr>`;
                     return;
                 }
                 
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('Full API Response:', JSON.stringify(data, null, 2));
-                    
-                    // Debug: Show raw response
-                    const debugDiv = document.getElementById('usersDebug');
-                    debugDiv.style.display = 'block';
-                    
-                    // FORCE RENDER - build table no matter what
-                    let html = '';
-                    let users = [];
-                    
-                    if (data && data.users && Array.isArray(data.users)) {
-                        users = data.users;
-                        debugDiv.innerHTML = `<div style="color: var(--success);">Found ${users.length} users</div>`;
-                    } else if (data && Array.isArray(data)) {
-                        users = data;
-                        debugDiv.innerHTML = `<div style="color: var(--warning);">Data is array with ${users.length} items</div>`;
-                    } else {
-                        debugDiv.innerHTML = `<div style="color: var(--danger);">Unexpected data format: ${typeof data}</div><pre style="font-size:10px;">${JSON.stringify(data, null, 2).substring(0, 500)}</pre>`;
-                    }
-                    
-                    // Build table rows
-                    for (const user of users) {
-                        html += `
+                const data = await response.json();
+                allUsers = data.users || [];
+                
+                if (allUsers.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">No users found</td></tr>';
+                    return;
+                }
+                
+                let html = '';
+                for (const user of allUsers) {
+                    const planClass = 'badge-' + (user.plan || 'starter');
+                    html += `
                         <tr>
-                            <td>${user.name || 'N/A'}</td>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="user-avatar">${(user.name || '?').charAt(0).toUpperCase()}</div>
+                                    <span>${user.name || 'Unknown'}</span>
+                                </div>
+                            </td>
                             <td>${user.email || 'N/A'}</td>
-                            <td>${user.plan || 'starter'}</td>
+                            <td><span class="badge ${planClass}">${user.plan || 'starter'}</span></td>
                             <td>$${user.credits || 0}</td>
-                            <td>${user.has_paid ? 'Yes' : 'No'}</td>
+                            <td class="${user.has_paid ? 'status-yes' : 'status-no'}">${user.has_paid ? '✓ Yes' : '✗ No'}</td>
                             <td>${user.created_at ? user.created_at.split('T')[0] : 'N/A'}</td>
-                            <td><button class="btn btn-primary btn-sm" onclick="editUser('${user.id}')">Edit</button></td>
+                            <td><button class="btn btn-primary" onclick="openEditModal('${user.id}')">Edit</button></td>
                         </tr>`;
-                    }
-                    
-                    if (html === '') {
-                        html = '<tr><td colspan="7" style="text-align:center; padding:40px;">No users</td></tr>';
-                    }
-                    
-                    document.getElementById('usersTable').innerHTML = html;
-                } else {
-                    const error = await response.text();
-                    console.error('Failed to load users:', response.status, error);
-                    document.getElementById('usersTable').innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">Error ${response.status}: ${error || 'Failed to load users'}</td></tr>`;
                 }
-            } catch (err) {
-                console.error('Failed to load users:', err);
-                document.getElementById('usersTable').innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">Error loading users: ${err.message}</td></tr>`;
-            }
-        }
-
-        function renderUsersTable(users) {
-            console.log('renderUsersTable called with:', users);
-            console.log('Type:', typeof users);
-            console.log('Is Array:', Array.isArray(users));
-            
-            if (!users) {
-                console.error('Users is null/undefined');
-                document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">Error: No users data received</td></tr>';
-                return;
-            }
-            
-            if (!Array.isArray(users)) {
-                console.error('Users is not an array:', users);
-                document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">Error: Invalid users data format</td></tr>';
-                return;
-            }
-            
-            if (users.length === 0) {
-                document.getElementById('usersTable').innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--text-muted);">No users found</td></tr>';
-                return;
-            }
-            
-            console.log('Rendering', users.length, 'users');
-            
-            const html = users.map((user, index) => {
-                console.log(`User ${index}:`, user);
-                const initials = (user.name || user.email || '?').charAt(0).toUpperCase();
-                const planClass = user.plan === 'starter' ? 'success' : user.plan === 'pro' ? 'warning' : 'danger';
-                const credits = parseFloat(user.credits || 0).toFixed(2);
-                const hasPaid = user.has_paid === 1 || user.has_paid === true ? '✅' : '❌';
-                const createdDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
-                const userId = user.id || '';
+                tbody.innerHTML = html;
                 
-                return `
-                <tr>
-                    <td>
-                        <div class="user-info">
-                            <div class="user-avatar">${initials}</div>
-                            <span>${user.name || 'Unknown'}</span>
-                        </div>
-                    </td>
-                    <td>${user.email || 'N/A'}</td>
-                    <td><span class="badge badge-${planClass}">${user.plan || 'starter'}</span></td>
-                    <td>$${credits}</td>
-                    <td>${hasPaid}</td>
-                    <td>${createdDate}</td>
-                    <td>
-                        <button class="btn btn-primary btn-sm" onclick="editUser('${userId}')">Edit</button>
-                    </td>
-                </tr>
-            `}).join('');
-            
-            document.getElementById('usersTable').innerHTML = html;
-            console.log('Table rendered successfully');
-        }
-
-        function searchUsers() {
-            const search = document.getElementById('userSearch').value.toLowerCase();
-            const filtered = allUsers.filter(user => 
-                user.name?.toLowerCase().includes(search) || 
-                user.email?.toLowerCase().includes(search)
-            );
-            renderUsersTable(filtered);
-        }
-
-        async function loadAgents() {
-            try {
-                const response = await fetch(`${API_URL}/api/admin/agents`, {
-                    headers: { 'Authorization': `Bearer ${authToken}` }
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    const html = data.agents?.map(agent => `
-                        <tr>
-                            <td>${agent.name}</td>
-                            <td>${agent.user_name || agent.user_id}</td>
-                            <td>${agent.model}</td>
-                            <td><span class="badge badge-${agent.status === 'running' ? 'success' : 'warning'}">${agent.status}</span></td>
-                            <td>${agent.message_count || 0}</td>
-                            <td>${new Date(agent.created_at).toLocaleDateString()}</td>
-                        </tr>
-                    `).join('') || '<tr><td colspan="6">No agents found</td></tr>';
-                    
-                    document.getElementById('agentsTable').innerHTML = html;
-                }
             } catch (err) {
-                console.error('Failed to load agents:', err);
-                document.getElementById('agentsTable').innerHTML = '<tr><td colspan="6">Error loading agents</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">${err.message}</td></tr>`;
             }
         }
 
-        function editUser(userId) {
+        function openEditModal(userId) {
             const user = allUsers.find(u => u.id === userId);
             if (!user) return;
             
             document.getElementById('editUserId').value = user.id;
-            document.getElementById('editUserName').value = user.name;
-            document.getElementById('editUserEmail').value = user.email;
-            document.getElementById('editUserPlan').value = user.plan;
-            document.getElementById('editUserCredits').value = user.credits || 0;
-            document.getElementById('editUserPaid').checked = user.has_paid;
+            document.getElementById('editName').value = user.name || '';
+            document.getElementById('editEmail').value = user.email || '';
+            document.getElementById('editPlan').value = user.plan || 'starter';
+            document.getElementById('editCredits').value = user.credits || 0;
+            document.getElementById('editHasPaid').checked = user.has_paid === 1 || user.has_paid === true;
             
-            document.getElementById('editUserModal').classList.add('active');
+            document.getElementById('editModal').classList.add('active');
         }
 
-        function closeEditModal() {
-            document.getElementById('editUserModal').classList.remove('active');
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
         }
 
         async function saveUser() {
             const userId = document.getElementById('editUserId').value;
+            
             const updates = {
-                name: document.getElementById('editUserName').value,
-                plan: document.getElementById('editUserPlan').value,
-                credits: parseFloat(document.getElementById('editUserCredits').value),
-                has_paid: document.getElementById('editUserPaid').checked
+                name: document.getElementById('editName').value,
+                plan: document.getElementById('editPlan').value,
+                credits: parseFloat(document.getElementById('editCredits').value),
+                has_paid: document.getElementById('editHasPaid').checked
             };
             
             try {
@@ -1078,25 +759,21 @@
                 });
                 
                 if (response.ok) {
-                    closeEditModal();
+                    closeModal();
                     loadUsers();
-                    loadDashboard();
                     alert('User updated successfully!');
                 } else {
                     const data = await response.json();
                     alert(data.error || 'Failed to update user');
                 }
             } catch (err) {
-                console.error('Failed to save user:', err);
-                alert('Network error. Please try again.');
+                alert('Network error: ' + err.message);
             }
         }
 
-        // Close modal on overlay click
-        document.getElementById('editUserModal').addEventListener('click', (e) => {
-            if (e.target === e.currentTarget) {
-                closeEditModal();
-            }
+        // Close modal on backdrop click
+        document.getElementById('editModal').addEventListener('click', (e) => {
+            if (e.target.id === 'editModal') closeModal();
         });
     </script>
 </body>
