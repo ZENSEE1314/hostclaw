@@ -209,11 +209,12 @@
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 
+                const revenue = parseFloat(data.revenue?.total_revenue) || 0;
                 document.getElementById('statsGrid').innerHTML = `
                     <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value">${data.users?.total_users || 0}</div></div>
                     <div class="stat-card"><div class="stat-label">Total Agents</div><div class="stat-value">${data.agents?.total_agents || 0}</div></div>
                     <div class="stat-card"><div class="stat-label">Paid Users</div><div class="stat-value">${data.users?.paid_users || 0}</div></div>
-                    <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value">$${(data.revenue?.total_revenue || 0).toFixed(2)}</div></div>`;
+                    <div class="stat-card"><div class="stat-label">Total Revenue</div><div class="stat-value">$${revenue.toFixed(2)}</div></div>`;
                 
                 if (data.recent?.users?.length) {
                     let html = '<table><thead><tr><th>User</th><th>Plan</th><th>Joined</th></tr></thead><tbody>';
@@ -234,7 +235,8 @@
                 const res = await fetch(`${API_URL}/api/admin/stats`, { headers: { 'Authorization': 'Bearer ' + token } });
                 if (res.ok) {
                     const data = await res.json();
-                    document.getElementById('totalRevenue').textContent = '$' + (data.revenue?.total_revenue || 0).toFixed(2);
+                    const revenue = parseFloat(data.revenue?.total_revenue) || 0;
+                    document.getElementById('totalRevenue').textContent = '$' + revenue.toFixed(2);
                 }
                 
                 const usersRes = await fetch(`${API_URL}/api/admin/users`, { headers: { 'Authorization': 'Bearer ' + token } });
