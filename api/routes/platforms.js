@@ -11,9 +11,11 @@ const VALID_PLATFORMS = ['whatsapp', 'telegram', 'discord', 'slack', 'line', 'me
 router.get('/', authenticate, async (req, res, next) => {
   try {
     const user = await User.findById(req.user.userId);
-    res.json({
-      platforms: user.platforms || {}
-    });
+    let platforms = {};
+    if (user.platforms) {
+      platforms = typeof user.platforms === 'string' ? JSON.parse(user.platforms) : user.platforms;
+    }
+    res.json({ platforms });
   } catch (error) {
     next(error);
   }
@@ -54,8 +56,8 @@ router.post('/telegram/connect', authenticate, async (req, res, next) => {
       return res.status(400).json({ error: 'Bot token is required' });
     }
 
-    if (!botToken.match(/^\d+:[A-Za-z0-9_-]{35}$/)) {
-      return res.status(400).json({ error: 'Invalid bot token format' });
+    if (!botToken.match(/^\d+:[A-Za-z0-9_-]{30,50}$/)) {
+      return res.status(400).json({ error: 'Invalid bot token format. Expected format: 123456789:ABCdef...' });
     }
 
     // Verify with Telegram API
@@ -326,18 +328,21 @@ router.delete('/:platform', authenticate, async (req, res, next) => {
 router.get('/status', authenticate, async (req, res, next) => {
   try {
     const user = await User.findById(req.user.userId);
-    const platforms = user.platforms || {};
-    
+    let platforms = {};
+    if (user.platforms) {
+      platforms = typeof user.platforms === 'string' ? JSON.parse(user.platforms) : user.platforms;
+    }
+
     const status = {};
     VALID_PLATFORMS.forEach(platform => {
       const p = platforms[platform];
       status[platform] = {
         connected: p?.status === 'connected',
-        name: p?.bot_name || p?.page_name || p?.team_name || p?.phone_number || null,
+        name: p?.bot_name || p?.bot_username || p?.page_name || p?.team_name || p?.phone_number || null,
         connected_at: p?.connected_at || null
       };
     });
-    
+
     res.json(status);
   } catch (error) {
     next(error);

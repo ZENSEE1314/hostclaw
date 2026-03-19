@@ -64,7 +64,7 @@ class User {
 
   static async findById(id) {
     const result = await query(
-      'SELECT id, email, name, plan, credits, has_paid, api_providers, skills, default_provider, stripe_customer_id, gateway_config, created_at FROM users WHERE id = $1',
+      'SELECT id, email, name, plan, credits, has_paid, api_providers, skills, platforms, default_provider, stripe_customer_id, gateway_config, created_at FROM users WHERE id = $1',
       [id]
     );
     return result.rows[0];
@@ -247,40 +247,50 @@ class User {
     return result.rows[0];
   }
 
+  // Helper: parse platforms from TEXT column
+  static _parsePlatforms(raw) {
+    if (!raw) return {};
+    if (typeof raw === 'object' && !Array.isArray(raw)) return raw;
+    try { return JSON.parse(raw); } catch (e) { return {}; }
+  }
+
   // Platform connection methods
   static async updatePlatform(userId, platform, config) {
+    const user = await this.findById(userId);
+    const platforms = this._parsePlatforms(user.platforms);
+    platforms[platform] = config;
     const result = await query(
-      `UPDATE users 
-       SET platforms = jsonb_set(COALESCE(platforms, '{}'), array[$1], $2::jsonb),
-       updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $3 
-       RETURNING platforms`,
-      [platform, JSON.stringify(config), userId]
+      `UPDATE users SET platforms = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING platforms`,
+      [JSON.stringify(platforms), userId]
     );
     return result.rows[0]?.platforms;
   }
 
   static async removePlatform(userId, platform) {
+    const user = await this.findById(userId);
+    const platforms = this._parsePlatforms(user.platforms);
+    delete platforms[platform];
     const result = await query(
-      `UPDATE users 
-       SET platforms = platforms - $1,
-       updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $2 
-       RETURNING platforms`,
-      [platform, userId]
+      `UPDATE users SET platforms = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING platforms`,
+      [JSON.stringify(platforms), userId]
     );
     return result.rows[0]?.platforms;
   }
 
-  // Find user by platform ID (for webhook routing)
-  static async findByPlatform(platform, platformUserId) {
+  // Find user by platform (for webhook routing) — scan in JS since platforms is TEXT
+  static async findByPlatform(platform, identifier) {
     const result = await query(
-      `SELECT * FROM users 
-       WHERE platforms->${platform}->>'user_id' = $1 
-       LIMIT 1`,
-      [platformUserId]
+      `SELECT id, email, name, plan, credits, has_paid, api_providers, skills, platforms, default_provider FROM users WHERE platforms IS NOT NULL AND platforms != '{}'`,
+      []
     );
-    return result.rows[0];
+    for (const row of result.rows) {
+      const platforms = this._parsePlatforms(row.platforms);
+      const p = platforms[platform];
+      if (p && (p.bot_username === identifier || p.phone_number === identifier || p.page_id === identifier)) {
+        return row;
+      }
+    }
+    return null;
   }
 
   // ===== FORGOT PASSWORD METHODS =====

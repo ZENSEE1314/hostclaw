@@ -7,6 +7,25 @@ const crypto = require('crypto');
 
 const router = express.Router();
 
+// Parse TEXT JSON columns from user row
+function parsePlatforms(user) {
+  if (!user.platforms) return {};
+  if (typeof user.platforms === 'object') return user.platforms;
+  try { return JSON.parse(user.platforms); } catch (e) { return {}; }
+}
+
+function parseProviders(user) {
+  if (!user.api_providers) return {};
+  if (typeof user.api_providers === 'object') return user.api_providers;
+  try { return JSON.parse(user.api_providers); } catch (e) { return {}; }
+}
+
+function parseSkills(user) {
+  if (!user.skills) return [];
+  if (Array.isArray(user.skills)) return user.skills;
+  try { return JSON.parse(user.skills); } catch (e) { return []; }
+}
+
 // Initialize Stripe if key exists
 let stripe = null;
 if (process.env.STRIPE_SECRET_KEY) {
@@ -64,25 +83,26 @@ router.post('/telegram/:userId', async (req, res) => {
   
   try {
     const user = await User.findById(userId);
-    if (!user || user.platforms?.telegram?.status !== 'connected') return;
-    
+    const platforms = parsePlatforms(user);
+    if (!user || platforms.telegram?.status !== 'connected') return;
+
     const chatId = update.message?.chat?.id || update.callback_query?.message?.chat?.id;
     const text = update.message?.text || update.callback_query?.data;
-    
+
     if (!chatId || !text) return;
-    
+
     if (user.credits <= 0) {
-      await sendTelegramMessage(chatId, noCreditsMsg(user), user.platforms.telegram.bot_token);
+      await sendTelegramMessage(chatId, noCreditsMsg(user), platforms.telegram.bot_token);
       return;
     }
-    
+
     if (text.startsWith('/')) {
-      await handleTelegramCommand(chatId, text, user);
+      await handleTelegramCommand(chatId, text, user, platforms);
       return;
     }
-    
+
     await processAndRespond(user, text, 'telegram', chatId, async (response) => {
-      await sendTelegramMessage(chatId, response, user.platforms.telegram.bot_token);
+      await sendTelegramMessage(chatId, response, platforms.telegram.bot_token);
     });
   } catch (error) {
     console.error('Telegram error:', error);
@@ -103,25 +123,26 @@ router.post('/discord/:userId', async (req, res) => {
     const body = JSON.stringify(req.body);
     
     const user = await User.findById(userId);
-    if (!user || user.platforms?.discord?.status !== 'connected') return;
-    
+    const platforms = parsePlatforms(user);
+    if (!user || platforms.discord?.status !== 'connected') return;
+
     const channelId = data.channel_id;
     const text = data.content;
-    
+
     if (!text) return;
-    
+
     if (user.credits <= 0) {
-      await sendDiscordMessage(channelId, noCreditsMsg(user), user.platforms.discord.bot_token);
+      await sendDiscordMessage(channelId, noCreditsMsg(user), platforms.discord.bot_token);
       return;
     }
-    
+
     if (text.startsWith('!')) {
-      await handleDiscordCommand(channelId, text, user);
+      await handleDiscordCommand(channelId, text, user, platforms);
       return;
     }
-    
+
     await processAndRespond(user, text, 'discord', channelId, async (response) => {
-      await sendDiscordMessage(channelId, response, user.platforms.discord.bot_token);
+      await sendDiscordMessage(channelId, response, platforms.discord.bot_token);
     });
   } catch (error) {
     console.error('Discord error:', error);
@@ -142,26 +163,27 @@ router.post('/slack/:userId', async (req, res) => {
     }
     
     const user = await User.findById(userId);
-    if (!user || user.platforms?.slack?.status !== 'connected') return;
-    
+    const platforms = parsePlatforms(user);
+    if (!user || platforms.slack?.status !== 'connected') return;
+
     const event = data.event;
     if (event?.type !== 'message' || event?.subtype === 'bot_message') return;
-    
+
     const channelId = event.channel;
     const text = event.text;
-    
+
     if (user.credits <= 0) {
-      await sendSlackMessage(channelId, noCreditsMsg(user), user.platforms.slack.bot_token);
+      await sendSlackMessage(channelId, noCreditsMsg(user), platforms.slack.bot_token);
       return;
     }
-    
+
     if (text?.startsWith('!')) {
-      await handleSlackCommand(channelId, text, user);
+      await handleSlackCommand(channelId, text, user, platforms);
       return;
     }
-    
+
     await processAndRespond(user, text, 'slack', channelId, async (response) => {
-      await sendSlackMessage(channelId, response, user.platforms.slack.bot_token);
+      await sendSlackMessage(channelId, response, platforms.slack.bot_token);
     });
   } catch (error) {
     console.error('Slack error:', error);
@@ -177,21 +199,22 @@ router.post('/line/:userId', async (req, res) => {
     const data = req.body;
     
     const user = await User.findById(userId);
-    if (!user || user.platforms?.line?.status !== 'connected') return;
-    
+    const platforms = parsePlatforms(user);
+    if (!user || platforms.line?.status !== 'connected') return;
+
     const event = data.events?.[0];
     if (!event || event.type !== 'message' || event.message.type !== 'text') return;
-    
+
     const replyToken = event.replyToken;
     const text = event.message.text;
-    
+
     if (user.credits <= 0) {
-      await sendLineMessage(replyToken, noCreditsMsg(user), user.platforms.line.channel_token);
+      await sendLineMessage(replyToken, noCreditsMsg(user), platforms.line.channel_token);
       return;
     }
-    
+
     await processAndRespond(user, text, 'line', replyToken, async (response) => {
-      await sendLineMessage(replyToken, response, user.platforms.line.channel_token);
+      await sendLineMessage(replyToken, response, platforms.line.channel_token);
     });
   } catch (error) {
     console.error('LINE error:', error);
@@ -220,25 +243,26 @@ router.post('/messenger/:userId', async (req, res) => {
     const data = req.body;
     
     const user = await User.findById(userId);
-    if (!user || user.platforms?.messenger?.status !== 'connected') return;
-    
+    const platforms = parsePlatforms(user);
+    if (!user || platforms.messenger?.status !== 'connected') return;
+
     const entry = data.entry?.[0];
     const messaging = entry?.messaging?.[0];
-    
+
     if (!messaging || messaging.message?.is_echo) return;
-    
+
     const senderId = messaging.sender.id;
     const text = messaging.message?.text;
-    
+
     if (!text) return;
-    
+
     if (user.credits <= 0) {
-      await sendMessengerMessage(senderId, noCreditsMsg(user), user.platforms.messenger.page_token);
+      await sendMessengerMessage(senderId, noCreditsMsg(user), platforms.messenger.page_token);
       return;
     }
-    
+
     await processAndRespond(user, text, 'messenger', senderId, async (response) => {
-      await sendMessengerMessage(senderId, response, user.platforms.messenger.page_token);
+      await sendMessengerMessage(senderId, response, platforms.messenger.page_token);
     });
   } catch (error) {
     console.error('Messenger error:', error);
@@ -254,23 +278,24 @@ router.post('/signal/:userId', async (req, res) => {
     const data = req.body;
     
     const user = await User.findById(userId);
-    if (!user || user.platforms?.signal?.status !== 'connected') return;
-    
+    const platforms = parsePlatforms(user);
+    if (!user || platforms.signal?.status !== 'connected') return;
+
     const envelope = data.envelope;
     if (!envelope || !envelope.dataMessage) return;
-    
+
     const fromNumber = envelope.sourceNumber;
     const text = envelope.dataMessage.message;
-    
+
     if (!text) return;
-    
+
     if (user.credits <= 0) {
-      await sendSignalMessage(fromNumber, noCreditsMsg(user), user.platforms.signal);
+      await sendSignalMessage(fromNumber, noCreditsMsg(user), platforms.signal);
       return;
     }
-    
+
     await processAndRespond(user, text, 'signal', fromNumber, async (response) => {
-      await sendSignalMessage(fromNumber, response, user.platforms.signal);
+      await sendSignalMessage(fromNumber, response, platforms.signal);
     });
   } catch (error) {
     console.error('Signal error:', error);
@@ -306,14 +331,15 @@ router.post('/whatsapp', async (req, res) => {
               
               const user = await User.findByPlatform('whatsapp', from);
               if (!user) continue;
-              
+              const userPlatforms = parsePlatforms(user);
+
               if (user.credits <= 0) {
-                await sendWhatsAppMessage(from, noCreditsMsg(user), user.platforms.whatsapp);
+                await sendWhatsAppMessage(from, noCreditsMsg(user), userPlatforms.whatsapp);
                 continue;
               }
-              
+
               await processAndRespond(user, text, 'whatsapp', from, async (response) => {
-                await sendWhatsAppMessage(from, response, user.platforms.whatsapp);
+                await sendWhatsAppMessage(from, response, userPlatforms.whatsapp);
               });
             }
           }
@@ -333,11 +359,12 @@ router.get('/wechat/:userId', async (req, res) => {
   
   try {
     const user = await User.findById(userId);
-    if (!user || !user.platforms?.wechat?.token) {
+    const platforms = parsePlatforms(user);
+    if (!user || !platforms.wechat?.token) {
       return res.sendStatus(403);
     }
-    
-    const token = user.platforms.wechat.token;
+
+    const token = platforms.wechat.token;
     const tmpArr = [token, timestamp, nonce].sort();
     const tmpStr = tmpArr.join('');
     const hash = crypto.createHash('sha1').update(tmpStr).digest('hex');
@@ -463,45 +490,49 @@ async function sendWhatsAppMessage(to, text, config) {
 
 // ===== COMMAND HANDLERS =====
 
-async function handleTelegramCommand(chatId, text, user) {
+async function handleTelegramCommand(chatId, text, user, platforms) {
+  const skills = parseSkills(user);
+  const providers = parseProviders(user);
   const commands = {
-    '/start': `👋 Welcome ${user.name}!\n\nI'm your AI assistant on HostClaw.\n💳 Credits: $${user.credits.toFixed(2)}\n🤖 Provider: ${user.default_provider}\n\nSend me any message to start!`,
+    '/start': `👋 Welcome ${user.name}!\n\nI'm your AI assistant on HostClaw.\n💳 Credits: $${parseFloat(user.credits).toFixed(2)}\n🤖 Provider: ${user.default_provider}\n\nSend me any message to start!`,
     '/help': `Available commands:\n/start - Start\n/credits - Check balance\n/provider - Current AI provider\n/skills - Active skills\n/help - This message`,
-    '/credits': `💳 Your credits: $${user.credits.toFixed(2)}\n\nAdd more: ${process.env.FRONTEND_URL}/billing.html`,
-    '/skills': `🧩 Active skills:\n${(user.skills || []).filter(s => s.active).map(s => `• ${s.id}`).join('\n') || 'None'}`,
-    '/provider': `🤖 Current: ${user.default_provider}\n\nAvailable:\n${Object.keys(user.api_providers || {}).join('\n') || 'None configured'}`
+    '/credits': `💳 Your credits: $${parseFloat(user.credits).toFixed(2)}\n\nAdd more: ${process.env.FRONTEND_URL}/billing.html`,
+    '/skills': `🧩 Active skills:\n${skills.filter(s => s.active).map(s => `• ${s.id}`).join('\n') || 'None'}`,
+    '/provider': `🤖 Current: ${user.default_provider}\n\nAvailable:\n${Object.keys(providers).join('\n') || 'None configured'}`
   };
-  
+
   const response = commands[text] || 'Unknown command. Type /help for available commands.';
-  await sendTelegramMessage(chatId, response, user.platforms.telegram.bot_token);
+  await sendTelegramMessage(chatId, response, platforms.telegram.bot_token);
 }
 
-async function handleDiscordCommand(channelId, text, user) {
+async function handleDiscordCommand(channelId, text, user, platforms) {
+  const skills = parseSkills(user);
   const commands = {
-    '!help': `**HostClaw AI Assistant**\n\n**Commands:**\n!start - Welcome message\n!credits - Check balance\n!provider - AI provider info\n!skills - List skills\n!help - This message\n\nYour credits: $${user.credits.toFixed(2)}`,
+    '!help': `**HostClaw AI Assistant**\n\n**Commands:**\n!start - Welcome message\n!credits - Check balance\n!provider - AI provider info\n!skills - List skills\n!help - This message\n\nYour credits: $${parseFloat(user.credits).toFixed(2)}`,
     '!start': `👋 Hey ${user.name}! I'm your AI assistant. Just type any message and I'll help you out.`,
-    '!credits': `💳 Your credits: $${user.credits.toFixed(2)}\n\nAdd more at: ${process.env.FRONTEND_URL}/billing.html`,
-    '!skills': `🧩 Your active skills:\n${(user.skills || []).filter(s => s.active).map(s => `• ${s.id}`).join('\n') || 'None yet'}`,
+    '!credits': `💳 Your credits: $${parseFloat(user.credits).toFixed(2)}\n\nAdd more at: ${process.env.FRONTEND_URL}/billing.html`,
+    '!skills': `🧩 Your active skills:\n${skills.filter(s => s.active).map(s => `• ${s.id}`).join('\n') || 'None yet'}`,
     '!provider': `🤖 Current provider: ${user.default_provider}`
   };
-  
+
   const response = commands[text] || null;
   if (response) {
-    await sendDiscordMessage(channelId, response, user.platforms.discord.bot_token);
+    await sendDiscordMessage(channelId, response, platforms.discord.bot_token);
   }
 }
 
-async function handleSlackCommand(channel, text, user) {
+async function handleSlackCommand(channel, text, user, platforms) {
+  const skills = parseSkills(user);
   const commands = {
     '!help': `*HostClaw AI Assistant*\n\nCommands:\n• !start - Welcome\n• !credits - Check balance\n• !skills - List skills\n• !help - This message`,
     '!start': `👋 Hey <!channel>! I'm an AI assistant powered by HostClaw.`,
-    '!credits': `💳 Credits: $${user.credits.toFixed(2)}`,
-    '!skills': `🧩 Active skills: ${(user.skills || []).filter(s => s.active).map(s => s.id).join(', ') || 'None'}`
+    '!credits': `💳 Credits: $${parseFloat(user.credits).toFixed(2)}`,
+    '!skills': `🧩 Active skills: ${skills.filter(s => s.active).map(s => s.id).join(', ') || 'None'}`
   };
-  
+
   const response = commands[text] || null;
   if (response) {
-    await sendSlackMessage(channel, response, user.platforms.slack.bot_token);
+    await sendSlackMessage(channel, response, platforms.slack.bot_token);
   }
 }
 
@@ -523,8 +554,9 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
 
     // Get AI response
     const defaultProvider = user.default_provider || 'openai';
-    const providerConfig = user.api_providers?.[defaultProvider];
-    const activeSkills = (user.skills || []).filter(s => s.active).map(s => s.id);
+    const allProviders = parseProviders(user);
+    const providerConfig = allProviders[defaultProvider] || allProviders[Object.keys(allProviders)[0]];
+    const activeSkills = parseSkills(user).filter(s => s.active).map(s => s.id);
 
     const aiResponse = await generateAIResponse({
       message: text,
