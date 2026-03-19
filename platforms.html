@@ -276,7 +276,8 @@
                                         <div class="qr-spinner"></div>
                                         <p class="qr-status">Waiting for QR code...</p>
                                     </div>
-                                    <p class="qr-hint">Open WhatsApp → Linked Devices → Link a Device → Scan</p>
+                                    <p class="qr-hint">Open WhatsApp → Settings → Linked Devices → Link a Device → Scan</p>
+                    <p style="font-size:0.75rem;color:var(--warning);margin-top:0.5rem">⚠️ QR refreshes every 60s. If WhatsApp says "check internet", scan the latest QR immediately.</p>
                                 </div>
                             </div>
                         ` : ''}
@@ -336,7 +337,7 @@
             cfg.fields.forEach(f => {
                 body[f.name] = document.getElementById(`${id}-${f.name}`).value.trim();
             });
-            const missing = cfg.fields.filter(f => f.label.indexOf('optional') === -1 && !body[f.name]);
+            const missing = cfg.fields.filter(f => !f.label.toLowerCase().includes('optional') && !body[f.name]);
             if (missing.length > 0) {
                 showToast('Please fill in: ' + missing.map(f => f.label).join(', '), 'error');
                 return;

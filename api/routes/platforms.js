@@ -2,8 +2,20 @@ const express = require('express');
 const { authenticate } = require('../middleware/auth');
 const User = require('../models/user');
 const axios = require('axios');
-const waService = require('../services/whatsapp');
 const { generateAIResponse } = require('../services/ai');
+
+// Lazy-load WhatsApp service — prevents server crash if Baileys not installed
+let _waService = null;
+function getWAService() {
+  if (_waService) return _waService;
+  try {
+    _waService = require('../services/whatsapp');
+    return _waService;
+  } catch (e) {
+    console.error('WhatsApp service unavailable:', e.message);
+    return null;
+  }
+}
 
 const router = express.Router();
 
@@ -57,8 +69,10 @@ router.get('/status', authenticate, async (req, res, next) => {
 // ===== WHATSAPP — QR Code via Baileys =====
 router.post('/whatsapp/start', authenticate, async (req, res) => {
   const userId = req.user.userId;
+  const wa = getWAService();
+  if (!wa) return res.status(503).json({ error: 'WhatsApp service is not available. Contact support.' });
   try {
-    await waService.createSession(
+    await wa.createSession(
       userId,
       // onConnected: save to DB
       async (phoneNumber, name) => {
@@ -94,7 +108,8 @@ router.post('/whatsapp/start', authenticate, async (req, res) => {
 // Poll for WhatsApp QR code / connection status
 router.get('/whatsapp/qr', authenticate, async (req, res) => {
   const userId = req.user.userId;
-  const session = waService.getSession(userId);
+  const wa = getWAService();
+  const session = wa ? wa.getSession(userId) : null;
 
   if (!session) {
     const user = await User.findById(userId);
@@ -112,7 +127,7 @@ router.get('/whatsapp/qr', authenticate, async (req, res) => {
 
 // Disconnect WhatsApp
 router.delete('/whatsapp', authenticate, async (req, res) => {
-  waService.deleteSession(req.user.userId);
+  getWAService()?.deleteSession(req.user.userId);
   await User.removePlatform(req.user.userId, 'whatsapp').catch(() => {});
   res.json({ message: 'WhatsApp disconnected' });
 });
@@ -365,7 +380,7 @@ router.delete('/:platform', authenticate, async (req, res, next) => {
       return res.status(400).json({ error: 'Invalid platform' });
     }
     if (platform === 'whatsapp') {
-      waService.deleteSession(req.user.userId);
+      getWAService()?.deleteSession(req.user.userId);
     }
     await User.removePlatform(req.user.userId, platform);
     res.json({ message: `${platform} disconnected` });

@@ -1,17 +1,27 @@
 // WhatsApp session manager using @whiskeysockets/baileys
 // Sessions are in-memory — users re-scan QR after server restart
 
-const QRCode = require('qrcode');
-
 // Active sessions: userId -> { status, qrDataUrl, connected, socket }
 const sessions = new Map();
 
-// Lazy-load Baileys (ESM-only package in newer versions)
+// Lazy-load everything so a missing package won't crash the server
 let baileysCache = null;
 async function getBaileys() {
   if (baileysCache) return baileysCache;
   baileysCache = await import('@whiskeysockets/baileys');
   return baileysCache;
+}
+
+let boomCache = null;
+async function getBoom() {
+  if (boomCache) return boomCache;
+  boomCache = await import('@hapi/boom');
+  return boomCache;
+}
+
+async function toQRDataUrl(qrString) {
+  const QRCode = require('qrcode');
+  return QRCode.toDataURL(qrString, { width: 256, margin: 2 });
 }
 
 async function createSession(userId, onConnected, onMessage) {
@@ -25,31 +35,34 @@ async function createSession(userId, onConnected, onMessage) {
   sessions.set(userId, session);
 
   try {
+    const baileys = await getBaileys();
     const {
       default: makeWASocket,
       DisconnectReason,
       fetchLatestBaileysVersion,
       initAuthCreds,
-      proto
-    } = await getBaileys();
+      proto,
+      Browsers
+    } = baileys;
 
-    const { Boom } = await import('@hapi/boom');
+    const { Boom } = await getBoom();
 
-    // Get latest WhatsApp version
+    // Get latest WhatsApp version with fallback
     let version;
     try {
       const v = await fetchLatestBaileysVersion();
       version = v.version;
     } catch (e) {
-      version = [2, 3000, 1015901307]; // fallback version
+      version = [2, 3000, 1015901307];
     }
 
-    // Simple in-memory auth state
+    // Simple in-memory auth state (no persistence)
     let creds = initAuthCreds();
     const keys = {};
 
     const sock = makeWASocket({
       version,
+      browser: Browsers.ubuntu('Chrome'),
       auth: {
         creds,
         keys: {
@@ -79,7 +92,8 @@ async function createSession(userId, onConnected, onMessage) {
       printQRInTerminal: false,
       syncFullHistory: false,
       connectTimeoutMs: 60000,
-      generateHighQualityLinkPreview: false
+      generateHighQualityLinkPreview: false,
+      getMessage: async () => undefined
     });
 
     session.socket = sock;
@@ -91,10 +105,10 @@ async function createSession(userId, onConnected, onMessage) {
 
       if (qr) {
         try {
-          session.qrDataUrl = await QRCode.toDataURL(qr, { width: 256, margin: 2 });
+          session.qrDataUrl = await toQRDataUrl(qr);
           session.status = 'qr';
         } catch (e) {
-          console.error('QR generate error:', e);
+          console.error('QR generate error:', e.message);
         }
       }
 
@@ -106,7 +120,7 @@ async function createSession(userId, onConnected, onMessage) {
         try {
           await onConnected(phoneNumber, sock.user?.name || phoneNumber);
         } catch (e) {
-          console.error('onConnected error:', e);
+          console.error('onConnected error:', e.message);
         }
       }
 
@@ -115,7 +129,7 @@ async function createSession(userId, onConnected, onMessage) {
         if (code === DisconnectReason.loggedOut) {
           session.status = 'disconnected';
           sessions.delete(userId);
-        } else {
+        } else if (connection === 'close') {
           session.status = 'reconnecting';
         }
       }
@@ -132,13 +146,13 @@ async function createSession(userId, onConnected, onMessage) {
         try {
           await onMessage(msg.key.remoteJid, text, sock);
         } catch (e) {
-          console.error('WhatsApp message handler error:', e);
+          console.error('WhatsApp message error:', e.message);
         }
       }
     });
 
   } catch (error) {
-    console.error('WhatsApp session create error:', error);
+    console.error('WhatsApp session create error:', error.message);
     sessions.delete(userId);
     throw error;
   }
