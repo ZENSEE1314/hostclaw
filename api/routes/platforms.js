@@ -2,323 +2,31 @@ const express = require('express');
 const { authenticate } = require('../middleware/auth');
 const User = require('../models/user');
 const axios = require('axios');
+const waService = require('../services/whatsapp');
+const { generateAIResponse } = require('../services/ai');
 
 const router = express.Router();
 
+const API_BASE = process.env.API_URL || 'https://hostclaw-api.onrender.com';
 const VALID_PLATFORMS = ['whatsapp', 'telegram', 'discord', 'slack', 'line', 'messenger', 'signal', 'wechat'];
+
+function parsePlatforms(user) {
+  if (!user.platforms) return {};
+  if (typeof user.platforms === 'object') return user.platforms;
+  try { return JSON.parse(user.platforms); } catch (e) { return {}; }
+}
+
+function parseProviders(user) {
+  if (!user.api_providers) return {};
+  if (typeof user.api_providers === 'object') return user.api_providers;
+  try { return JSON.parse(user.api_providers); } catch (e) { return {}; }
+}
 
 // Get user's connected platforms
 router.get('/', authenticate, async (req, res, next) => {
   try {
     const user = await User.findById(req.user.userId);
-    let platforms = {};
-    if (user.platforms) {
-      platforms = typeof user.platforms === 'string' ? JSON.parse(user.platforms) : user.platforms;
-    }
-    res.json({ platforms });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// ===== WHATSAPP =====
-router.post('/whatsapp/connect', authenticate, async (req, res, next) => {
-  try {
-    const pairingCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    
-    await User.updatePlatform(req.user.userId, 'whatsapp', {
-      status: 'pending',
-      pairing_code: pairingCode,
-      created_at: new Date()
-    });
-
-    res.json({
-      message: 'Use this code to connect WhatsApp',
-      pairing_code: pairingCode,
-      instructions: [
-        'Open WhatsApp on your phone',
-        'Go to Settings → Linked Devices',
-        'Tap "Link a Device"',
-        'Enter the pairing code above'
-      ]
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// ===== TELEGRAM =====
-router.post('/telegram/connect', authenticate, async (req, res, next) => {
-  try {
-    const { botToken } = req.body;
-    
-    if (!botToken) {
-      return res.status(400).json({ error: 'Bot token is required' });
-    }
-
-    if (!botToken.match(/^\d+:[A-Za-z0-9_-]{30,50}$/)) {
-      return res.status(400).json({ error: 'Invalid bot token format. Expected format: 123456789:ABCdef...' });
-    }
-
-    // Verify with Telegram API
-    const telegramRes = await axios.get(`https://api.telegram.org/bot${botToken}/getMe`);
-    
-    if (!telegramRes.data.ok) {
-      return res.status(400).json({ error: 'Invalid bot token' });
-    }
-
-    const botInfo = telegramRes.data.result;
-    
-    await User.updatePlatform(req.user.userId, 'telegram', {
-      status: 'connected',
-      bot_token: Buffer.from(botToken).toString('base64'),
-      bot_username: botInfo.username,
-      bot_name: botInfo.first_name,
-      connected_at: new Date()
-    });
-
-    // Set webhook
-    const webhookUrl = `${process.env.API_URL}/webhooks/telegram/${req.user.userId}`;
-    await axios.post(`https://api.telegram.org/bot${botToken}/setWebhook`, {
-      url: webhookUrl
-    });
-
-    res.json({
-      message: 'Telegram bot connected successfully',
-      bot_username: botInfo.username,
-      bot_name: botInfo.first_name,
-      webhook_url: webhookUrl
-    });
-  } catch (error) {
-    console.error('Telegram connection error:', error);
-    next(error);
-  }
-});
-
-// ===== DISCORD =====
-router.post('/discord/connect', authenticate, async (req, res, next) => {
-  try {
-    const { botToken } = req.body;
-    
-    if (!botToken) {
-      return res.status(400).json({ error: 'Bot token is required' });
-    }
-
-    // Verify with Discord API
-    const discordRes = await axios.get('https://discord.com/api/v10/users/@me', {
-      headers: { 'Authorization': `Bot ${botToken}` }
-    });
-
-    const botInfo = discordRes.data;
-    
-    await User.updatePlatform(req.user.userId, 'discord', {
-      status: 'connected',
-      bot_token: Buffer.from(botToken).toString('base64'),
-      bot_username: botInfo.username,
-      bot_id: botInfo.id,
-      connected_at: new Date()
-    });
-
-    res.json({
-      message: 'Discord bot connected successfully',
-      bot_username: botInfo.username,
-      bot_id: botInfo.id,
-      invite_url: `https://discord.com/api/oauth2/authorize?client_id=${botInfo.id}&permissions=309237664768&scope=bot`
-    });
-  } catch (error) {
-    console.error('Discord connection error:', error);
-    res.status(400).json({ error: 'Invalid Discord bot token' });
-  }
-});
-
-// ===== SLACK =====
-router.post('/slack/connect', authenticate, async (req, res, next) => {
-  try {
-    const { botToken, signingSecret } = req.body;
-    
-    if (!botToken || !botToken.startsWith('xoxb-')) {
-      return res.status(400).json({ error: 'Valid Bot User OAuth Token required (starts with xoxb-)' });
-    }
-
-    // Verify with Slack API
-    const slackRes = await axios.get('https://slack.com/api/auth.test', {
-      headers: { 'Authorization': `Bearer ${botToken}` }
-    });
-
-    if (!slackRes.data.ok) {
-      return res.status(400).json({ error: 'Invalid Slack token' });
-    }
-
-    const teamInfo = await axios.get('https://slack.com/api/team.info', {
-      headers: { 'Authorization': `Bearer ${botToken}` }
-    });
-
-    await User.updatePlatform(req.user.userId, 'slack', {
-      status: 'connected',
-      bot_token: Buffer.from(botToken).toString('base64'),
-      signing_secret: signingSecret ? Buffer.from(signingSecret).toString('base64') : null,
-      team_name: teamInfo.data.team?.name,
-      team_id: slackRes.data.team_id,
-      bot_user_id: slackRes.data.user_id,
-      connected_at: new Date()
-    });
-
-    res.json({
-      message: 'Slack workspace connected successfully',
-      team_name: teamInfo.data.team?.name,
-      team_id: slackRes.data.team_id
-    });
-  } catch (error) {
-    console.error('Slack connection error:', error);
-    res.status(400).json({ error: 'Failed to connect Slack' });
-  }
-});
-
-// ===== LINE =====
-router.post('/line/connect', authenticate, async (req, res, next) => {
-  try {
-    const { channelSecret, channelAccessToken } = req.body;
-    
-    if (!channelSecret || !channelAccessToken) {
-      return res.status(400).json({ error: 'Channel secret and access token are required' });
-    }
-
-    // Verify with LINE API
-    const lineRes = await axios.get('https://api.line.me/v2/bot/info', {
-      headers: { 'Authorization': `Bearer ${channelAccessToken}` }
-    });
-
-    await User.updatePlatform(req.user.userId, 'line', {
-      status: 'connected',
-      channel_secret: Buffer.from(channelSecret).toString('base64'),
-      channel_token: Buffer.from(channelAccessToken).toString('base64'),
-      bot_name: lineRes.data.displayName,
-      bot_id: lineRes.data.userId,
-      connected_at: new Date()
-    });
-
-    res.json({
-      message: 'LINE bot connected successfully',
-      bot_name: lineRes.data.displayName,
-      webhook_url: `${process.env.API_URL}/webhooks/line/${req.user.userId}`
-    });
-  } catch (error) {
-    console.error('LINE connection error:', error);
-    res.status(400).json({ error: 'Invalid LINE credentials' });
-  }
-});
-
-// ===== MESSENGER (META) =====
-router.post('/messenger/connect', authenticate, async (req, res, next) => {
-  try {
-    const { pageAccessToken, pageId, appSecret } = req.body;
-    
-    if (!pageAccessToken || !pageId) {
-      return res.status(400).json({ error: 'Page access token and page ID are required' });
-    }
-
-    // Verify with Facebook Graph API
-    const fbRes = await axios.get(`https://graph.facebook.com/v18.0/${pageId}?access_token=${pageAccessToken}`);
-
-    await User.updatePlatform(req.user.userId, 'messenger', {
-      status: 'connected',
-      page_token: Buffer.from(pageAccessToken).toString('base64'),
-      page_id: pageId,
-      app_secret: appSecret ? Buffer.from(appSecret).toString('base64') : null,
-      page_name: fbRes.data.name,
-      connected_at: new Date()
-    });
-
-    res.json({
-      message: 'Facebook Messenger connected successfully',
-      page_name: fbRes.data.name,
-      page_id: pageId
-    });
-  } catch (error) {
-    console.error('Messenger connection error:', error);
-    res.status(400).json({ error: 'Invalid Facebook credentials' });
-  }
-});
-
-// ===== SIGNAL (Simple-Bridge) =====
-router.post('/signal/connect', authenticate, async (req, res, next) => {
-  try {
-    const { phoneNumber, signalCliRestApiUrl } = req.body;
-    
-    if (!phoneNumber || !signalCliRestApiUrl) {
-      return res.status(400).json({ error: 'Phone number and Signal CLI REST API URL are required' });
-    }
-
-    // Verify Signal CLI connection
-    const signalRes = await axios.get(`${signalCliRestApiUrl}/v1/about`);
-
-    await User.updatePlatform(req.user.userId, 'signal', {
-      status: 'connected',
-      phone_number: phoneNumber,
-      api_url: signalCliRestApiUrl,
-      connected_at: new Date()
-    });
-
-    res.json({
-      message: 'Signal connected successfully',
-      phone_number: phoneNumber,
-      signal_version: signalRes.data.version
-    });
-  } catch (error) {
-    console.error('Signal connection error:', error);
-    res.status(400).json({ error: 'Failed to connect Signal. Make sure signal-cli-rest-api is running.' });
-  }
-});
-
-// ===== WECHAT (Work/Official Account) =====
-router.post('/wechat/connect', authenticate, async (req, res, next) => {
-  try {
-    const { appId, appSecret, token, encodingAesKey } = req.body;
-    
-    if (!appId || !appSecret) {
-      return res.status(400).json({ error: 'App ID and App Secret are required' });
-    }
-
-    // Get access token to verify
-    const wxRes = await axios.get(`https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${appId}&secret=${appSecret}`);
-
-    if (wxRes.data.errcode) {
-      return res.status(400).json({ error: 'Invalid WeChat credentials' });
-    }
-
-    await User.updatePlatform(req.user.userId, 'wechat', {
-      status: 'connected',
-      app_id: appId,
-      app_secret: Buffer.from(appSecret).toString('base64'),
-      token: token,
-      encoding_aes_key: encodingAesKey,
-      access_token: wxRes.data.access_token,
-      connected_at: new Date()
-    });
-
-    res.json({
-      message: 'WeChat Official Account connected successfully',
-      app_id: appId,
-      webhook_url: `${process.env.API_URL}/webhooks/wechat/${req.user.userId}`
-    });
-  } catch (error) {
-    console.error('WeChat connection error:', error);
-    res.status(400).json({ error: 'Failed to connect WeChat' });
-  }
-});
-
-// Disconnect any platform
-router.delete('/:platform', authenticate, async (req, res, next) => {
-  try {
-    const { platform } = req.params;
-    
-    if (!VALID_PLATFORMS.includes(platform)) {
-      return res.status(400).json({ error: 'Invalid platform' });
-    }
-
-    await User.removePlatform(req.user.userId, platform);
-    
-    res.json({ message: `${platform} disconnected successfully` });
+    res.json({ platforms: parsePlatforms(user) });
   } catch (error) {
     next(error);
   }
@@ -328,10 +36,7 @@ router.delete('/:platform', authenticate, async (req, res, next) => {
 router.get('/status', authenticate, async (req, res, next) => {
   try {
     const user = await User.findById(req.user.userId);
-    let platforms = {};
-    if (user.platforms) {
-      platforms = typeof user.platforms === 'string' ? JSON.parse(user.platforms) : user.platforms;
-    }
+    const platforms = parsePlatforms(user);
 
     const status = {};
     VALID_PLATFORMS.forEach(platform => {
@@ -344,6 +49,326 @@ router.get('/status', authenticate, async (req, res, next) => {
     });
 
     res.json(status);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ===== WHATSAPP — QR Code via Baileys =====
+router.post('/whatsapp/start', authenticate, async (req, res) => {
+  const userId = req.user.userId;
+  try {
+    await waService.createSession(
+      userId,
+      // onConnected: save to DB
+      async (phoneNumber, name) => {
+        await User.updatePlatform(userId, 'whatsapp', {
+          status: 'connected',
+          phone_number: phoneNumber,
+          bot_name: name,
+          connected_at: new Date().toISOString()
+        });
+      },
+      // onMessage: AI reply
+      async (chatJid, text, sock) => {
+        const user = await User.findById(userId);
+        if (!user) return;
+        const providers = parseProviders(user);
+        const defProv = user.default_provider || 'openai';
+        const providerConfig = providers[defProv] || providers[Object.keys(providers)[0]];
+        if (!providerConfig) {
+          await sock.sendMessage(chatJid, { text: '⚠️ No AI provider configured in HostClaw. Please add your API keys in Settings.' });
+          return;
+        }
+        const aiRes = await generateAIResponse({ message: text, provider: defProv, providerConfig, skills: [] });
+        await sock.sendMessage(chatJid, { text: aiRes.content });
+      }
+    );
+    res.json({ message: 'WhatsApp QR session started' });
+  } catch (error) {
+    console.error('WhatsApp start error:', error);
+    res.status(500).json({ error: 'Failed to start WhatsApp: ' + error.message });
+  }
+});
+
+// Poll for WhatsApp QR code / connection status
+router.get('/whatsapp/qr', authenticate, async (req, res) => {
+  const userId = req.user.userId;
+  const session = waService.getSession(userId);
+
+  if (!session) {
+    const user = await User.findById(userId);
+    const plats = parsePlatforms(user);
+    if (plats.whatsapp?.status === 'connected') return res.json({ status: 'connected' });
+    return res.json({ status: 'not_started' });
+  }
+
+  res.json({
+    status: session.status,
+    qrDataUrl: session.qrDataUrl || null,
+    connected: session.connected
+  });
+});
+
+// Disconnect WhatsApp
+router.delete('/whatsapp', authenticate, async (req, res) => {
+  waService.deleteSession(req.user.userId);
+  await User.removePlatform(req.user.userId, 'whatsapp').catch(() => {});
+  res.json({ message: 'WhatsApp disconnected' });
+});
+
+// ===== TELEGRAM =====
+router.post('/telegram/connect', authenticate, async (req, res) => {
+  try {
+    const { botToken } = req.body;
+
+    if (!botToken) {
+      return res.status(400).json({ error: 'Bot token is required' });
+    }
+
+    // Validate token format (flexible length)
+    if (!botToken.match(/^\d+:[A-Za-z0-9_-]{30,}$/)) {
+      return res.status(400).json({ error: 'Invalid bot token format. Expected: 123456789:ABCdef...' });
+    }
+
+    // Verify with Telegram API
+    let botInfo;
+    try {
+      const telegramRes = await axios.get(`https://api.telegram.org/bot${botToken}/getMe`, { timeout: 10000 });
+      if (!telegramRes.data.ok) {
+        return res.status(400).json({ error: 'Invalid bot token — Telegram rejected it' });
+      }
+      botInfo = telegramRes.data.result;
+    } catch (e) {
+      return res.status(400).json({ error: 'Could not verify token with Telegram. Check the token and try again.' });
+    }
+
+    // Save to DB
+    await User.updatePlatform(req.user.userId, 'telegram', {
+      status: 'connected',
+      bot_token: Buffer.from(botToken).toString('base64'),
+      bot_username: botInfo.username,
+      bot_name: botInfo.first_name,
+      connected_at: new Date().toISOString()
+    });
+
+    // Set webhook — non-fatal
+    const webhookUrl = `${API_BASE}/webhooks/telegram/${req.user.userId}`;
+    try {
+      await axios.post(`https://api.telegram.org/bot${botToken}/setWebhook`, { url: webhookUrl }, { timeout: 10000 });
+    } catch (e) {
+      console.warn('Telegram webhook setup failed (non-fatal):', e.message);
+    }
+
+    res.json({
+      message: 'Telegram bot connected successfully',
+      bot_username: botInfo.username,
+      bot_name: botInfo.first_name
+    });
+  } catch (error) {
+    console.error('Telegram connection error:', error);
+    res.status(500).json({ error: 'Failed to connect Telegram: ' + error.message });
+  }
+});
+
+// ===== DISCORD =====
+router.post('/discord/connect', authenticate, async (req, res) => {
+  try {
+    const { botToken } = req.body;
+    if (!botToken) return res.status(400).json({ error: 'Bot token is required' });
+
+    let botInfo;
+    try {
+      const discordRes = await axios.get('https://discord.com/api/v10/users/@me', {
+        headers: { 'Authorization': `Bot ${botToken}` },
+        timeout: 10000
+      });
+      botInfo = discordRes.data;
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid Discord bot token' });
+    }
+
+    await User.updatePlatform(req.user.userId, 'discord', {
+      status: 'connected',
+      bot_token: Buffer.from(botToken).toString('base64'),
+      bot_username: botInfo.username,
+      bot_id: botInfo.id,
+      connected_at: new Date().toISOString()
+    });
+
+    res.json({
+      message: 'Discord bot connected successfully',
+      bot_username: botInfo.username,
+      invite_url: `https://discord.com/api/oauth2/authorize?client_id=${botInfo.id}&permissions=309237664768&scope=bot`
+    });
+  } catch (error) {
+    console.error('Discord connection error:', error);
+    res.status(500).json({ error: 'Failed to connect Discord: ' + error.message });
+  }
+});
+
+// ===== SLACK =====
+router.post('/slack/connect', authenticate, async (req, res) => {
+  try {
+    const { botToken, signingSecret } = req.body;
+    if (!botToken || !botToken.startsWith('xoxb-')) {
+      return res.status(400).json({ error: 'Valid Bot User OAuth Token required (starts with xoxb-)' });
+    }
+
+    let teamInfo;
+    try {
+      const slackRes = await axios.get('https://slack.com/api/auth.test', {
+        headers: { 'Authorization': `Bearer ${botToken}` },
+        timeout: 10000
+      });
+      if (!slackRes.data.ok) return res.status(400).json({ error: 'Invalid Slack token: ' + slackRes.data.error });
+
+      const teamRes = await axios.get('https://slack.com/api/team.info', {
+        headers: { 'Authorization': `Bearer ${botToken}` },
+        timeout: 10000
+      });
+      teamInfo = { team_name: teamRes.data.team?.name, team_id: slackRes.data.team_id };
+    } catch (e) {
+      return res.status(400).json({ error: 'Could not verify Slack token' });
+    }
+
+    await User.updatePlatform(req.user.userId, 'slack', {
+      status: 'connected',
+      bot_token: Buffer.from(botToken).toString('base64'),
+      signing_secret: signingSecret ? Buffer.from(signingSecret).toString('base64') : null,
+      team_name: teamInfo.team_name,
+      team_id: teamInfo.team_id,
+      connected_at: new Date().toISOString()
+    });
+
+    res.json({ message: 'Slack workspace connected', team_name: teamInfo.team_name });
+  } catch (error) {
+    console.error('Slack connection error:', error);
+    res.status(500).json({ error: 'Failed to connect Slack: ' + error.message });
+  }
+});
+
+// ===== LINE =====
+router.post('/line/connect', authenticate, async (req, res) => {
+  try {
+    const { channelSecret, channelAccessToken } = req.body;
+    if (!channelSecret || !channelAccessToken) {
+      return res.status(400).json({ error: 'Channel secret and access token are required' });
+    }
+
+    let botInfo;
+    try {
+      const lineRes = await axios.get('https://api.line.me/v2/bot/info', {
+        headers: { 'Authorization': `Bearer ${channelAccessToken}` },
+        timeout: 10000
+      });
+      botInfo = lineRes.data;
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid LINE credentials' });
+    }
+
+    await User.updatePlatform(req.user.userId, 'line', {
+      status: 'connected',
+      channel_secret: Buffer.from(channelSecret).toString('base64'),
+      channel_token: Buffer.from(channelAccessToken).toString('base64'),
+      bot_name: botInfo.displayName,
+      bot_id: botInfo.userId,
+      connected_at: new Date().toISOString()
+    });
+
+    // Set webhook — non-fatal
+    try {
+      await axios.put('https://api.line.me/v2/bot/channel/webhook/endpoint', {
+        webhook_endpoint: `${API_BASE}/webhooks/line/${req.user.userId}`
+      }, {
+        headers: { 'Authorization': `Bearer ${channelAccessToken}` },
+        timeout: 10000
+      });
+    } catch (e) {
+      console.warn('LINE webhook setup failed (non-fatal):', e.message);
+    }
+
+    res.json({ message: 'LINE bot connected', bot_name: botInfo.displayName });
+  } catch (error) {
+    console.error('LINE connection error:', error);
+    res.status(500).json({ error: 'Failed to connect LINE: ' + error.message });
+  }
+});
+
+// ===== MESSENGER =====
+router.post('/messenger/connect', authenticate, async (req, res) => {
+  try {
+    const { pageAccessToken, pageId } = req.body;
+    if (!pageAccessToken || !pageId) {
+      return res.status(400).json({ error: 'Page access token and page ID are required' });
+    }
+
+    let pageName;
+    try {
+      const fbRes = await axios.get(`https://graph.facebook.com/v18.0/${pageId}`, {
+        params: { access_token: pageAccessToken },
+        timeout: 10000
+      });
+      pageName = fbRes.data.name;
+    } catch (e) {
+      return res.status(400).json({ error: 'Invalid Facebook credentials or Page ID' });
+    }
+
+    await User.updatePlatform(req.user.userId, 'messenger', {
+      status: 'connected',
+      page_token: Buffer.from(pageAccessToken).toString('base64'),
+      page_id: pageId,
+      page_name: pageName,
+      connected_at: new Date().toISOString()
+    });
+
+    res.json({ message: 'Facebook Messenger connected', page_name: pageName });
+  } catch (error) {
+    console.error('Messenger connection error:', error);
+    res.status(500).json({ error: 'Failed to connect Messenger: ' + error.message });
+  }
+});
+
+// ===== SIGNAL =====
+router.post('/signal/connect', authenticate, async (req, res) => {
+  try {
+    const { phoneNumber, signalCliRestApiUrl } = req.body;
+    if (!phoneNumber || !signalCliRestApiUrl) {
+      return res.status(400).json({ error: 'Phone number and Signal CLI REST API URL are required' });
+    }
+
+    try {
+      await axios.get(`${signalCliRestApiUrl}/v1/about`, { timeout: 10000 });
+    } catch (e) {
+      return res.status(400).json({ error: 'Cannot reach Signal CLI REST API. Make sure it is running.' });
+    }
+
+    await User.updatePlatform(req.user.userId, 'signal', {
+      status: 'connected',
+      phone_number: phoneNumber,
+      api_url: signalCliRestApiUrl,
+      connected_at: new Date().toISOString()
+    });
+
+    res.json({ message: 'Signal connected' });
+  } catch (error) {
+    console.error('Signal connection error:', error);
+    res.status(500).json({ error: 'Failed to connect Signal: ' + error.message });
+  }
+});
+
+// ===== DISCONNECT ANY =====
+router.delete('/:platform', authenticate, async (req, res, next) => {
+  try {
+    const { platform } = req.params;
+    if (!VALID_PLATFORMS.includes(platform)) {
+      return res.status(400).json({ error: 'Invalid platform' });
+    }
+    if (platform === 'whatsapp') {
+      waService.deleteSession(req.user.userId);
+    }
+    await User.removePlatform(req.user.userId, platform);
+    res.json({ message: `${platform} disconnected` });
   } catch (error) {
     next(error);
   }

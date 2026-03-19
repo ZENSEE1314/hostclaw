@@ -11,11 +11,10 @@
             --primary-dark: #4f46e5;
             --primary-light: #818cf8;
             --secondary: #06b6d4;
-            --accent: #f59e0b;
             --dark: #0f0f23;
             --darker: #0a0a1a;
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.1);
+            --card-bg: rgba(255,255,255,0.03);
+            --border: rgba(255,255,255,0.1);
             --text: #f8fafc;
             --text-muted: #94a3b8;
             --success: #10b981;
@@ -26,7 +25,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--darker); color: var(--text); min-height: 100vh; }
         .container { max-width: 1000px; margin: 0 auto; padding: 2rem; }
-        
+
         .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
         .back-btn { width: 40px; height: 40px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; transition: all 0.2s; }
         .back-btn:hover { background: rgba(255,255,255,0.05); border-color: var(--primary); }
@@ -34,29 +33,28 @@
         .header p { color: var(--text-muted); font-size: 0.875rem; }
 
         .platform-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
-        
+
         .platform-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; transition: all 0.2s; }
         .platform-card:hover { border-color: rgba(255,255,255,0.2); }
         .platform-card.connected { border-color: var(--success); }
-        .platform-card.connecting { border-color: var(--warning); }
 
         .platform-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
         .platform-icon { width: 56px; height: 56px; background: rgba(255,255,255,0.05); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
         .platform-info { flex: 1; }
         .platform-name { font-weight: 600; font-size: 1.125rem; display: flex; align-items: center; gap: 0.5rem; }
         .platform-badge { font-size: 0.625rem; padding: 0.125rem 0.5rem; border-radius: 100px; background: var(--success); color: white; }
-        .platform-badge.connecting { background: var(--warning); }
         .platform-desc { font-size: 0.875rem; color: var(--text-muted); }
-        .platform-status { display: flex; align-items: center; gap: 0.5rem; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
-        .status-dot.disconnected { background: var(--text-muted); }
-        .status-dot.connecting { background: var(--warning); }
-        .status-text { font-size: 0.875rem; color: var(--text-muted); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block; }
+        .status-dot.off { background: var(--text-muted); }
 
         .connection-info { background: rgba(16,185,129,0.05); border: 1px solid rgba(16,185,129,0.2); border-radius: 10px; padding: 1rem; margin: 1rem 0; }
-        .info-row { display: flex; justify-content: space-between; font-size: 0.875rem; margin-bottom: 0.5rem; }
+        .info-row { display: flex; justify-content: space-between; font-size: 0.875rem; margin-bottom: 0.375rem; }
         .info-row:last-child { margin-bottom: 0; }
         .info-label { color: var(--text-muted); }
+
+        .instructions { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; margin: 1rem 0; font-size: 0.875rem; }
+        .instructions ol { margin: 0.5rem 0 0 0; padding-left: 1.25rem; color: var(--text-muted); }
+        .instructions li { margin-bottom: 0.375rem; }
 
         .form-group { margin-bottom: 1rem; }
         .form-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; }
@@ -67,26 +65,27 @@
         .btn { padding: 0.75rem 1.5rem; border-radius: 10px; font-size: 0.9375rem; font-weight: 500; cursor: pointer; border: none; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; }
         .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
         .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(99,102,241,0.4); }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-        .btn-outline:hover { background: rgba(255,255,255,0.05); border-color: var(--primary); }
         .btn-danger { background: rgba(239,68,68,0.1); border: 1px solid var(--danger); color: var(--danger); }
         .btn-danger:hover { background: rgba(239,68,68,0.2); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
         .btn-sm { padding: 0.5rem 1rem; font-size: 0.875rem; }
 
-        .platform-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-        
-        .instructions { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; margin: 1rem 0; font-size: 0.875rem; }
-        .instructions ol { margin: 0.5rem 0 0 0; padding-left: 1.25rem; color: var(--text-muted); }
-        .instructions li { margin-bottom: 0.375rem; }
+        .platform-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem; }
 
-        .pairing-code { text-align: center; padding: 1.5rem; background: rgba(99,102,241,0.1); border: 2px dashed var(--primary); border-radius: 12px; margin: 1rem 0; }
-        .pairing-code-value { font-size: 2rem; font-weight: 700; font-family: monospace; letter-spacing: 0.25rem; color: var(--primary-light); }
+        /* WhatsApp QR section */
+        .qr-section { text-align: center; padding: 1.5rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; margin: 1rem 0; }
+        .qr-section img { border-radius: 8px; max-width: 220px; }
+        .qr-hint { font-size: 0.8125rem; color: var(--text-muted); margin-top: 0.75rem; }
+        .qr-status { font-size: 0.875rem; color: var(--text-muted); }
+        .qr-spinner { display: inline-block; width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 1rem auto; }
 
-        .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; }
+        /* Discord invite link */
+        .invite-link { word-break: break-all; font-size: 0.75rem; color: var(--primary-light); background: rgba(99,102,241,0.1); padding: 0.5rem 0.75rem; border-radius: 8px; margin-top: 0.75rem; display: block; }
+
+        .loading { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: white; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--dark); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 1000; }
+        .toast { position: fixed; bottom: 2rem; right: 2rem; background: var(--dark); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 10px 40px rgba(0,0,0,0.5); transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 1000; max-width: 360px; }
         .toast.show { transform: translateY(0); opacity: 1; }
         .toast.success { border-color: var(--success); }
         .toast.error { border-color: var(--danger); }
@@ -103,10 +102,7 @@
                 <p>Chat with your AI on any platform</p>
             </div>
         </div>
-
-        <div class="platform-grid" id="platformGrid">
-            <!-- Platforms will be rendered here -->
-        </div>
+        <div class="platform-grid" id="platformGrid"></div>
     </div>
 
     <div class="toast" id="toast">
@@ -123,25 +119,25 @@
             whatsapp: {
                 name: 'WhatsApp',
                 icon: '💬',
-                desc: 'Chat via WhatsApp messaging',
+                desc: 'Connect your WhatsApp by scanning a QR code',
                 instructions: [
-                    'Click "Generate Code" below',
+                    'Click "Connect WhatsApp" below',
+                    'A QR code will appear',
                     'Open WhatsApp → Settings → Linked Devices',
-                    'Tap "Link a Device"',
-                    'Enter the pairing code'
+                    'Tap "Link a Device" and scan the QR code'
                 ],
                 fields: [],
-                showCode: true
+                qrMode: true
             },
             telegram: {
                 name: 'Telegram',
                 icon: '✈️',
-                desc: 'Create a Telegram bot',
+                desc: 'Create a Telegram bot and connect it',
                 instructions: [
-                    'Message @BotFather on Telegram',
-                    'Send /newbot and follow steps',
-                    'Copy the API token',
-                    'Paste below and connect'
+                    'Open Telegram → search @BotFather',
+                    'Send /newbot and follow the steps',
+                    'Copy the API token it gives you',
+                    'Paste it below and click Connect'
                 ],
                 fields: [
                     { name: 'botToken', label: 'Bot API Token', type: 'password', placeholder: '123456789:ABCdef...' }
@@ -150,12 +146,12 @@
             discord: {
                 name: 'Discord',
                 icon: '🎮',
-                desc: 'Add bot to your Discord server',
+                desc: 'Add an AI bot to your Discord server',
                 instructions: [
-                    'Go to Discord Developer Portal',
-                    'Create New Application → Bot',
-                    'Copy the bot token',
-                    'Paste below and invite the bot'
+                    'Go to discord.com/developers/applications',
+                    'Create New Application → Bot tab',
+                    'Click Reset Token and copy it',
+                    'Paste below and click Connect'
                 ],
                 fields: [
                     { name: 'botToken', label: 'Bot Token', type: 'password', placeholder: 'Your Discord bot token' }
@@ -168,8 +164,8 @@
                 instructions: [
                     'Go to api.slack.com/apps',
                     'Create New App → From scratch',
-                    'Go to OAuth & Permissions',
-                    'Copy Bot User OAuth Token'
+                    'OAuth & Permissions → add bot scopes',
+                    'Install to workspace → copy Bot User OAuth Token'
                 ],
                 fields: [
                     { name: 'botToken', label: 'Bot User OAuth Token', type: 'password', placeholder: 'xoxb-...' },
@@ -183,8 +179,8 @@
                 instructions: [
                     'Go to LINE Developers Console',
                     'Create a Messaging API channel',
-                    'Get Channel Secret and Access Token',
-                    'Paste both below'
+                    'Get Channel Secret and Channel Access Token',
+                    'Paste both below and click Connect'
                 ],
                 fields: [
                     { name: 'channelSecret', label: 'Channel Secret', type: 'password', placeholder: 'Your channel secret' },
@@ -197,9 +193,9 @@
                 desc: 'Facebook Messenger integration',
                 instructions: [
                     'Go to developers.facebook.com',
-                    'Create App → Messenger product',
+                    'Create App → Add Messenger product',
                     'Connect your Facebook Page',
-                    'Get Page Access Token'
+                    'Generate Page Access Token → paste below'
                 ],
                 fields: [
                     { name: 'pageAccessToken', label: 'Page Access Token', type: 'password', placeholder: 'EAAG...' },
@@ -209,183 +205,227 @@
             signal: {
                 name: 'Signal',
                 icon: '🔐',
-                desc: 'Signal messaging (via signal-cli)',
+                desc: 'Signal messaging (requires signal-cli-rest-api)',
                 instructions: [
-                    'Set up signal-cli-rest-api',
-                    'Register your phone number',
-                    'Get the REST API URL',
-                    'Enter details below'
+                    'Set up signal-cli-rest-api on your server',
+                    'Register your phone number with it',
+                    'Note the REST API URL (e.g. http://your-server:8080)',
+                    'Enter your phone and API URL below'
                 ],
                 fields: [
                     { name: 'phoneNumber', label: 'Your Phone Number', type: 'text', placeholder: '+1234567890' },
-                    { name: 'signalCliRestApiUrl', label: 'Signal CLI REST API URL', type: 'text', placeholder: 'http://localhost:8080' }
+                    { name: 'signalCliRestApiUrl', label: 'Signal CLI REST API URL', type: 'text', placeholder: 'http://your-server:8080' }
                 ]
             }
         };
 
-        let platforms = {};
+        let statuses = {};
+        let qrPollInterval = null;
 
         async function loadPlatforms() {
             try {
-                const response = await fetch(`${API_URL}/api/platforms/status`, {
+                const res = await fetch(`${API_URL}/api/platforms/status`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                if (response.ok) {
-                    platforms = await response.json();
-                    renderPlatforms();
+                if (res.ok) {
+                    statuses = await res.json();
                 }
-            } catch (error) {
-                showToast('Failed to load platforms', 'error');
+            } catch (e) {
+                console.error('Failed to load platform statuses:', e);
             }
+            renderPlatforms();
         }
 
         function renderPlatforms() {
             const grid = document.getElementById('platformGrid');
-            grid.innerHTML = Object.entries(PLATFORMS).map(([id, config]) => {
-                const status = platforms[id] || { connected: false };
-                const isConnected = status.connected;
-                
+            grid.innerHTML = Object.entries(PLATFORMS).map(([id, cfg]) => {
+                const st = statuses[id] || {};
+                const connected = st.connected === true;
                 return `
-                    <div class="platform-card ${isConnected ? 'connected' : ''}" id="card-${id}">
-                        <div class="platform-header">
-                            <div class="platform-icon">${config.icon}</div>
-                            <div class="platform-info">
-                                <div class="platform-name">
-                                    ${config.name}
-                                    ${isConnected ? '<span class="platform-badge">✓ Connected</span>' : ''}
-                                </div>
-                                <div class="platform-desc">${config.desc}</div>
+                <div class="platform-card ${connected ? 'connected' : ''}" id="card-${id}">
+                    <div class="platform-header">
+                        <div class="platform-icon">${cfg.icon}</div>
+                        <div class="platform-info">
+                            <div class="platform-name">
+                                ${cfg.name}
+                                ${connected ? '<span class="platform-badge">✓ Connected</span>' : ''}
                             </div>
-                            <div class="platform-status">
-                                <div class="status-dot ${isConnected ? '' : 'disconnected'}"></div>
-                                <span class="status-text">${isConnected ? 'Active' : 'Not connected'}</span>
+                            <div class="platform-desc">${cfg.desc}</div>
+                        </div>
+                        <span class="status-dot ${connected ? '' : 'off'}"></span>
+                    </div>
+
+                    ${connected ? `
+                        <div class="connection-info">
+                            ${st.name ? `<div class="info-row"><span class="info-label">Account</span><span>${st.name}</span></div>` : ''}
+                            ${st.connected_at ? `<div class="info-row"><span class="info-label">Connected</span><span>${new Date(st.connected_at).toLocaleDateString()}</span></div>` : ''}
+                        </div>
+                        <div class="platform-actions">
+                            <button class="btn btn-danger btn-sm" onclick="disconnectPlatform('${id}')">Disconnect</button>
+                        </div>
+                    ` : `
+                        <div class="instructions">
+                            <strong>How to connect:</strong>
+                            <ol>${cfg.instructions.map(i => `<li>${i}</li>`).join('')}</ol>
+                        </div>
+
+                        ${cfg.qrMode ? `
+                            <div id="qr-section-${id}" class="hidden">
+                                <div class="qr-section">
+                                    <div id="qr-img-${id}">
+                                        <div class="qr-spinner"></div>
+                                        <p class="qr-status">Waiting for QR code...</p>
+                                    </div>
+                                    <p class="qr-hint">Open WhatsApp → Linked Devices → Link a Device → Scan</p>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <div id="form-${id}">
+                            ${cfg.fields.map(f => `
+                                <div class="form-group">
+                                    <label class="form-label">${f.label}</label>
+                                    <input type="${f.type}" class="form-input" id="${id}-${f.name}" placeholder="${f.placeholder}">
+                                </div>
+                            `).join('')}
+                            <div class="platform-actions">
+                                <button class="btn btn-primary" id="btn-${id}" onclick="connectPlatform('${id}')">
+                                    ${cfg.qrMode ? '📷 Connect WhatsApp' : 'Connect'}
+                                </button>
                             </div>
                         </div>
 
-                        ${isConnected ? `
-                            <div class="connection-info">
-                                <div class="info-row">
-                                    <span class="info-label">Connected</span>
-                                    <span>${new Date(status.connected_at).toLocaleDateString()}</span>
-                                </div>
-                                ${status.name ? `
-                                <div class="info-row">
-                                    <span class="info-label">Account</span>
-                                    <span>${status.name}</span>
-                                </div>` : ''}
-                            </div>
-                            <div class="platform-actions">
-                                <button class="btn btn-danger btn-sm" onclick="disconnectPlatform('${id}')">Disconnect</button>
-                            </div>
-                        ` : `
-                            <div class="instructions">
-                                <strong>How to connect:</strong>
-                                <ol>
-                                    ${config.instructions.map(i => `<li>${i}</li>`).join('')}
-                                </ol>
-                            </div>
-                            
-                            ${config.showCode ? `
-                                <div id="codeSection-${id}" class="hidden">
-                                    <div class="pairing-code">
-                                        <div class="pairing-code-value" id="code-${id}">------</div>
-                                    </div>
-                                </div>
-                            ` : ''}
-                            
-                            <div id="form-${id}">
-                                ${config.fields.map(f => `
-                                    <div class="form-group">
-                                        <label class="form-label">${f.label}</label>
-                                        <input type="${f.type}" class="form-input" id="${id}-${f.name}" placeholder="${f.placeholder}">
-                                    </div>
-                                `).join('')}
-                                
-                                <div class="platform-actions">
-                                    <button class="btn btn-primary" onclick="connectPlatform('${id}')" id="btn-${id}">
-                                        ${config.showCode ? 'Generate Code' : 'Connect'}
-                                    </button>
-                                </div>
-                            </div>
-                        `}
-                    </div>
-                `;
+                        <div id="invite-${id}"></div>
+                    `}
+                </div>`;
             }).join('');
         }
 
-        async function connectPlatform(platform) {
-            const config = PLATFORMS[platform];
-            const btn = document.getElementById(`btn-${platform}`);
-            
+        async function connectPlatform(id) {
+            const cfg = PLATFORMS[id];
+            const btn = document.getElementById(`btn-${id}`);
+
+            // For WhatsApp, use QR mode
+            if (cfg.qrMode) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="loading"></span> Starting...';
+                try {
+                    const res = await fetch(`${API_URL}/api/platforms/whatsapp/start`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) {
+                        const d = await res.json();
+                        showToast(d.error || 'Failed to start WhatsApp', 'error');
+                        return;
+                    }
+                    document.getElementById(`qr-section-${id}`).classList.remove('hidden');
+                    document.getElementById(`form-${id}`).classList.add('hidden');
+                    startQRPoll(id);
+                } catch (e) {
+                    showToast('Network error: ' + e.message, 'error');
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = '📷 Connect WhatsApp';
+                }
+                return;
+            }
+
+            // Other platforms: collect fields
+            let body = {};
+            cfg.fields.forEach(f => {
+                body[f.name] = document.getElementById(`${id}-${f.name}`).value.trim();
+            });
+            const missing = cfg.fields.filter(f => f.label.indexOf('optional') === -1 && !body[f.name]);
+            if (missing.length > 0) {
+                showToast('Please fill in: ' + missing.map(f => f.label).join(', '), 'error');
+                return;
+            }
+
             btn.disabled = true;
             btn.innerHTML = '<span class="loading"></span> Connecting...';
 
             try {
-                let body = {};
-                
-                // Collect form fields
-                config.fields.forEach(f => {
-                    body[f.name] = document.getElementById(`${platform}-${f.name}`).value.trim();
-                });
-
-                // Validate required fields
-                const missing = config.fields.filter(f => !body[f.name]);
-                if (missing.length > 0) {
-                    showToast(`Please fill in: ${missing.map(f => f.label).join(', ')}`, 'error');
-                    return;
-                }
-
-                const response = await fetch(`${API_URL}/api/platforms/${platform}/connect`, {
+                const res = await fetch(`${API_URL}/api/platforms/${id}/connect`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify(body)
                 });
+                const data = await res.json();
 
-                const data = await response.json();
-
-                if (response.ok) {
-                    if (data.pairing_code) {
-                        // Show pairing code for WhatsApp
-                        document.getElementById(`code-${platform}`).textContent = data.pairing_code;
-                        document.getElementById(`codeSection-${platform}`).classList.remove('hidden');
-                        showToast('Code generated! Enter it in WhatsApp.');
-                        
-                        // Poll for connection
-                        setInterval(() => loadPlatforms(), 5000);
-                    } else {
-                        showToast(`${config.name} connected successfully!`);
-                        loadPlatforms();
+                if (res.ok) {
+                    showToast(`${cfg.name} connected successfully!`);
+                    // Show invite link for Discord
+                    if (data.invite_url) {
+                        const el = document.getElementById(`invite-${id}`);
+                        if (el) el.innerHTML = `<a class="invite-link" href="${data.invite_url}" target="_blank">🔗 Click here to invite the bot to your server</a>`;
                     }
+                    setTimeout(() => loadPlatforms(), 1000);
                 } else {
                     showToast(data.error || 'Failed to connect', 'error');
                 }
-            } catch (error) {
-                showToast('Network error', 'error');
+            } catch (e) {
+                showToast('Network error: ' + e.message, 'error');
             } finally {
                 btn.disabled = false;
-                btn.textContent = config.showCode ? 'Generate Code' : 'Connect';
+                btn.innerHTML = 'Connect';
             }
         }
 
-        async function disconnectPlatform(platform) {
-            if (!confirm(`Disconnect ${PLATFORMS[platform].name}?`)) return;
+        function startQRPoll(id) {
+            if (qrPollInterval) clearInterval(qrPollInterval);
 
+            qrPollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`${API_URL}/api/platforms/whatsapp/qr`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) return;
+                    const data = await res.json();
+
+                    if (data.status === 'qr' && data.qrDataUrl) {
+                        const container = document.getElementById(`qr-img-${id}`);
+                        if (container) {
+                            container.innerHTML = `<img src="${data.qrDataUrl}" alt="WhatsApp QR Code" style="width:220px;height:220px;border-radius:8px;">`;
+                        }
+                    } else if (data.status === 'connected') {
+                        clearInterval(qrPollInterval);
+                        showToast('WhatsApp connected! 🎉');
+                        setTimeout(() => loadPlatforms(), 500);
+                    } else if (data.status === 'reconnecting') {
+                        const container = document.getElementById(`qr-img-${id}`);
+                        if (container) container.innerHTML = `<div class="qr-spinner"></div><p class="qr-status">Reconnecting...</p>`;
+                    }
+                } catch (e) { /* ignore poll errors */ }
+            }, 3000);
+
+            // Stop polling after 3 minutes
+            setTimeout(() => {
+                if (qrPollInterval) {
+                    clearInterval(qrPollInterval);
+                    const container = document.getElementById(`qr-img-${id}`);
+                    if (container) container.innerHTML = `<p style="color:var(--warning)">QR expired. Click Connect again.</p>`;
+                }
+            }, 180000);
+        }
+
+        async function disconnectPlatform(id) {
+            if (!confirm(`Disconnect ${PLATFORMS[id].name}?`)) return;
             try {
-                const response = await fetch(`${API_URL}/api/platforms/${platform}`, {
+                const url = id === 'whatsapp'
+                    ? `${API_URL}/api/platforms/whatsapp`
+                    : `${API_URL}/api/platforms/${id}`;
+                const res = await fetch(url, {
                     method: 'DELETE',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-
-                if (response.ok) {
+                if (res.ok) {
                     showToast('Disconnected');
                     loadPlatforms();
                 } else {
                     showToast('Failed to disconnect', 'error');
                 }
-            } catch (error) {
+            } catch (e) {
                 showToast('Network error', 'error');
             }
         }
@@ -395,7 +435,7 @@
             document.getElementById('toastMessage').textContent = message;
             document.getElementById('toastIcon').textContent = type === 'success' ? '✓' : '✗';
             toast.className = `toast ${type} show`;
-            setTimeout(() => toast.classList.remove('show'), 3000);
+            setTimeout(() => toast.classList.remove('show'), 4000);
         }
 
         loadPlatforms();
