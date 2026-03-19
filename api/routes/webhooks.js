@@ -56,7 +56,7 @@ async function handlePlatformWebhook(req, res, platform, userIdExtractor, messag
     if (!text) return;
     
     // Check credits
-    if (user.credits <= 0) {
+    if (!canChat(user)) {
       await sendNoCreditsMessage(platform, platformId, user.platforms[platform]);
       return;
     }
@@ -91,7 +91,7 @@ router.post('/telegram/:userId', async (req, res) => {
 
     if (!chatId || !text) return;
 
-    if (user.credits <= 0) {
+    if (!canChat(user)) {
       await sendTelegramMessage(chatId, noCreditsMsg(user), platforms.telegram.bot_token);
       return;
     }
@@ -131,7 +131,7 @@ router.post('/discord/:userId', async (req, res) => {
 
     if (!text) return;
 
-    if (user.credits <= 0) {
+    if (!canChat(user)) {
       await sendDiscordMessage(channelId, noCreditsMsg(user), platforms.discord.bot_token);
       return;
     }
@@ -172,7 +172,7 @@ router.post('/slack/:userId', async (req, res) => {
     const channelId = event.channel;
     const text = event.text;
 
-    if (user.credits <= 0) {
+    if (!canChat(user)) {
       await sendSlackMessage(channelId, noCreditsMsg(user), platforms.slack.bot_token);
       return;
     }
@@ -208,7 +208,7 @@ router.post('/line/:userId', async (req, res) => {
     const replyToken = event.replyToken;
     const text = event.message.text;
 
-    if (user.credits <= 0) {
+    if (!canChat(user)) {
       await sendLineMessage(replyToken, noCreditsMsg(user), platforms.line.channel_token);
       return;
     }
@@ -256,7 +256,7 @@ router.post('/messenger/:userId', async (req, res) => {
 
     if (!text) return;
 
-    if (user.credits <= 0) {
+    if (!canChat(user)) {
       await sendMessengerMessage(senderId, noCreditsMsg(user), platforms.messenger.page_token);
       return;
     }
@@ -289,7 +289,7 @@ router.post('/signal/:userId', async (req, res) => {
 
     if (!text) return;
 
-    if (user.credits <= 0) {
+    if (!canChat(user)) {
       await sendSignalMessage(fromNumber, noCreditsMsg(user), platforms.signal);
       return;
     }
@@ -333,7 +333,7 @@ router.post('/whatsapp', async (req, res) => {
               if (!user) continue;
               const userPlatforms = parsePlatforms(user);
 
-              if (user.credits <= 0) {
+              if (!canChat(user)) {
                 await sendWhatsAppMessage(from, noCreditsMsg(user), userPlatforms.whatsapp);
                 continue;
               }
@@ -390,13 +390,13 @@ router.post('/wechat/:userId', async (req, res) => {
 async function sendTelegramMessage(chatId, text, botToken) {
   try {
     const token = Buffer.from(botToken, 'base64').toString();
+    // No parse_mode — Markdown causes silent failures if AI response has special chars
     await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
       chat_id: chatId,
-      text: text.substring(0, 4096), // Telegram limit
-      parse_mode: 'Markdown'
+      text: text.substring(0, 4096)
     });
   } catch (error) {
-    console.error('Telegram send error:', error.message);
+    console.error('Telegram send error:', error.response?.data || error.message);
   }
 }
 
@@ -539,7 +539,16 @@ async function handleSlackCommand(channel, text, user, platforms) {
 // ===== UTILITIES =====
 
 function noCreditsMsg(user) {
-  return `⚠️ Out of credits!\n\nAdd more at: ${process.env.FRONTEND_URL}/billing.html`;
+  const url = process.env.FRONTEND_URL || 'https://hostclaw-web.onrender.com';
+  return `⚠️ Out of credits! Add more at: ${url}/billing.html`;
+}
+
+// Check if user can chat: has credits, OR has their own API keys configured
+function canChat(user) {
+  const credits = parseFloat(user.credits) || 0;
+  if (credits > 0 || user.has_paid === true || user.has_paid == 1 || user.plan !== 'starter') return true;
+  const providers = parseProviders(user);
+  return Object.keys(providers).length > 0;
 }
 
 async function processAndRespond(user, text, platform, platformId, sendFn) {
@@ -552,22 +561,30 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
       content: text
     });
 
-    // Get AI response
-    const defaultProvider = user.default_provider || 'openai';
+    // Get AI response — pick best available provider
     const allProviders = parseProviders(user);
-    const providerConfig = allProviders[defaultProvider] || allProviders[Object.keys(allProviders)[0]];
+    const savedDefault = user.default_provider;
+    const resolvedProvider = (savedDefault && allProviders[savedDefault])
+      ? savedDefault
+      : Object.keys(allProviders)[0];
+
+    if (!resolvedProvider || !allProviders[resolvedProvider]) {
+      await sendFn('⚠️ No AI provider configured. Please add your API key in HostClaw Settings.');
+      return;
+    }
+
+    const providerConfig = allProviders[resolvedProvider];
     const activeSkills = parseSkills(user).filter(s => s.active).map(s => s.id);
 
     const aiResponse = await generateAIResponse({
       message: text,
-      provider: defaultProvider,
+      provider: resolvedProvider,
       providerConfig,
-      skills: activeSkills,
-      user
+      skills: activeSkills
     });
 
     // Deduct credits
-    const cost = calculateCost(aiResponse.tokens || 0, defaultProvider);
+    const cost = calculateCost(aiResponse.tokens || 0, resolvedProvider);
     await User.deductCredits(user.id, cost);
 
     // Save AI response

@@ -274,7 +274,7 @@
                                 <div class="qr-section">
                                     <div id="qr-img-${id}">
                                         <div class="qr-spinner"></div>
-                                        <p class="qr-status">Waiting for QR code...</p>
+                                        <p class="qr-status" id="qr-status-${id}">Connecting to WhatsApp servers...</p>
                                     </div>
                                     <p class="qr-hint">Open WhatsApp → Settings → Linked Devices → Link a Device → Scan</p>
                     <p style="font-size:0.75rem;color:var(--warning);margin-top:0.5rem">⚠️ QR refreshes every 60s. If WhatsApp says "check internet", scan the latest QR immediately.</p>
@@ -309,22 +309,27 @@
             // For WhatsApp, use QR mode
             if (cfg.qrMode) {
                 btn.disabled = true;
-                btn.innerHTML = '<span class="loading"></span> Starting...';
+                btn.innerHTML = '<span class="loading"></span> Starting (may take 30s)...';
+                // Show QR section immediately with loading state
+                document.getElementById(`qr-section-${id}`).classList.remove('hidden');
+                document.getElementById(`form-${id}`).classList.add('hidden');
                 try {
                     const res = await fetch(`${API_URL}/api/platforms/whatsapp/start`, {
                         method: 'POST',
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
                     if (!res.ok) {
-                        const d = await res.json();
+                        const d = await res.json().catch(() => ({}));
                         showToast(d.error || 'Failed to start WhatsApp', 'error');
+                        document.getElementById(`qr-section-${id}`).classList.add('hidden');
+                        document.getElementById(`form-${id}`).classList.remove('hidden');
                         return;
                     }
-                    document.getElementById(`qr-section-${id}`).classList.remove('hidden');
-                    document.getElementById(`form-${id}`).classList.add('hidden');
                     startQRPoll(id);
                 } catch (e) {
                     showToast('Network error: ' + e.message, 'error');
+                    document.getElementById(`qr-section-${id}`).classList.add('hidden');
+                    document.getElementById(`form-${id}`).classList.remove('hidden');
                 } finally {
                     btn.disabled = false;
                     btn.innerHTML = '📷 Connect WhatsApp';
@@ -391,11 +396,15 @@
                         }
                     } else if (data.status === 'connected') {
                         clearInterval(qrPollInterval);
+                        qrPollInterval = null;
                         showToast('WhatsApp connected! 🎉');
                         setTimeout(() => loadPlatforms(), 500);
                     } else if (data.status === 'reconnecting') {
                         const container = document.getElementById(`qr-img-${id}`);
                         if (container) container.innerHTML = `<div class="qr-spinner"></div><p class="qr-status">Reconnecting...</p>`;
+                    } else if (data.status === 'connecting' || data.status === 'not_started') {
+                        const st = document.getElementById(`qr-status-${id}`);
+                        if (st) st.textContent = 'Connecting to WhatsApp servers... (this can take 20-30s)';
                     }
                 } catch (e) { /* ignore poll errors */ }
             }, 3000);
