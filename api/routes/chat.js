@@ -72,7 +72,7 @@ router.post('/message', async (req, res, next) => {
       ? requestedProvider
       : (allProviders[defaultProvider] ? defaultProvider : Object.keys(allProviders)[0]);
 
-    const providerConfig = resolvedProvider ? allProviders[resolvedProvider] : null;
+    let providerConfig = resolvedProvider ? allProviders[resolvedProvider] : null;
 
     console.log('Using provider:', resolvedProvider, 'Config exists:', !!providerConfig);
 
