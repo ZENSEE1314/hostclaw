@@ -90,6 +90,8 @@ async function generateAIResponse({ message, provider, providerConfig, skills })
       userMessage = `⚠️ Rate limit reached for ${provider}. Wait a moment and try again.`;
     } else if (status === 402 || (error.message && error.message.includes('insufficient_quota'))) {
       userMessage = `⚠️ Your ${provider} account has no remaining quota/credits. Please top up your ${provider} account.`;
+    } else if (status === 404) {
+      userMessage = `⚠️ Model not found for ${provider}. Please go to **Settings** and select a different model.`;
     } else {
       userMessage = `⚠️ ${provider} error: ${error.message}`;
     }
@@ -293,7 +295,7 @@ function getDefaultModel(provider) {
     gemini: 'gemini-1.5-flash',
     deepseek: 'deepseek-chat',
     groq: 'llama-3.1-70b-versatile',
-    nvidia: 'nvidia/llama-3.1-nemotron-70b-instruct'
+    nvidia: 'meta/llama-3.1-8b-instruct'
   };
   return models[provider] || 'gpt-4o';
 }
