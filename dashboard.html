@@ -588,8 +588,15 @@
         }
 
         function checkPayment() {
-            // Show payment wall if not paid
-            if (!user.has_paid && user.plan === 'starter') {
+            const hasPaid = user.has_paid === true || user.has_paid == 1 || user.plan !== 'starter' || parseFloat(user.credits || 0) > 0;
+            let hasOwnApiKey = false;
+            if (user.api_providers) {
+                try {
+                    const providers = typeof user.api_providers === 'string' ? JSON.parse(user.api_providers) : user.api_providers;
+                    hasOwnApiKey = Object.keys(providers).length > 0;
+                } catch(e) {}
+            }
+            if (!hasPaid && !hasOwnApiKey) {
                 document.getElementById('paymentWall').style.display = 'flex';
             }
         }
