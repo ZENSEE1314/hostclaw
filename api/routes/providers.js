@@ -74,12 +74,19 @@ router.post('/', authenticate, async (req, res) => {
     
     // Update user
     await User.updateProviders(req.user.userId, providers);
-    
+
+    // Auto-set as default if no default is set, or if current default isn't configured
+    const currentDefault = user.default_provider;
+    if (!currentDefault || !providers[currentDefault]) {
+      await User.updateDefaultProvider(req.user.userId, provider);
+    }
+
     console.log('Providers saved successfully');
-    
-    res.json({ 
+
+    res.json({
       message: 'Provider saved successfully',
-      provider: provider
+      provider: provider,
+      isDefault: !currentDefault || !providers[currentDefault]
     });
     
   } catch (error) {
@@ -181,7 +188,7 @@ function getDefaultModel(provider) {
   const defaults = {
     openai: 'gpt-4o',
     anthropic: 'claude-3-5-sonnet-latest',
-    nvidia: 'nvidia/llama-3.1-nemotron-70b-instruct',
+    nvidia: 'meta/llama-3.1-8b-instruct',
     gemini: 'gemini-1.5-flash',
     deepseek: 'deepseek-chat',
     groq: 'llama-3.1-70b-versatile',

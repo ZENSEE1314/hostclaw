@@ -923,6 +923,9 @@
                     const toggleBtn = keyInput.nextElementSibling;
                     if (toggleBtn) toggleBtn.textContent = '👁';
                     setConnected(provider, modelInput.value);
+                    if (data.isDefault || !currentDefault) {
+                        markDefault(provider);
+                    }
                     showSuccess(`${capitalize(provider)} API key saved successfully.`);
                 } else {
                     showError('Error: ' + (data.error || 'Failed to save key'));
