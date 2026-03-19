@@ -449,9 +449,14 @@
 
     <!-- Main Content -->
     <main class="main">
-        <div class="page-header">
-            <h1>Settings</h1>
-            <p>Manage your AI providers and API keys</p>
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+            <div>
+                <h1>AI Providers</h1>
+                <p>Connect your API keys to power chat and agents</p>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="removeAllProviders()" style="margin-top:0.25rem">
+                🗑 Remove All
+            </button>
         </div>
 
         <div id="alertError" class="alert alert-error">
@@ -480,7 +485,10 @@
                                 <div class="provider-desc">GPT-4o, GPT-4 Turbo, GPT-3.5</div>
                             </div>
                         </div>
-                        <span id="status-openai" class="badge badge-disconnected">Not Connected</span>
+                        <div style="display:flex;gap:0.5rem;align-items:center">
+                            <span id="default-openai" class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;display:none">⭐ Default</span>
+                            <span id="status-openai" class="badge badge-disconnected">Not Connected</span>
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -502,12 +510,9 @@
                         </div>
                     </div>
                     <div class="provider-actions">
-                        <button class="btn btn-primary btn-sm" onclick="saveProvider('openai')">
-                            <span id="saving-openai"></span> Save
-                        </button>
-                        <button class="btn btn-danger btn-sm" id="remove-openai" onclick="removeProvider('openai')" style="display:none">
-                            Remove
-                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="saveProvider('openai')"><span id="saving-openai"></span> Save</button>
+                        <button class="btn btn-ghost btn-sm" id="setdefault-openai" onclick="setDefault('openai')" style="display:none">Set as Default</button>
+                        <button class="btn btn-danger btn-sm" id="remove-openai" onclick="removeProvider('openai')" style="display:none">Remove</button>
                     </div>
                 </div>
 
@@ -521,7 +526,10 @@
                                 <div class="provider-desc">Claude 3.5 Sonnet, Opus, Haiku</div>
                             </div>
                         </div>
-                        <span id="status-anthropic" class="badge badge-disconnected">Not Connected</span>
+                        <div style="display:flex;gap:0.5rem;align-items:center">
+                            <span id="default-anthropic" class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;display:none">⭐ Default</span>
+                            <span id="status-anthropic" class="badge badge-disconnected">Not Connected</span>
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -542,12 +550,9 @@
                         </div>
                     </div>
                     <div class="provider-actions">
-                        <button class="btn btn-primary btn-sm" onclick="saveProvider('anthropic')">
-                            <span id="saving-anthropic"></span> Save
-                        </button>
-                        <button class="btn btn-danger btn-sm" id="remove-anthropic" onclick="removeProvider('anthropic')" style="display:none">
-                            Remove
-                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="saveProvider('anthropic')"><span id="saving-anthropic"></span> Save</button>
+                        <button class="btn btn-ghost btn-sm" id="setdefault-anthropic" onclick="setDefault('anthropic')" style="display:none">Set as Default</button>
+                        <button class="btn btn-danger btn-sm" id="remove-anthropic" onclick="removeProvider('anthropic')" style="display:none">Remove</button>
                     </div>
                 </div>
 
@@ -563,6 +568,7 @@
                         </div>
                         <div style="display:flex;gap:0.5rem;align-items:center">
                             <span class="badge badge-free">FREE</span>
+                            <span id="default-nvidia" class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;display:none">⭐ Default</span>
                             <span id="status-nvidia" class="badge badge-disconnected">Not Connected</span>
                         </div>
                     </div>
@@ -585,12 +591,9 @@
                         </div>
                     </div>
                     <div class="provider-actions">
-                        <button class="btn btn-primary btn-sm" onclick="saveProvider('nvidia')">
-                            <span id="saving-nvidia"></span> Save
-                        </button>
-                        <button class="btn btn-danger btn-sm" id="remove-nvidia" onclick="removeProvider('nvidia')" style="display:none">
-                            Remove
-                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="saveProvider('nvidia')"><span id="saving-nvidia"></span> Save</button>
+                        <button class="btn btn-ghost btn-sm" id="setdefault-nvidia" onclick="setDefault('nvidia')" style="display:none">Set as Default</button>
+                        <button class="btn btn-danger btn-sm" id="remove-nvidia" onclick="removeProvider('nvidia')" style="display:none">Remove</button>
                     </div>
                 </div>
 
@@ -604,7 +607,10 @@
                                 <div class="provider-desc">Gemini 1.5 Flash, Pro</div>
                             </div>
                         </div>
-                        <span id="status-gemini" class="badge badge-disconnected">Not Connected</span>
+                        <div style="display:flex;gap:0.5rem;align-items:center">
+                            <span id="default-gemini" class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;display:none">⭐ Default</span>
+                            <span id="status-gemini" class="badge badge-disconnected">Not Connected</span>
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -625,12 +631,9 @@
                         </div>
                     </div>
                     <div class="provider-actions">
-                        <button class="btn btn-primary btn-sm" onclick="saveProvider('gemini')">
-                            <span id="saving-gemini"></span> Save
-                        </button>
-                        <button class="btn btn-danger btn-sm" id="remove-gemini" onclick="removeProvider('gemini')" style="display:none">
-                            Remove
-                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="saveProvider('gemini')"><span id="saving-gemini"></span> Save</button>
+                        <button class="btn btn-ghost btn-sm" id="setdefault-gemini" onclick="setDefault('gemini')" style="display:none">Set as Default</button>
+                        <button class="btn btn-danger btn-sm" id="remove-gemini" onclick="removeProvider('gemini')" style="display:none">Remove</button>
                     </div>
                 </div>
 
@@ -644,7 +647,10 @@
                                 <div class="provider-desc">DeepSeek-V3, DeepSeek-R1</div>
                             </div>
                         </div>
-                        <span id="status-deepseek" class="badge badge-disconnected">Not Connected</span>
+                        <div style="display:flex;gap:0.5rem;align-items:center">
+                            <span id="default-deepseek" class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;display:none">⭐ Default</span>
+                            <span id="status-deepseek" class="badge badge-disconnected">Not Connected</span>
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -664,12 +670,9 @@
                         </div>
                     </div>
                     <div class="provider-actions">
-                        <button class="btn btn-primary btn-sm" onclick="saveProvider('deepseek')">
-                            <span id="saving-deepseek"></span> Save
-                        </button>
-                        <button class="btn btn-danger btn-sm" id="remove-deepseek" onclick="removeProvider('deepseek')" style="display:none">
-                            Remove
-                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="saveProvider('deepseek')"><span id="saving-deepseek"></span> Save</button>
+                        <button class="btn btn-ghost btn-sm" id="setdefault-deepseek" onclick="setDefault('deepseek')" style="display:none">Set as Default</button>
+                        <button class="btn btn-danger btn-sm" id="remove-deepseek" onclick="removeProvider('deepseek')" style="display:none">Remove</button>
                     </div>
                 </div>
 
@@ -683,7 +686,10 @@
                                 <div class="provider-desc">Llama 3.1 — ultra-fast inference</div>
                             </div>
                         </div>
-                        <span id="status-groq" class="badge badge-disconnected">Not Connected</span>
+                        <div style="display:flex;gap:0.5rem;align-items:center">
+                            <span id="default-groq" class="badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;display:none">⭐ Default</span>
+                            <span id="status-groq" class="badge badge-disconnected">Not Connected</span>
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -704,46 +710,15 @@
                         </div>
                     </div>
                     <div class="provider-actions">
-                        <button class="btn btn-primary btn-sm" onclick="saveProvider('groq')">
-                            <span id="saving-groq"></span> Save
-                        </button>
-                        <button class="btn btn-danger btn-sm" id="remove-groq" onclick="removeProvider('groq')" style="display:none">
-                            Remove
-                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="saveProvider('groq')"><span id="saving-groq"></span> Save</button>
+                        <button class="btn btn-ghost btn-sm" id="setdefault-groq" onclick="setDefault('groq')" style="display:none">Set as Default</button>
+                        <button class="btn btn-danger btn-sm" id="remove-groq" onclick="removeProvider('groq')" style="display:none">Remove</button>
                     </div>
                 </div>
 
             </div>
         </div>
 
-        <!-- Default Provider -->
-        <div class="section">
-            <div class="section-title">⭐ Default Provider</div>
-            <div class="default-card">
-                <p style="font-size:0.875rem;color:var(--text-muted);margin-bottom:1.25rem;">
-                    This provider will be used for all chat messages and agents unless overridden.
-                </p>
-                <div class="default-row">
-                    <div class="form-group">
-                        <label class="form-label">Default AI Provider</label>
-                        <select id="defaultProvider" class="form-select">
-                            <option value="">— Select Provider —</option>
-                            <option value="openai">OpenAI</option>
-                            <option value="anthropic">Anthropic (Claude)</option>
-                            <option value="nvidia">NVIDIA (Free)</option>
-                            <option value="gemini">Google Gemini</option>
-                            <option value="deepseek">DeepSeek</option>
-                            <option value="groq">Groq</option>
-                        </select>
-                    </div>
-                    <div style="padding-bottom:1rem">
-                        <button class="btn btn-primary" onclick="saveDefaultProvider()">
-                            <span id="saving-default"></span> Save Default
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </main>
 
     <script>
@@ -786,14 +761,18 @@
             }
         }
 
+        let currentDefault = null;
+
         function setConnected(provider, model) {
             const status = document.getElementById('status-' + provider);
             const card = document.getElementById('card-' + provider);
-            const removeBtn = document.getElementById('remove-' + provider);
             status.textContent = 'Connected';
             status.className = 'badge badge-connected';
             card.classList.add('connected');
+            const removeBtn = document.getElementById('remove-' + provider);
+            const setDefBtn = document.getElementById('setdefault-' + provider);
             if (removeBtn) removeBtn.style.display = 'inline-flex';
+            if (setDefBtn) setDefBtn.style.display = 'inline-flex';
             if (model) {
                 const modelEl = document.getElementById('model-' + provider);
                 if (modelEl) modelEl.value = model;
@@ -803,11 +782,69 @@
         function setDisconnected(provider) {
             const status = document.getElementById('status-' + provider);
             const card = document.getElementById('card-' + provider);
-            const removeBtn = document.getElementById('remove-' + provider);
             status.textContent = 'Not Connected';
             status.className = 'badge badge-disconnected';
             card.classList.remove('connected');
-            if (removeBtn) removeBtn.style.display = 'none';
+            ['remove-', 'setdefault-', 'default-'].forEach(prefix => {
+                const el = document.getElementById(prefix + provider);
+                if (el) el.style.display = 'none';
+            });
+        }
+
+        function markDefault(provider) {
+            // Clear old default badge
+            ['openai','anthropic','nvidia','gemini','deepseek','groq'].forEach(p => {
+                const badge = document.getElementById('default-' + p);
+                const setBtn = document.getElementById('setdefault-' + p);
+                if (badge) badge.style.display = 'none';
+                // Only show "Set as Default" if connected and not already default
+                if (setBtn) setBtn.style.display = (p !== provider && document.getElementById('card-' + p)?.classList.contains('connected')) ? 'inline-flex' : 'none';
+            });
+            // Show new default badge
+            if (provider) {
+                const badge = document.getElementById('default-' + provider);
+                if (badge) badge.style.display = 'inline-flex';
+            }
+            currentDefault = provider;
+        }
+
+        async function setDefault(provider) {
+            try {
+                const res = await fetch(`${API_URL}/api/providers/default`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ provider })
+                });
+                if (res.ok) {
+                    markDefault(provider);
+                    showSuccess(capitalize(provider) + ' set as default provider.');
+                } else {
+                    const d = await res.json();
+                    showError(d.error || 'Failed to set default');
+                }
+            } catch (e) {
+                showError('Network error: ' + e.message);
+            }
+        }
+
+        async function removeAllProviders() {
+            if (!confirm('Remove ALL connected API keys? This cannot be undone.')) return;
+            try {
+                const res = await fetch(`${API_URL}/api/providers`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    ['openai','anthropic','nvidia','gemini','deepseek','groq'].forEach(setDisconnected);
+                    markDefault(null);
+                    showSuccess('All providers removed.');
+                } else {
+                    const d = await res.json();
+                    showError(d.error || 'Failed to remove all providers');
+                }
+            } catch (e) {
+                showError('Network error: ' + e.message);
+            }
         }
 
         async function loadSettings() {
@@ -841,7 +878,7 @@
                         });
                     }
                     if (data.defaultProvider) {
-                        document.getElementById('defaultProvider').value = data.defaultProvider;
+                        markDefault(data.defaultProvider);
                     }
                 }
             } catch (e) {
@@ -912,41 +949,6 @@
                     showError('Failed to remove: ' + (data.error || res.status));
                 }
             } catch (e) {
-                showError('Network error: ' + e.message);
-            }
-        }
-
-        async function saveDefaultProvider() {
-            const select = document.getElementById('defaultProvider');
-            const savingEl = document.getElementById('saving-default');
-
-            if (!select.value) {
-                showError('Please select a default provider');
-                return;
-            }
-
-            savingEl.innerHTML = '<span class="spinner"></span>';
-
-            try {
-                const res = await fetch(`${API_URL}/api/providers/default`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': 'Bearer ' + token,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ provider: select.value })
-                });
-
-                savingEl.innerHTML = '';
-
-                if (res.ok) {
-                    showSuccess('Default provider set to ' + capitalize(select.value));
-                } else {
-                    const data = await res.json();
-                    showError(data.error || 'Failed to save default provider');
-                }
-            } catch (e) {
-                savingEl.innerHTML = '';
                 showError('Network error: ' + e.message);
             }
         }

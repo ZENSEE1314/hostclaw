@@ -110,6 +110,18 @@ router.put('/default', authenticate, async (req, res) => {
   }
 });
 
+// Remove ALL providers
+router.delete('/', authenticate, async (req, res) => {
+  try {
+    await User.updateProviders(req.user.userId, {});
+    await User.updateDefaultProvider(req.user.userId, null);
+    res.json({ message: 'All providers removed' });
+  } catch (error) {
+    console.error('Remove all providers error:', error);
+    res.status(500).json({ error: 'Failed to remove providers' });
+  }
+});
+
 // Remove a provider
 router.delete('/:provider', authenticate, async (req, res) => {
   try {
@@ -169,7 +181,11 @@ function getDefaultModel(provider) {
   const defaults = {
     openai: 'gpt-4o',
     anthropic: 'claude-3-5-sonnet-latest',
-    nvidia: 'nvidia/llama-3.1-nemotron-70b-instruct'
+    nvidia: 'nvidia/llama-3.1-nemotron-70b-instruct',
+    gemini: 'gemini-1.5-flash',
+    deepseek: 'deepseek-chat',
+    groq: 'llama-3.1-70b-versatile',
+    kimi: 'moonshot-v1-8k'
   };
   return defaults[provider] || 'gpt-4o';
 }
