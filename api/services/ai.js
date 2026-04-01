@@ -66,13 +66,27 @@ async function generateAIResponse({ message, provider, providerConfig, skills })
     // Try HostClaw shared key for the requested provider
     decryptedKey = getHostClawKey(resolvedProvider);
 
-    // If no key for this provider, try HostClaw default provider
+    // If no key for this provider, try the configured default
     if (!decryptedKey) {
       const defaultProvider = process.env.HOSTCLAW_DEFAULT_PROVIDER || 'openai';
       decryptedKey = getHostClawKey(defaultProvider);
       if (decryptedKey) {
         resolvedProvider = defaultProvider;
         resolvedModel = process.env.HOSTCLAW_DEFAULT_MODEL || getDefaultModel(defaultProvider);
+      }
+    }
+
+    // Last resort: try every provider until we find one with a key
+    if (!decryptedKey) {
+      const providers = ['openai', 'anthropic', 'groq', 'deepseek', 'gemini', 'kimi', 'nvidia'];
+      for (const p of providers) {
+        const key = getHostClawKey(p);
+        if (key) {
+          decryptedKey = key;
+          resolvedProvider = p;
+          resolvedModel = getDefaultModel(p);
+          break;
+        }
       }
     }
   }
