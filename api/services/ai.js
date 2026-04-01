@@ -191,7 +191,13 @@ async function callAnthropic(message, apiKey, model, skills) {
       'x-api-key': apiKey,
       'anthropic-version': '2023-06-01',
       'Content-Type': 'application/json'
-    }
+    },
+    timeout: 30000
+  }).catch(err => {
+    // Log detailed Anthropic error for debugging
+    const errData = err.response?.data;
+    console.error('Anthropic API error:', JSON.stringify(errData || err.message));
+    throw err;
   });
 
   return {
@@ -357,7 +363,7 @@ function estimateTokens(text) {
 function getDefaultModel(provider) {
   const models = {
     openai: 'gpt-4o',
-    anthropic: 'claude-3-5-sonnet-20241022',
+    anthropic: 'claude-sonnet-4-5-20250414',
     kimi: 'moonshot-v1-8k',
     gemini: 'gemini-1.5-flash',
     deepseek: 'deepseek-chat',

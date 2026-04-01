@@ -193,7 +193,7 @@ app.get('/debug/ai', async (req, res) => {
       providerConfig: null,
       skills: []
     });
-    res.json({ keys, aiTest: { success: !result.error, model: result.model, provider: result.model, content: result.content?.substring(0, 200), error: result.error || false } });
+    res.json({ keys, aiTest: { success: !result.error, model: result.model, content: result.content?.substring(0, 300), error: result.error || false } });
   } catch (e) {
     res.json({ keys, aiTest: { success: false, error: e.message, stack: e.stack?.substring(0, 300) } });
   }
