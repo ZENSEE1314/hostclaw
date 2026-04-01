@@ -77,14 +77,16 @@ async function generateAIResponse({ message, provider, providerConfig, skills })
     }
 
     // Last resort: try every provider until we find one with a key
+    // Order by reliability/speed: groq (fast+free) > anthropic > openai > others
     if (!decryptedKey) {
-      const providers = ['openai', 'anthropic', 'groq', 'deepseek', 'gemini', 'kimi', 'nvidia'];
+      const providers = ['groq', 'anthropic', 'openai', 'deepseek', 'gemini', 'kimi', 'nvidia'];
       for (const p of providers) {
         const key = getHostClawKey(p);
         if (key) {
           decryptedKey = key;
           resolvedProvider = p;
           resolvedModel = getDefaultModel(p);
+          console.log(`AI fallback: using ${p} server key`);
           break;
         }
       }

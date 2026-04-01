@@ -188,12 +188,12 @@ app.get('/debug/ai', async (req, res) => {
   try {
     const { generateAIResponse } = require('./services/ai');
     const result = await generateAIResponse({
-      message: 'Say "hello" in one word',
-      provider: 'groq',
+      message: 'Say hello in one word',
+      provider: undefined,
       providerConfig: null,
       skills: []
     });
-    res.json({ keys, aiTest: { success: !result.error, model: result.model, content: result.content?.substring(0, 100), error: result.error || false } });
+    res.json({ keys, aiTest: { success: !result.error, model: result.model, provider: result.model, content: result.content?.substring(0, 200), error: result.error || false } });
   } catch (e) {
     res.json({ keys, aiTest: { success: false, error: e.message, stack: e.stack?.substring(0, 300) } });
   }
