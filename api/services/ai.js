@@ -74,8 +74,8 @@ async function generateAIResponse({ message, provider, providerConfig, skills })
     const defaultProv = process.env.HOSTCLAW_DEFAULT_PROVIDER;
     if (defaultProv && !searchOrder.includes(defaultProv)) searchOrder.push(defaultProv);
 
-    // 3. Try all providers (prefer anthropic/groq for reliability)
-    for (const p of ['anthropic', 'groq', 'openai', 'deepseek', 'gemini', 'kimi', 'nvidia']) {
+    // 3. Try all providers (groq first — free tier, fast, reliable)
+    for (const p of ['groq', 'deepseek', 'openai', 'anthropic', 'gemini', 'kimi', 'nvidia']) {
       if (!searchOrder.includes(p)) searchOrder.push(p);
     }
 
