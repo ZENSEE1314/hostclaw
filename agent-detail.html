@@ -224,10 +224,17 @@
                 console.log('Deploying agent:', agentId);
                 console.log('API URL:', `${API_URL}/api/agents/${agentId}/deploy`);
                 
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
                 const res = await fetch(`${API_URL}/api/agents/${agentId}/deploy`, {
                     method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
                 
                 console.log('Deploy response status:', res.status);
                 

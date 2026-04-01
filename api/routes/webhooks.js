@@ -591,6 +591,12 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
       skills: activeSkills
     });
 
+    // If AI returned an error, send it directly
+    if (aiResponse.error) {
+      await sendFn(aiResponse.content);
+      return;
+    }
+
     // Save AI response
     await Chat.saveMessage({
       user_id: user.id,
@@ -603,10 +609,10 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
 
     // Send response
     await sendFn(aiResponse.content);
-    
+
   } catch (error) {
-    console.error('Process message error:', error);
-    await sendFn('Sorry, I encountered an error. Please try again later.');
+    console.error('Process message error:', error.message, error.stack);
+    await sendFn('Sorry, something went wrong. The admin has been notified.');
   }
 }
 
