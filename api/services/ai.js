@@ -363,7 +363,7 @@ function estimateTokens(text) {
 function getDefaultModel(provider) {
   const models = {
     openai: 'gpt-4o',
-    anthropic: 'claude-sonnet-4-5-20250414',
+    anthropic: 'claude-3-5-sonnet-20241022',
     kimi: 'moonshot-v1-8k',
     gemini: 'gemini-1.5-flash',
     deepseek: 'deepseek-chat',

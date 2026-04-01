@@ -175,28 +175,52 @@ app.get('/debug/db', async (req, res) => {
 
 // Debug: test AI provider availability
 app.get('/debug/ai', async (req, res) => {
-  const keys = {
-    OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
-    ANTHROPIC_API_KEY: !!process.env.ANTHROPIC_API_KEY,
-    GROQ_API_KEY: !!process.env.GROQ_API_KEY,
-    DEEPSEEK_API_KEY: !!process.env.DEEPSEEK_API_KEY,
-    GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
-    HOSTCLAW_OPENAI_KEY: !!process.env.HOSTCLAW_OPENAI_KEY,
-    HOSTCLAW_DEFAULT_PROVIDER: process.env.HOSTCLAW_DEFAULT_PROVIDER || 'not set',
-  };
-  // Try a real AI call
-  try {
-    const { generateAIResponse } = require('./services/ai');
-    const result = await generateAIResponse({
-      message: 'Say hello in one word',
-      provider: undefined,
-      providerConfig: null,
-      skills: []
-    });
-    res.json({ keys, aiTest: { success: !result.error, model: result.model, content: result.content?.substring(0, 300), error: result.error || false } });
-  } catch (e) {
-    res.json({ keys, aiTest: { success: false, error: e.message, stack: e.stack?.substring(0, 300) } });
+  // Show ALL env vars that look like API keys (masked)
+  const allKeys = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (k.includes('API_KEY') || k.includes('_KEY') || k.includes('GROQ') || k.includes('ANTHROPIC') || k.includes('OPENAI')) {
+      allKeys[k] = v ? v.substring(0, 8) + '...' : 'empty';
+    }
   }
+
+  // Test each provider individually
+  const axios = require('axios');
+  const results = {};
+
+  // Test Groq
+  const groqKey = process.env.GROQ_API_KEY || process.env.GROQ_KEY || process.env.HOSTCLAW_GROQ_KEY;
+  if (groqKey) {
+    try {
+      const r = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+        model: 'llama-3.1-8b-instant', messages: [{ role: 'user', content: 'say hi' }], max_tokens: 10
+      }, { headers: { 'Authorization': `Bearer ${groqKey}` }, timeout: 10000 });
+      results.groq = { ok: true, reply: r.data.choices[0].message.content };
+    } catch (e) { results.groq = { ok: false, error: e.response?.data?.error?.message || e.message }; }
+  } else { results.groq = { ok: false, error: 'no key found' }; }
+
+  // Test Anthropic
+  const antKey = process.env.ANTHROPIC_API_KEY || process.env.HOSTCLAW_ANTHROPIC_KEY;
+  if (antKey) {
+    try {
+      const r = await axios.post('https://api.anthropic.com/v1/messages', {
+        model: 'claude-3-5-sonnet-20241022', max_tokens: 10, messages: [{ role: 'user', content: 'say hi' }]
+      }, { headers: { 'x-api-key': antKey, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' }, timeout: 10000 });
+      results.anthropic = { ok: true, reply: r.data.content[0].text };
+    } catch (e) { results.anthropic = { ok: false, error: e.response?.data?.error?.message || e.message }; }
+  } else { results.anthropic = { ok: false, error: 'no key found' }; }
+
+  // Test OpenAI
+  const oaiKey = process.env.OPENAI_API_KEY || process.env.HOSTCLAW_OPENAI_KEY;
+  if (oaiKey) {
+    try {
+      const r = await axios.post('https://api.openai.com/v1/chat/completions', {
+        model: 'gpt-4o-mini', messages: [{ role: 'user', content: 'say hi' }], max_tokens: 10
+      }, { headers: { 'Authorization': `Bearer ${oaiKey}` }, timeout: 10000 });
+      results.openai = { ok: true, reply: r.data.choices[0].message.content };
+    } catch (e) { results.openai = { ok: false, error: e.response?.data?.error?.message || e.message }; }
+  } else { results.openai = { ok: false, error: 'no key found' }; }
+
+  res.json({ envKeys: allKeys, providerTests: results });
 });
 
 // API Routes
