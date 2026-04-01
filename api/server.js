@@ -173,6 +173,32 @@ app.get('/debug/db', async (req, res) => {
   }
 });
 
+// Debug: test AI provider availability
+app.get('/debug/ai', async (req, res) => {
+  const keys = {
+    OPENAI_API_KEY: !!process.env.OPENAI_API_KEY,
+    ANTHROPIC_API_KEY: !!process.env.ANTHROPIC_API_KEY,
+    GROQ_API_KEY: !!process.env.GROQ_API_KEY,
+    DEEPSEEK_API_KEY: !!process.env.DEEPSEEK_API_KEY,
+    GEMINI_API_KEY: !!process.env.GEMINI_API_KEY,
+    HOSTCLAW_OPENAI_KEY: !!process.env.HOSTCLAW_OPENAI_KEY,
+    HOSTCLAW_DEFAULT_PROVIDER: process.env.HOSTCLAW_DEFAULT_PROVIDER || 'not set',
+  };
+  // Try a real AI call
+  try {
+    const { generateAIResponse } = require('./services/ai');
+    const result = await generateAIResponse({
+      message: 'Say "hello" in one word',
+      provider: 'groq',
+      providerConfig: null,
+      skills: []
+    });
+    res.json({ keys, aiTest: { success: !result.error, model: result.model, content: result.content?.substring(0, 100), error: result.error || false } });
+  } catch (e) {
+    res.json({ keys, aiTest: { success: false, error: e.message, stack: e.stack?.substring(0, 300) } });
+  }
+});
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/agents', agentRoutes);
