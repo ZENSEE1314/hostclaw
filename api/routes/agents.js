@@ -24,7 +24,7 @@ router.get('/', async (req, res, next) => {
 router.post('/', [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('description').optional().trim(),
-  body('model').isIn(['gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo', 'claude-3.5-sonnet', 'claude-3-opus', 'gemini-pro']),
+  body('model').optional().isString(),
   body('channels').isArray({ min: 1 }).withMessage('At least one channel required'),
   body('config').optional().isObject()
 ], async (req, res, next) => {

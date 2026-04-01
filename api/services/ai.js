@@ -26,15 +26,16 @@ function decrypt(text) {
 }
 
 // HostClaw shared API keys — fallback when user has no keys configured
+// Checks both HOSTCLAW_*_KEY and standard env var names (OPENAI_API_KEY, etc.)
 function getHostClawKey(provider) {
   const map = {
-    openai: process.env.HOSTCLAW_OPENAI_KEY,
-    anthropic: process.env.HOSTCLAW_ANTHROPIC_KEY || process.env.HOSTCLAW_CLAUDE_KEY,
-    kimi: process.env.HOSTCLAW_KIMI_KEY,
-    gemini: process.env.HOSTCLAW_GEMINI_KEY,
-    deepseek: process.env.HOSTCLAW_DEEPSEEK_KEY,
-    groq: process.env.HOSTCLAW_GROQ_KEY,
-    nvidia: process.env.HOSTCLAW_NVIDIA_KEY
+    openai: process.env.HOSTCLAW_OPENAI_KEY || process.env.OPENAI_API_KEY,
+    anthropic: process.env.HOSTCLAW_ANTHROPIC_KEY || process.env.HOSTCLAW_CLAUDE_KEY || process.env.ANTHROPIC_API_KEY,
+    kimi: process.env.HOSTCLAW_KIMI_KEY || process.env.KIMI_API_KEY,
+    gemini: process.env.HOSTCLAW_GEMINI_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY,
+    deepseek: process.env.HOSTCLAW_DEEPSEEK_KEY || process.env.DEEPSEEK_API_KEY,
+    groq: process.env.HOSTCLAW_GROQ_KEY || process.env.GROQ_API_KEY,
+    nvidia: process.env.HOSTCLAW_NVIDIA_KEY || process.env.NVIDIA_API_KEY
   };
   return map[provider] || null;
 }
