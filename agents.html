@@ -1,229 +1,455 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Agents - HostClaw.ai</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #6366f1;
-            --primary-light: #818cf8;
-            --secondary: #06b6d4;
-            --dark: #0f0f23;
-            --darker: #0a0a1a;
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.1);
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --success: #10b981;
-            --danger: #ef4444;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--darker); color: var(--text); min-height: 100vh; }
-        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
-        
-        .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
-        .header h1 { font-size: 1.75rem; font-weight: 700; }
-        
-        .back-btn { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem 1rem; color: var(--text); text-decoration: none; display: flex; align-items: center; gap: 0.5rem; }
-        
-        .empty-state { text-align: center; padding: 4rem 2rem; }
-        .empty-icon { font-size: 4rem; margin-bottom: 1rem; }
-        .empty-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
-        .empty-desc { color: var(--text-muted); margin-bottom: 1.5rem; }
-        
-        .btn { padding: 0.75rem 1.5rem; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
-        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
-        
-        .payment-wall { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .payment-card { background: var(--dark); border: 1px solid var(--border); border-radius: 24px; padding: 3rem; text-align: center; max-width: 450px; }
-        .payment-icon { font-size: 4rem; margin-bottom: 1rem; }
-        .payment-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem; }
-        .payment-price { font-size: 2.5rem; font-weight: 800; color: var(--primary-light); }
-        .payment-desc { color: var(--text-muted); margin: 1rem 0; line-height: 1.7; }
-        .payment-btn { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; padding: 1rem 2rem; border-radius: 12px; font-size: 1rem; font-weight: 600; border: none; cursor: pointer; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Agents - HostClaw.ai</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="/css/shared.css" rel="stylesheet">
+  <style>
+    .agents-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .agent-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      cursor: pointer;
+    }
+
+    .agent-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .agent-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .agent-card-name {
+      font-size: 1.0625rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .agent-card-desc {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .agent-card-badges {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .agent-card-platforms {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      margin-left: auto;
+    }
+
+    .platform-icon-sm {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .platform-icon-sm.whatsapp {
+      background: rgba(37, 211, 102, 0.12);
+      color: #25d366;
+    }
+
+    .platform-icon-sm.telegram {
+      background: rgba(0, 136, 204, 0.12);
+      color: #0088cc;
+    }
+
+    .platform-icon-sm svg {
+      width: 13px;
+      height: 13px;
+    }
+
+    .agent-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .agent-card-messages {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .agent-card-messages svg {
+      width: 14px;
+      height: 14px;
+      opacity: 0.6;
+    }
+
+    .agent-card-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Status badge variants */
+    .badge-inactive {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+    }
+
+    /* Loading skeleton */
+    .skeleton-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .skeleton-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      height: 200px;
+    }
+
+    .skeleton-line {
+      height: 14px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 6px;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .skeleton-line.w-50 { width: 50%; }
+    .skeleton-line.w-75 { width: 75%; }
+    .skeleton-line.w-40 { width: 40%; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* Modal max-width override for system prompt */
+    #createAgentModal .modal-card {
+      max-width: 540px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .agents-grid,
+      .skeleton-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="payment-wall" id="paymentWall" style="display: none;">
-        <div class="payment-card">
-            <div class="payment-icon">💳</div>
-            <div class="payment-title">One-Time Setup Fee</div>
-            <div class="payment-price">$500</div>
-            <div class="payment-desc">Pay once to unlock all features forever!</div>
-            <button class="payment-btn" onclick="alert('Contact support to pay $500')">Pay $500</button>
+  <div class="app-layout">
+    <main class="main-content">
+
+      <div class="page-header">
+        <div>
+          <h1>AI Agents</h1>
+          <p class="page-header-sub">Manage your AI-powered conversation agents</p>
         </div>
+        <button class="btn btn-primary" onclick="showCreateModal()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Create Agent
+        </button>
+      </div>
+
+      <div id="agentsContainer">
+        <!-- Loading skeleton -->
+        <div class="skeleton-grid" id="loadingSkeleton">
+          <div class="skeleton-card">
+            <div class="skeleton-line w-50 mb-2"></div>
+            <div class="skeleton-line w-75 mb-1"></div>
+            <div class="skeleton-line w-40"></div>
+          </div>
+          <div class="skeleton-card">
+            <div class="skeleton-line w-50 mb-2"></div>
+            <div class="skeleton-line w-75 mb-1"></div>
+            <div class="skeleton-line w-40"></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Create Agent Modal -->
+  <div class="modal-overlay" id="createAgentModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">Create New Agent</h2>
+        <button class="modal-close" onclick="hideCreateModal()" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="createAgentForm" onsubmit="return false;">
+        <div class="form-group">
+          <label class="form-label" for="agentName">Agent Name</label>
+          <input type="text" class="form-input" id="agentName" placeholder="e.g. Customer Support Bot" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="agentDesc">Description</label>
+          <textarea class="form-textarea" id="agentDesc" rows="2" placeholder="What does this agent do?"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="agentModel">AI Model</label>
+          <select class="form-select" id="agentModel">
+            <option value="gpt-4o">GPT-4o</option>
+            <option value="gpt-4-turbo">GPT-4 Turbo</option>
+            <option value="claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+            <option value="claude-3-haiku">Claude 3 Haiku</option>
+            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+            <option value="deepseek-chat">DeepSeek Chat</option>
+            <option value="groq-llama-3.1">Groq Llama 3.1</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="agentPrompt">System Prompt</label>
+          <textarea class="form-textarea" id="agentPrompt" rows="5" placeholder="Instructions for your agent...">You are a helpful, friendly, and professional AI assistant. Respond clearly and concisely. If you are unsure about something, say so honestly rather than guessing.</textarea>
+          <div class="form-hint">This prompt defines your agent's personality and behavior.</div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" onclick="hideCreateModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="createBtn" onclick="createAgent()">Create Agent</button>
+        </div>
+      </form>
     </div>
+  </div>
 
-    <div class="container">
-        <div class="header">
-            <button class="back-btn" onclick="history.back()">← Back</button>
-            <h1>My Agents</h1>
-            <button class="btn btn-primary" onclick="showCreateModal()">+ Create Agent</button>
-        </div>
+  <script src="/js/shared.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script>
+    requireAuth();
 
-        <div id="agentsList">
-            <div class="empty-state">
-                <div class="empty-icon">🤖</div>
-                <div class="empty-title">No Agents Yet</div>
-                <div class="empty-desc">Create your first AI agent to get started</div>
-                <button class="btn btn-primary" onclick="showCreateModal()">+ Create Agent</button>
+    const MODEL_LABELS = {
+      'gpt-4o': 'GPT-4o',
+      'gpt-4-turbo': 'GPT-4 Turbo',
+      'claude-3.5-sonnet': 'Claude 3.5 Sonnet',
+      'claude-3-haiku': 'Claude 3 Haiku',
+      'gemini-1.5-flash': 'Gemini 1.5 Flash',
+      'deepseek-chat': 'DeepSeek Chat',
+      'groq-llama-3.1': 'Groq Llama 3.1'
+    };
+
+    const STATUS_CONFIG = {
+      running:  { label: 'Active',   badgeClass: 'badge-success' },
+      active:   { label: 'Active',   badgeClass: 'badge-success' },
+      stopped:  { label: 'Inactive', badgeClass: 'badge-inactive' },
+      inactive: { label: 'Inactive', badgeClass: 'badge-inactive' },
+      error:    { label: 'Error',    badgeClass: 'badge-danger' },
+      failed:   { label: 'Error',    badgeClass: 'badge-danger' }
+    };
+
+    const WHATSAPP_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>';
+    const TELEGRAM_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>';
+
+    async function loadAgents() {
+      const container = document.getElementById('agentsContainer');
+
+      try {
+        const data = await api('/api/agents');
+        const agents = Array.isArray(data) ? data : (data.agents || []);
+
+        if (agents.length === 0) {
+          container.innerHTML = renderEmptyState();
+          return;
+        }
+
+        container.innerHTML = '<div class="agents-grid">' + agents.map(renderAgentCard).join('') + '</div>';
+      } catch (e) {
+        container.innerHTML = renderEmptyState();
+        showToast('Failed to load agents: ' + e.message, 'error');
+      }
+    }
+
+    function renderEmptyState() {
+      return `
+        <div class="empty-state">
+          <div class="empty-icon">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="10" rx="2"/>
+              <circle cx="9" cy="16" r="1.5"/>
+              <circle cx="15" cy="16" r="1.5"/>
+              <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+              <line x1="12" y1="3" x2="12" y2="1"/>
+              <line x1="9" y1="2" x2="15" y2="2"/>
+            </svg>
+          </div>
+          <div class="empty-title">No agents yet</div>
+          <div class="empty-desc">Create your first AI agent to automate your WhatsApp and Telegram conversations.</div>
+          <button class="btn btn-primary" onclick="showCreateModal()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Create Agent
+          </button>
+        </div>`;
+    }
+
+    function renderAgentCard(agent) {
+      const statusKey = (agent.status || 'inactive').toLowerCase();
+      const statusCfg = STATUS_CONFIG[statusKey] || STATUS_CONFIG.inactive;
+      const modelLabel = MODEL_LABELS[agent.model] || agent.model || 'Unknown';
+      const description = escapeHtml(agent.description || 'No description');
+      const name = escapeHtml(agent.name || 'Unnamed Agent');
+      const messageCount = agent.message_count || 0;
+      const channels = Array.isArray(agent.channels) ? agent.channels : [];
+      const hasWhatsApp = channels.includes('whatsapp');
+      const hasTelegram = channels.includes('telegram');
+
+      return `
+        <div class="agent-card" onclick="viewAgent('${agent.id}')">
+          <div class="agent-card-header">
+            <div>
+              <div class="agent-card-name">${name}</div>
+              <div class="agent-card-desc mt-1">${description}</div>
             </div>
-        </div>
+          </div>
 
-        <!-- Create Agent Modal -->
-        <div id="createModal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
-            <div style="background: var(--dark); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; width: 90%; max-width: 500px;">
-                <h2 style="margin-bottom: 1.5rem;">Create Agent</h2>
-                <div id="createError" style="color: var(--danger); margin-bottom: 1rem; display: none;"></div>
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">Agent Name</label>
-                    <input type="text" id="agentName" style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text);" placeholder="My AI Assistant">
-                </div>
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">Description</label>
-                    <textarea id="agentDesc" style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text);" placeholder="What does this agent do?"></textarea>
-                </div>
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem;">AI Model</label>
-                    <select id="agentModel" style="width: 100%; padding: 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 8px; color: var(--text);">
-                        <option value="gpt-4o">GPT-4o</option>
-                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                        <option value="claude-3.5-sonnet">Claude 3.5 Sonnet</option>
-                    </select>
-                </div>
-                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
-                    <button class="btn" onclick="hideCreateModal()" style="background: transparent; border: 1px solid var(--border);">Cancel</button>
-                    <button class="btn btn-primary" onclick="createAgent()">Create</button>
-                </div>
+          <div class="agent-card-badges">
+            <span class="badge badge-accent">${escapeHtml(modelLabel)}</span>
+            <span class="badge ${statusCfg.badgeClass}">
+              ${statusKey === 'running' || statusKey === 'active' ? '<span class="status-dot online" style="width:6px;height:6px"></span>' : ''}
+              ${statusCfg.label}
+            </span>
+            ${(hasWhatsApp || hasTelegram) ? `
+              <span class="agent-card-platforms">
+                ${hasWhatsApp ? '<span class="platform-icon-sm whatsapp" title="WhatsApp">' + WHATSAPP_SVG + '</span>' : ''}
+                ${hasTelegram ? '<span class="platform-icon-sm telegram" title="Telegram">' + TELEGRAM_SVG + '</span>' : ''}
+              </span>
+            ` : ''}
+          </div>
+
+          <div class="agent-card-footer">
+            <span class="agent-card-messages">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              ${formatNumber(messageCount)} messages handled
+            </span>
+            <div class="agent-card-actions" onclick="event.stopPropagation()">
+              <button class="btn btn-sm btn-secondary" onclick="viewAgent('${agent.id}')">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteAgent('${agent.id}', '${escapeHtml(name)}')">Delete</button>
             </div>
-        </div>
-    </div>
+          </div>
+        </div>`;
+    }
 
-    <script>
-        const API_URL = 'https://hostclaw-api.onrender.com';
-        const token = localStorage.getItem('token');
-        
-        if (!token) window.location.href = '/login.html';
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
 
-        async function checkPayment() {
-            try {
-                const res = await fetch(`${API_URL}/api/auth/profile`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    const user = data.user || data;
-                    // Allow if user has paid or is on pro/enterprise plan
-                    if (!user.has_paid && user.plan === 'starter') {
-                        document.getElementById('paymentWall').style.display = 'flex';
-                    } else {
-                        // User can create agents - hide payment wall
-                        document.getElementById('paymentWall').style.display = 'none';
-                        // Load their agents
-                        loadAgents();
-                    }
-                }
-            } catch(e) { console.error(e); }
-        }
+    function showCreateModal() {
+      openModal('createAgentModal');
+    }
 
-        async function loadAgents() {
-            try {
-                const res = await fetch(`${API_URL}/api/agents`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    const agents = await res.json();
-                    if (agents.length > 0) {
-                        renderAgents(agents);
-                    }
-                }
-            } catch(e) { console.error('Failed to load agents:', e); }
-        }
+    function hideCreateModal() {
+      closeModal('createAgentModal');
+      document.getElementById('createAgentForm').reset();
+      // Restore default system prompt after reset
+      document.getElementById('agentPrompt').value = 'You are a helpful, friendly, and professional AI assistant. Respond clearly and concisely. If you are unsure about something, say so honestly rather than guessing.';
+    }
 
-        function renderAgents(agents) {
-            const list = document.getElementById('agentsList');
-            let html = '<div style="display: grid; gap: 1rem;">';
-            for (const agent of agents) {
-                html += `
-                    <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-weight: 600; font-size: 1.1rem;">${agent.name}</div>
-                            <div style="color: var(--text-muted); font-size: 0.875rem; margin-top: 0.25rem;">${agent.description || 'No description'}</div>
-                            <div style="margin-top: 0.5rem;">
-                                <span style="background: rgba(99,102,241,0.1); color: var(--primary-light); padding: 0.25rem 0.75rem; border-radius: 100px; font-size: 0.75rem;">${agent.model}</span>
-                                <span style="background: ${agent.status === 'running' ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)'}; color: ${agent.status === 'running' ? 'var(--success)' : 'var(--warning)'}; padding: 0.25rem 0.75rem; border-radius: 100px; font-size: 0.75rem; margin-left: 0.5rem;">${agent.status}</span>
-                            </div>
-                        </div>
-                        <button class="btn btn-primary" onclick="viewAgent('${agent.id}')">View</button>
-                    </div>
-                `;
-            }
-            html += '</div>';
-            list.innerHTML = html;
-        }
+    async function createAgent() {
+      const nameInput = document.getElementById('agentName');
+      const name = nameInput.value.trim();
+      const description = document.getElementById('agentDesc').value.trim();
+      const model = document.getElementById('agentModel').value;
+      const systemPrompt = document.getElementById('agentPrompt').value.trim();
+      const btn = document.getElementById('createBtn');
 
-        function showCreateModal() {
-            document.getElementById('createModal').style.display = 'flex';
-        }
+      if (!name) {
+        nameInput.focus();
+        showToast('Agent name is required', 'warning');
+        return;
+      }
 
-        function hideCreateModal() {
-            document.getElementById('createModal').style.display = 'none';
-            document.getElementById('createError').style.display = 'none';
-        }
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span> Creating...';
 
-        async function createAgent() {
-            const name = document.getElementById('agentName').value.trim();
-            const description = document.getElementById('agentDesc').value.trim();
-            const model = document.getElementById('agentModel').value;
-            const errorDiv = document.getElementById('createError');
-
-            if (!name) {
-                errorDiv.textContent = 'Agent name is required';
-                errorDiv.style.display = 'block';
-                return;
-            }
-
-            try {
-                const res = await fetch(`${API_URL}/api/agents`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        name,
-                        description,
-                        model,
-                        channels: ['web'] // Default channel
-                    })
-                });
-
-                if (res.ok) {
-                    hideCreateModal();
-                    loadAgents();
-                } else {
-                    const data = await res.json();
-                    errorDiv.textContent = data.error || data.message || 'Failed to create agent';
-                    errorDiv.style.display = 'block';
-                }
-            } catch (e) {
-                errorDiv.textContent = 'Network error. Please try again.';
-                errorDiv.style.display = 'block';
-            }
-        }
-
-        function viewAgent(id) {
-            window.location.href = `/agent-detail.html?id=${id}`;
-        }
-
-        // Close modal on backdrop click
-        document.getElementById('createModal').addEventListener('click', (e) => {
-            if (e.target.id === 'createModal') hideCreateModal();
+      try {
+        await api('/api/agents', {
+          method: 'POST',
+          body: JSON.stringify({
+            name,
+            description,
+            model,
+            channels: ['web'],
+            config: { system_prompt: systemPrompt }
+          })
         });
 
-        checkPayment();
-    </script>
+        hideCreateModal();
+        showToast('Agent created successfully', 'success');
+        loadAgents();
+      } catch (e) {
+        showToast(e.message || 'Failed to create agent', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Create Agent';
+      }
+    }
+
+    async function deleteAgent(id, name) {
+      if (!confirm('Delete agent "' + name + '"? This cannot be undone.')) return;
+
+      try {
+        await api('/api/agents/' + id, { method: 'DELETE' });
+        showToast('Agent deleted', 'success');
+        loadAgents();
+      } catch (e) {
+        showToast(e.message || 'Failed to delete agent', 'error');
+      }
+    }
+
+    function viewAgent(id) {
+      window.location.href = '/agent-detail.html?id=' + id;
+    }
+
+    // Close modal on backdrop click
+    document.getElementById('createAgentModal').addEventListener('click', function(e) {
+      if (e.target === this) hideCreateModal();
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') hideCreateModal();
+    });
+
+    loadAgents();
+  </script>
 </body>
 </html>

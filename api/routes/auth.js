@@ -25,11 +25,10 @@ function getGoogleConfig() {
   };
 }
 
-// Valid coupon codes (store these in env or DB in production)
-const VALID_COUPONS = {
-  'HALFPRICE': { discount: 0.5, type: 'percent', price: 250 },
-  'FREETRIAL': { discount: 1.0, type: 'percent', price: 0, setPaid: true }
-};
+// Generate a unique 6-char referral code
+function generateReferralCode() {
+  return crypto.randomBytes(4).toString('hex').toUpperCase().slice(0, 6);
+}
 
 // Register
 router.post('/register', [
@@ -39,69 +38,52 @@ router.post('/register', [
 ], async (req, res, next) => {
   try {
     console.log('Register attempt:', req.body.email);
-    
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log('Register: Validation errors:', errors.array());
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { email, password, name, referralCode, couponCode } = req.body;
-    
-    // Process coupon
-    let userPlan = 'starter';
-    let userCredits = 20;
-    let requiresPayment = true;
-    let paymentAmount = 500;
-    let hasPaid = false;
-    let appliedCoupon = null;
-
-    if (couponCode) {
-      const coupon = VALID_COUPONS[couponCode.toUpperCase()];
-      if (coupon) {
-        appliedCoupon = couponCode.toUpperCase();
-        paymentAmount = coupon.price;
-        
-        if (coupon.price === 0) {
-          // Free trial
-          requiresPayment = false;
-          hasPaid = true;
-          userPlan = 'pro';
-          userCredits = 100;
-        } else {
-          // Discounted price - still needs payment
-          requiresPayment = true;
-          hasPaid = false;
-        }
-      }
-    }
+    const { email, password, name, referralCode } = req.body;
 
     // Check if user exists
-    console.log('Register: Checking if user exists...');
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
-      console.log('Register: User already exists:', email);
       return res.status(400).json({ error: 'Email already registered' });
     }
 
+    // Resolve referrer
+    let referrer = null;
+    if (referralCode) {
+      referrer = await User.findByMyReferralCode(referralCode.toUpperCase().trim());
+    }
+
+    // Generate this user's own referral code
+    const myReferralCode = generateReferralCode();
+
     // Hash password
-    console.log('Register: Hashing password...');
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
-    console.log('Register: Creating user...');
+    // Create user with $10 free credits
     const user = await User.createUser({
       email,
       password: hashedPassword,
       name,
-      plan: userPlan,
-      credits: userCredits,
-      has_paid: hasPaid ? 1 : 0,
-      referral_code: referralCode || null,
-      applied_coupon: appliedCoupon
+      plan: 'starter',
+      credits: 10,
+      has_paid: 0,
+      referral_code: referrer ? referralCode.toUpperCase().trim() : null,
+      my_referral_code: myReferralCode,
+      referred_by: referrer ? referrer.id : null
     });
 
     console.log('Register: User created:', user.id);
+
+    // Give referrer $5 bonus
+    if (referrer) {
+      await User.updateCredits(referrer.id, 5);
+      console.log(`Referral bonus: +$5 to user ${referrer.id}`);
+    }
 
     // Generate JWT
     const token = jwt.sign(
@@ -110,16 +92,14 @@ router.post('/register', [
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
-    // Try to send welcome email (don't fail if SMTP not configured)
     try {
       await EmailService.sendWelcomeEmail(user);
     } catch (e) {
       console.log('Welcome email not sent:', e.message);
     }
 
-    console.log('Register: Success!');
     res.status(201).json({
-      message: 'User created successfully',
+      message: 'Account created! $10 free credits added.',
       token,
       user: {
         id: user.id,
@@ -127,11 +107,9 @@ router.post('/register', [
         name: user.name,
         plan: user.plan,
         credits: user.credits,
-        has_paid: hasPaid
+        my_referral_code: myReferralCode
       },
-      requiresPayment,
-      paymentAmount,
-      appliedCoupon
+      freeCredits: 10
     });
   } catch (error) {
     console.error('Register error:', error);
@@ -226,6 +204,7 @@ router.get('/profile', authenticate, async (req, res, next) => {
         name: user.name,
         plan: user.plan,
         credits: user.credits,
+        my_referral_code: user.my_referral_code,
         created_at: user.created_at
       }
     });
@@ -394,16 +373,17 @@ router.get('/google/callback', async (req, res, next) => {
     
     if (!user) {
       console.log('Google OAuth: Creating new user...');
-      // Create new user
       const randomPassword = crypto.randomBytes(32).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 12);
-      
+      const myReferralCode = generateReferralCode();
+
       user = await User.createUser({
         email,
         password: hashedPassword,
         name,
         plan: 'starter',
-        credits: 20
+        credits: 10,
+        my_referral_code: myReferralCode
       });
       console.log('Google OAuth: New user created:', user.id);
     }

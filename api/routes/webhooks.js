@@ -151,16 +151,17 @@ router.post('/discord/:userId', async (req, res) => {
 
 // Slack webhook
 router.post('/slack/:userId', async (req, res) => {
+  const data = req.body;
+
+  // Handle URL verification (must respond with challenge before sending 200)
+  if (data.type === 'url_verification') {
+    return res.json({ challenge: data.challenge });
+  }
+
   res.sendStatus(200);
-  
+
   try {
     const userId = req.params.userId;
-    const data = req.body;
-    
-    // Handle URL verification
-    if (data.type === 'url_verification') {
-      return res.json({ challenge: data.challenge });
-    }
     
     const user = await User.findById(userId);
     const platforms = parsePlatforms(user);
@@ -543,16 +544,28 @@ function noCreditsMsg(user) {
   return `⚠️ Out of credits! Add more at: ${url}/billing.html`;
 }
 
-// Check if user can chat: has credits, OR has their own API keys configured
+// Check if user can chat: has messages remaining, unlimited plan, OR has their own API keys
 function canChat(user) {
-  const credits = parseFloat(user.credits) || 0;
-  if (credits > 0 || user.has_paid === true || user.has_paid == 1 || user.plan !== 'starter') return true;
+  // Check message-based billing first
+  if (User.canSendMessage(user)) return true;
+  // Allow if user has their own API keys configured
   const providers = parseProviders(user);
   return Object.keys(providers).length > 0;
 }
 
 async function processAndRespond(user, text, platform, platformId, sendFn) {
   try {
+    // Deduct message BEFORE generating AI response to prevent unbilled usage
+    const hasOwnKey = Object.keys(parseProviders(user)).length > 0;
+    if (!hasOwnKey) {
+      const deducted = await User.deductMessage(user.id);
+      if (!deducted) {
+        const url = process.env.FRONTEND_URL || 'https://hostclaw-web.onrender.com';
+        await sendFn(`Message limit reached. Upgrade your plan at: ${url}/billing.html`);
+        return;
+      }
+    }
+
     // Save user message
     await Chat.saveMessage({
       user_id: user.id,
@@ -568,24 +581,15 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
       ? savedDefault
       : Object.keys(allProviders)[0];
 
-    if (!resolvedProvider || !allProviders[resolvedProvider]) {
-      await sendFn('⚠️ No AI provider configured. Please add your API key in HostClaw Settings.');
-      return;
-    }
-
-    const providerConfig = allProviders[resolvedProvider];
+    const providerConfig = allProviders[resolvedProvider] || null;
     const activeSkills = parseSkills(user).filter(s => s.active).map(s => s.id);
 
     const aiResponse = await generateAIResponse({
       message: text,
-      provider: resolvedProvider,
+      provider: resolvedProvider || 'openai',
       providerConfig,
       skills: activeSkills
     });
-
-    // Deduct credits
-    const cost = calculateCost(aiResponse.tokens || 0, resolvedProvider);
-    await User.deductCredits(user.id, cost);
 
     // Save AI response
     await Chat.saveMessage({
@@ -604,18 +608,6 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
     console.error('Process message error:', error);
     await sendFn('Sorry, I encountered an error. Please try again later.');
   }
-}
-
-function calculateCost(tokens, provider) {
-  const rates = {
-    openai: 0.03,
-    anthropic: 0.03,
-    kimi: 0.015,
-    gemini: 0.005,
-    deepseek: 0.002,
-    groq: 0.005
-  };
-  return Math.max(0.01, (tokens / 1000) * (rates[provider] || 0.03));
 }
 
 // ===== STRIPE WEBHOOK =====
@@ -637,7 +629,9 @@ router.post('/stripe', async (req, res) => {
     }
   } catch (err) {
     console.log(`⚠️ Webhook signature verification failed:`, err.message);
-    // Still process in development
+    if (process.env.NODE_ENV === 'production') {
+      return res.status(400).json({ error: 'Webhook signature verification failed' });
+    }
     event = req.body;
   }
 
@@ -650,17 +644,49 @@ router.post('/stripe', async (req, res) => {
         const session = event.data.object;
         const userId = session.metadata?.userId;
         const type = session.metadata?.type;
-        const amount = parseInt(session.metadata?.amount || '0');
-        
-        if (userId) {
-          if (type === 'setup_fee') {
-            // Mark user as paid setup fee
-            await User.updatePaymentStatus(userId, 'paid');
-            console.log(`✅ Setup fee paid for user ${userId}`);
-          } else if (type === 'credits' && amount > 0) {
-            // Add credits to user
-            await User.addCredits(userId, amount);
-            console.log(`✅ Added $${amount} credits to user ${userId}`);
+
+        if (userId && type === 'messages') {
+          const planType = session.metadata?.plan_type;
+          const messages = parseInt(session.metadata?.messages || '0');
+          const duration = parseInt(session.metadata?.duration || '0');
+
+          if (planType === 'unlimited' && duration > 0) {
+            // Unlimited plan — set expiry
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + duration);
+            await User.addMessages(userId, null, 'unlimited', expiresAt.toISOString());
+            console.log(`✅ Activated unlimited plan for user ${userId} (${duration} days)`);
+          } else if (messages > 0) {
+            // Top-up — add messages to limit
+            await User.addMessages(userId, messages, 'paid', null);
+            console.log(`✅ Added ${messages} messages to user ${userId}`);
+          }
+
+          // Save subscription ID if applicable
+          if (session.subscription) {
+            await User.updateStripeInfo(userId, {
+              customerId: session.customer,
+              subscriptionId: session.subscription
+            });
+          }
+
+          // Referral bonus: give referrer 10% of messages purchased
+          const buyer = await User.findById(userId);
+          if (buyer?.referred_by && messages > 0) {
+            const bonus = Math.floor(messages * 0.1);
+            if (bonus > 0) {
+              await User.addMessages(buyer.referred_by, bonus, 'paid', null);
+              console.log(`✅ Referral bonus: +${bonus} messages to referrer ${buyer.referred_by}`);
+            }
+          }
+        }
+
+        // Legacy: handle old credit-based purchases
+        if (userId && type === 'credits') {
+          const credits = parseInt(session.metadata?.credits || '0');
+          if (credits > 0) {
+            await User.updateCredits(userId, credits);
+            console.log(`✅ Legacy: Added ${credits} credits to user ${userId}`);
           }
         }
         break;
@@ -669,6 +695,25 @@ router.post('/stripe', async (req, res) => {
       case 'invoice.payment_succeeded': {
         const invoice = event.data.object;
         console.log('💰 Invoice payment succeeded:', invoice.id);
+
+        // Handle subscription renewal — reset message count and extend plan
+        if (invoice.subscription) {
+          const customerId = invoice.customer;
+          const { query: dbQuery } = require('../config/database');
+          const userResult = await dbQuery(
+            'SELECT id, plan_type FROM users WHERE stripe_customer_id = $1',
+            [customerId]
+          );
+          const subUser = userResult.rows[0];
+          if (subUser && subUser.plan_type === 'unlimited') {
+            // Determine duration from subscription interval
+            const lineItem = invoice.lines?.data?.[0];
+            const interval = lineItem?.price?.recurring?.interval;
+            const days = interval === 'year' ? 365 : 30;
+            await User.renewUnlimitedPlan(subUser.id, days);
+            console.log(`✅ Renewed unlimited plan for user ${subUser.id} (${days} days)`);
+          }
+        }
         break;
       }
       

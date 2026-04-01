@@ -59,6 +59,18 @@ async function startup() {
     const testResult = await query('SELECT COUNT(*) as count FROM users');
     console.log('✅ Database test passed. Users in DB:', testResult.rows[0]?.count || 0);
     
+    // Start openclaw daemon (non-fatal — chat still works without it)
+    try {
+      const openclawService = require('./services/openclaw');
+      openclawService.start().then(() => {
+        if (openclawService.isReady()) {
+          console.log('✅ OpenClaw daemon running');
+        }
+      }).catch(e => console.warn('⚠️ OpenClaw start error:', e.message));
+    } catch (e) {
+      console.warn('⚠️ OpenClaw not installed:', e.message);
+    }
+
     // Start server
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 HostClaw API server running on port ${PORT}`);

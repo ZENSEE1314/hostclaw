@@ -1,4 +1,4 @@
-// Middleware to check if user has paid/active subscription
+// Middleware to check if user has messages remaining or own API keys
 async function checkPayment(req, res, next) {
   try {
     // Always allow GET history
@@ -9,13 +9,10 @@ async function checkPayment(req, res, next) {
     const User = require('../models/user');
     const user = await User.findById(req.user.userId);
 
-    // Allow if: paid, on a non-starter plan, has credits, OR has their own API key configured
-    const hasPaid = user.has_paid === true ||
-                    user.has_paid == 1 ||
-                    user.plan !== 'starter' ||
-                    parseFloat(user.credits) > 0;
+    // Check message-based billing
+    const hasMessages = User.canSendMessage(user);
 
-    // Also allow if the user has configured their own API provider
+    // Also allow if user has their own API provider configured
     let hasOwnApiKey = false;
     if (user.api_providers) {
       try {
@@ -26,12 +23,12 @@ async function checkPayment(req, res, next) {
       } catch (e) { /* ignore */ }
     }
 
-    if (!hasPaid && !hasOwnApiKey) {
+    if (!hasMessages && !hasOwnApiKey) {
       return res.status(402).json({
-        error: 'Payment required',
-        message: 'Please add credits or configure your own AI API key in Settings',
+        error: 'Message limit reached',
+        message: 'You have used all your free messages. Upgrade to continue.',
         payment_url: '/billing.html',
-        setup_url: '/settings.html'
+        setup_url: '/providers.html'
       });
     }
 

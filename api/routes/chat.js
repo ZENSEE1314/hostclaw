@@ -41,14 +41,8 @@ router.post('/message', async (req, res, next) => {
 
     console.log('User found:', user.id, 'Credits:', user.credits, 'Has paid:', user.has_paid);
     
-    // Check credits
-    if (user.credits <= 0 && !user.has_paid) {
-      return res.status(402).json({ 
-        error: 'Insufficient credits',
-        message: 'Please add credits to continue using the chat',
-        credits: user.credits
-      });
-    }
+    // Credits check is handled by checkPayment middleware above
+    // Users with own API keys bypass the credit requirement
 
     // Get user's active skills
     let activeSkills = [];

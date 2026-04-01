@@ -130,7 +130,38 @@ async function migrate() {
       await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS applied_coupon TEXT`);
       console.log('✅ Column applied_coupon ready');
     } catch (e) { console.log('ℹ️ applied_coupon:', e.message); }
-    
+
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS my_referral_code TEXT UNIQUE`);
+      console.log('✅ Column my_referral_code ready');
+    } catch (e) { console.log('ℹ️ my_referral_code:', e.message); }
+
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS referred_by TEXT`);
+      console.log('✅ Column referred_by ready');
+    } catch (e) { console.log('ℹ️ referred_by:', e.message); }
+
+    // Message-based billing columns
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS message_count INTEGER DEFAULT 0`);
+      console.log('✅ Column message_count ready');
+    } catch (e) { console.log('ℹ️ message_count:', e.message); }
+
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS message_limit INTEGER DEFAULT 50`);
+      console.log('✅ Column message_limit ready');
+    } catch (e) { console.log('ℹ️ message_limit:', e.message); }
+
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_type TEXT DEFAULT 'free'`);
+      console.log('✅ Column plan_type ready');
+    } catch (e) { console.log('ℹ️ plan_type:', e.message); }
+
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMP`);
+      console.log('✅ Column plan_expires_at ready');
+    } catch (e) { console.log('ℹ️ plan_expires_at:', e.message); }
+
     console.log('✅ All migrations complete!');
     return true;
   } catch (err) {

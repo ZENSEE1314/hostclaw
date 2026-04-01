@@ -1,1252 +1,662 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - HostClaw.ai</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #6366f1;
-            --primary-dark: #4f46e5;
-            --primary-light: #818cf8;
-            --secondary: #06b6d4;
-            --accent: #f59e0b;
-            --dark: #0f0f23;
-            --darker: #0a0a1a;
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --card-bg-hover: rgba(255, 255, 255, 0.06);
-            --border: rgba(255, 255, 255, 0.08);
-            --border-hover: rgba(255, 255, 255, 0.15);
-            --text: #f8fafc;
-            --text-muted: #64748b;
-            --text-secondary: #94a3b8;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --glow-primary: rgba(99, 102, 241, 0.15);
-            --glow-secondary: rgba(6, 182, 212, 0.1);
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: var(--darker);
-            color: var(--text);
-            line-height: 1.6;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-
-        /* Ambient background */
-        body::before {
-            content: '';
-            position: fixed;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.06) 0%, transparent 40%),
-                        radial-gradient(circle at 80% 80%, rgba(6, 182, 212, 0.04) 0%, transparent 40%),
-                        radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.03) 0%, transparent 50%);
-            pointer-events: none;
-            z-index: 0;
-            animation: ambientShift 20s ease-in-out infinite alternate;
-        }
-
-        @keyframes ambientShift {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            100% { transform: translate(-3%, 2%) rotate(3deg); }
-        }
-
-        .dashboard {
-            display: grid;
-            grid-template-columns: 260px 1fr;
-            min-height: 100vh;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* ─── Sidebar ─── */
-        .sidebar {
-            background: rgba(15, 15, 35, 0.8);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-right: 1px solid var(--border);
-            padding: 1.5rem;
-            position: fixed;
-            width: 260px;
-            height: 100vh;
-            overflow-y: auto;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            font-size: 1.35rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #818cf8 0%, #06b6d4 50%, #a78bfa 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 2.5rem;
-            text-decoration: none;
-            letter-spacing: -0.02em;
-        }
-
-        .logo-icon {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1rem;
-            -webkit-text-fill-color: white;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-        }
-
-        .nav-section { margin-bottom: 1.75rem; }
-
-        .nav-section-title {
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            color: var(--text-muted);
-            margin-bottom: 0.6rem;
-            padding-left: 0.75rem;
-            font-weight: 600;
-        }
-
-        .nav-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.65rem 0.75rem;
-            border-radius: 10px;
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.875rem;
-            transition: all 0.2s ease;
-            margin-bottom: 2px;
-            position: relative;
-        }
-
-        .nav-item:hover {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text);
-        }
-
-        .nav-item.active {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.08));
-            color: var(--primary-light);
-            box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.2);
-        }
-
-        .nav-item.active::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 3px;
-            height: 60%;
-            background: var(--primary-light);
-            border-radius: 0 3px 3px 0;
-        }
-
-        .nav-badge {
-            margin-left: auto;
-            background: rgba(99, 102, 241, 0.2);
-            color: var(--primary-light);
-            font-size: 0.7rem;
-            font-weight: 600;
-            padding: 0.15rem 0.5rem;
-            border-radius: 20px;
-        }
-
-        /* User card at bottom */
-        .user-section {
-            margin-top: auto;
-            padding-top: 1.5rem;
-            border-top: 1px solid var(--border);
-        }
-
-        .user-card {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.6rem 0.75rem;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .user-card:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: var(--border-hover);
-        }
-
-        .user-avatar {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.8rem;
-            flex-shrink: 0;
-            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.25);
-        }
-
-        .user-info { flex: 1; min-width: 0; }
-
-        .user-name {
-            font-weight: 600;
-            font-size: 0.85rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .user-plan {
-            font-size: 0.7rem;
-            color: var(--text-muted);
-        }
-
-        .user-logout {
-            font-size: 0.9rem;
-            opacity: 0.5;
-            transition: opacity 0.2s;
-        }
-
-        .user-card:hover .user-logout { opacity: 1; }
-
-        /* ─── Main Content ─── */
-        .main-content {
-            margin-left: 260px;
-            padding: 2rem 2.5rem;
-            min-height: 100vh;
-        }
-
-        /* Header */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .header-left h1 {
-            font-size: 1.75rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            margin-bottom: 0.25rem;
-        }
-
-        .header-greeting {
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
-
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .credits-display {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            background: rgba(16, 185, 129, 0.06);
-            border: 1px solid rgba(16, 185, 129, 0.15);
-            padding: 0.6rem 1.25rem;
-            border-radius: 12px;
-            transition: all 0.2s;
-        }
-
-        .credits-display:hover {
-            background: rgba(16, 185, 129, 0.1);
-            border-color: rgba(16, 185, 129, 0.25);
-        }
-
-        .credits-icon { font-size: 1.1rem; }
-
-        .credits-amount {
-            font-size: 1.1rem;
-            font-weight: 700;
-            color: var(--success);
-        }
-
-        .btn {
-            padding: 0.6rem 1.2rem;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 0.85rem;
-            cursor: pointer;
-            border: none;
-            transition: all 0.25s ease;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
-        }
-
-        .btn-primary:active { transform: translateY(0); }
-
-        .btn-outline {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--border);
-            color: var(--text-secondary);
-        }
-
-        .btn-outline:hover {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: var(--border-hover);
-            color: var(--text);
-        }
-
-        .btn-sm { padding: 0.45rem 0.9rem; font-size: 0.8rem; }
-
-        /* ─── Stats Grid ─── */
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.25rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .stat-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: linear-gradient(90deg, transparent, var(--card-accent, var(--primary)), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-3px);
-            border-color: var(--border-hover);
-            background: var(--card-bg-hover);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .stat-card:hover::before { opacity: 1; }
-
-        .stat-card:nth-child(1) { --card-accent: #818cf8; }
-        .stat-card:nth-child(2) { --card-accent: #06b6d4; }
-        .stat-card:nth-child(3) { --card-accent: #f59e0b; }
-        .stat-card:nth-child(4) { --card-accent: #10b981; }
-
-        .stat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1.25rem;
-        }
-
-        .stat-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-        }
-
-        .stat-card:nth-child(1) .stat-icon { background: rgba(129, 140, 248, 0.12); }
-        .stat-card:nth-child(2) .stat-icon { background: rgba(6, 182, 212, 0.12); }
-        .stat-card:nth-child(3) .stat-icon { background: rgba(245, 158, 11, 0.12); }
-        .stat-card:nth-child(4) .stat-icon { background: rgba(16, 185, 129, 0.12); }
-
-        .stat-trend {
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.2rem 0.5rem;
-            border-radius: 6px;
-        }
-
-        .stat-trend.up {
-            color: var(--success);
-            background: rgba(16, 185, 129, 0.1);
-        }
-
-        .stat-trend.neutral {
-            color: var(--text-muted);
-            background: rgba(148, 163, 184, 0.1);
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 800;
-            letter-spacing: -0.03em;
-            margin-bottom: 0.25rem;
-            background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .stat-label {
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        /* Sparkline bar chart in stat cards */
-        .stat-sparkline {
-            display: flex;
-            align-items: flex-end;
-            gap: 3px;
-            height: 28px;
-            margin-top: 1rem;
-        }
-
-        .spark-bar {
-            flex: 1;
-            border-radius: 2px;
-            min-height: 4px;
-            transition: height 0.3s ease;
-        }
-
-        .stat-card:nth-child(1) .spark-bar { background: rgba(129, 140, 248, 0.3); }
-        .stat-card:nth-child(2) .spark-bar { background: rgba(6, 182, 212, 0.3); }
-        .stat-card:nth-child(3) .spark-bar { background: rgba(245, 158, 11, 0.3); }
-        .stat-card:nth-child(4) .spark-bar { background: rgba(16, 185, 129, 0.3); }
-
-        .stat-card:nth-child(1) .spark-bar:last-child { background: rgba(129, 140, 248, 0.7); }
-        .stat-card:nth-child(2) .spark-bar:last-child { background: rgba(6, 182, 212, 0.7); }
-        .stat-card:nth-child(3) .spark-bar:last-child { background: rgba(245, 158, 11, 0.7); }
-        .stat-card:nth-child(4) .spark-bar:last-child { background: rgba(16, 185, 129, 0.7); }
-
-        /* ─── Content Grid ─── */
-        .content-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .card:hover {
-            border-color: var(--border-hover);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        }
-
-        .card-full { grid-column: 1 / -1; }
-
-        .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1.25rem 1.5rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .card-title {
-            font-weight: 600;
-            font-size: 1rem;
-            letter-spacing: -0.01em;
-        }
-
-        .card-body { padding: 1.5rem; }
-
-        /* Quick Actions */
-        .quick-actions {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 0.75rem;
-        }
-
-        .action-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            text-decoration: none;
-            color: var(--text-secondary);
-            transition: all 0.25s ease;
-            cursor: pointer;
-        }
-
-        .action-btn:hover {
-            background: rgba(255, 255, 255, 0.05);
-            border-color: var(--border-hover);
-            color: var(--text);
-            transform: translateY(-1px);
-        }
-
-        .action-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-            flex-shrink: 0;
-        }
-
-        .action-btn:nth-child(1) .action-icon { background: rgba(99, 102, 241, 0.12); }
-        .action-btn:nth-child(2) .action-icon { background: rgba(6, 182, 212, 0.12); }
-        .action-btn:nth-child(3) .action-icon { background: rgba(245, 158, 11, 0.12); }
-        .action-btn:nth-child(4) .action-icon { background: rgba(16, 185, 129, 0.12); }
-
-        .action-text { font-weight: 600; font-size: 0.85rem; }
-        .action-desc { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
-
-        /* Plan Card */
-        .plan-card {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(6, 182, 212, 0.05));
-            border: 1px solid rgba(99, 102, 241, 0.15);
-            border-radius: 16px;
-            padding: 2rem;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .plan-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle at 30% 30%, rgba(99, 102, 241, 0.08) 0%, transparent 50%);
-            pointer-events: none;
-        }
-
-        .plan-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            background: rgba(99, 102, 241, 0.15);
-            color: var(--primary-light);
-            padding: 0.3rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-
-        .plan-name {
-            font-size: 1.5rem;
-            font-weight: 800;
-            letter-spacing: -0.02em;
-            margin-bottom: 0.5rem;
-        }
-
-        .plan-desc {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            margin-bottom: 1.5rem;
-            line-height: 1.6;
-        }
-
-        .plan-features {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            justify-content: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .plan-feature {
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            background: rgba(255, 255, 255, 0.03);
-            padding: 0.35rem 0.75rem;
-            border-radius: 8px;
-        }
-
-        .plan-feature .check { color: var(--success); }
-
-        /* Activity / Status section */
-        .status-row {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .status-row:last-child { border-bottom: none; }
-
-        .status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            flex-shrink: 0;
-        }
-
-        .status-dot.green {
-            background: var(--success);
-            box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
-        }
-
-        .status-dot.yellow {
-            background: var(--warning);
-            box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
-        }
-
-        .status-dot.red {
-            background: var(--danger);
-            box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
-        }
-
-        .status-label {
-            flex: 1;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        .status-value {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            font-weight: 500;
-        }
-
-        /* ─── Payment Wall ─── */
-        .payment-wall {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.92);
-            backdrop-filter: blur(12px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 2rem;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        .payment-card {
-            background: var(--dark);
-            border: 1px solid var(--border);
-            border-radius: 24px;
-            padding: 3rem;
-            text-align: center;
-            max-width: 480px;
-            width: 100%;
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
-            animation: slideUp 0.4s ease;
-        }
-
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .payment-icon {
-            width: 72px;
-            height: 72px;
-            margin: 0 auto 1.5rem;
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(6, 182, 212, 0.15));
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2rem;
-        }
-
-        .payment-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.02em;
-        }
-
-        .payment-price {
-            font-size: 2.75rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--primary-light), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-            letter-spacing: -0.03em;
-        }
-
-        .payment-desc {
-            color: var(--text-muted);
-            margin-bottom: 1.5rem;
-            line-height: 1.7;
-            font-size: 0.9rem;
-        }
-
-        .payment-features {
-            text-align: left;
-            margin-bottom: 2rem;
-        }
-
-        .payment-feature {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            padding: 0.5rem 0;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-
-        .payment-feature .check-icon {
-            color: var(--success);
-            font-size: 0.8rem;
-            flex-shrink: 0;
-        }
-
-        .payment-btn {
-            width: 100%;
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            font-size: 1rem;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: all 0.25s ease;
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-        }
-
-        .payment-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
-        }
-
-        .payment-logout {
-            margin-top: 1rem;
-            background: transparent;
-            border: 1px solid var(--border);
-            color: var(--text-muted);
-            padding: 0.6rem 1.5rem;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        }
-
-        .payment-logout:hover {
-            border-color: var(--border-hover);
-            color: var(--text-secondary);
-        }
-
-        .payment-footer {
-            margin-top: 1.25rem;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.4rem;
-        }
-
-        /* Loading spinner */
-        .loading {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(255,255,255,0.2);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 0.7s linear infinite;
-            margin-right: 8px;
-            vertical-align: middle;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ─── Responsive ─── */
-        .mobile-toggle {
-            display: none;
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 0.5rem;
-            cursor: pointer;
-            font-size: 1.25rem;
-            color: var(--text);
-        }
-
-        .sidebar-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 99;
-        }
-
-        @media (max-width: 1200px) {
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        @media (max-width: 768px) {
-            .dashboard { grid-template-columns: 1fr; }
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-            }
-            .sidebar.open { transform: translateX(0); }
-            .sidebar-overlay.open { display: block; }
-            .main-content { margin-left: 0; padding: 1.5rem; }
-            .mobile-toggle { display: block; }
-            .header { flex-wrap: wrap; gap: 1rem; }
-            .header-right { width: 100%; justify-content: space-between; }
-            .stats-grid { grid-template-columns: 1fr 1fr; }
-            .content-grid { grid-template-columns: 1fr; }
-            .quick-actions { grid-template-columns: 1fr; }
-        }
-
-        @media (max-width: 480px) {
-            .stats-grid { grid-template-columns: 1fr; }
-        }
-
-        /* Entrance animations */
-        .stat-card, .card {
-            opacity: 0;
-            transform: translateY(12px);
-            animation: cardIn 0.5s ease forwards;
-        }
-
-        .stat-card:nth-child(1) { animation-delay: 0.05s; }
-        .stat-card:nth-child(2) { animation-delay: 0.1s; }
-        .stat-card:nth-child(3) { animation-delay: 0.15s; }
-        .stat-card:nth-child(4) { animation-delay: 0.2s; }
-
-        .content-grid .card:nth-child(1) { animation-delay: 0.25s; }
-        .content-grid .card:nth-child(2) { animation-delay: 0.3s; }
-
-        @keyframes cardIn {
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Pulse on credits */
-        @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.2); }
-            50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-        }
-
-        .credits-display { animation: pulse 3s ease-in-out infinite; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - HostClaw.ai</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="/css/shared.css" rel="stylesheet">
+  <style>
+    /* Dashboard-specific styles */
+    .stat-progress {
+      margin-top: 0.75rem;
+    }
+
+    .stat-progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      margin-bottom: 0.375rem;
+    }
+
+    .stat-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Bot platform cards */
+    .bot-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: var(--transition);
+    }
+
+    .bot-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-1px);
+    }
+
+    .bot-card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .bot-card-icon.whatsapp {
+      background: rgba(37, 211, 102, 0.1);
+      color: #25d366;
+    }
+
+    .bot-card-icon.telegram {
+      background: rgba(0, 136, 204, 0.1);
+      color: #0088cc;
+    }
+
+    .bot-card-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .bot-card-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .bot-card-name {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      margin-bottom: 0.125rem;
+    }
+
+    .bot-card-status {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    .bot-card-botname {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.125rem;
+    }
+
+    /* Quick action cards */
+    .action-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      text-decoration: none;
+      color: var(--text);
+      transition: var(--transition);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .action-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .action-card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .action-card-icon svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .action-card-icon.green {
+      background: rgba(37, 211, 102, 0.1);
+      color: #25d366;
+    }
+
+    .action-card-icon.blue {
+      background: rgba(0, 136, 204, 0.1);
+      color: #0088cc;
+    }
+
+    .action-card-icon.purple {
+      background: var(--accent-bg);
+      color: var(--accent-light);
+    }
+
+    .action-card-title {
+      font-size: 0.9375rem;
+      font-weight: 600;
+    }
+
+    .action-card-desc {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .action-card-arrow {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--accent-light);
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      margin-top: auto;
+    }
+
+    /* Activity list */
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.875rem;
+      padding: 0.875rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+
+    .activity-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .activity-icon.whatsapp {
+      background: rgba(37, 211, 102, 0.1);
+      color: #25d366;
+    }
+
+    .activity-icon.telegram {
+      background: rgba(0, 136, 204, 0.1);
+      color: #0088cc;
+    }
+
+    .activity-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .activity-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .activity-message {
+      font-size: 0.8125rem;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .activity-meta {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      margin-top: 0.125rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-size: 1.0625rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .section-link {
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--accent-light);
+      text-decoration: none;
+      transition: var(--transition);
+    }
+
+    .section-link:hover {
+      color: var(--accent);
+    }
+
+    .dashboard-section {
+      margin-bottom: 2rem;
+    }
+
+    /* Cyan background token not defined as bg, derive it */
+    .stat-icon.cyan-bg {
+      background: rgba(6, 182, 212, 0.08);
+      color: var(--cyan);
+    }
+
+    .plan-badge {
+      font-size: 0.8125rem;
+      font-weight: 700;
+      text-transform: capitalize;
+    }
+
+    @media (max-width: 768px) {
+      .bot-grid,
+      .action-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .bot-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+
+      .action-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .bot-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+
+      .action-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1rem;
+      }
+    }
+  </style>
 </head>
 <body>
-    <!-- Payment Wall -->
-    <div class="payment-wall" id="paymentWall" style="display: none;">
-        <div class="payment-card">
-            <div class="payment-icon">⚡</div>
-            <div class="payment-title">Unlock HostClaw</div>
-            <div class="payment-price">$500</div>
-            <div class="payment-desc">One-time payment. Yours forever.</div>
-            <div class="payment-features">
-                <div class="payment-feature"><span class="check-icon">✓</span> Unlimited AI Agents</div>
-                <div class="payment-feature"><span class="check-icon">✓</span> WhatsApp, Telegram, Discord, Slack</div>
-                <div class="payment-feature"><span class="check-icon">✓</span> Full Chat Access</div>
-                <div class="payment-feature"><span class="check-icon">✓</span> Bring Your Own API Keys</div>
-                <div class="payment-feature"><span class="check-icon">✓</span> All Future Features Included</div>
-            </div>
-            <button class="payment-btn" onclick="handlePayment()">
-                Pay $500 &rarr;
-            </button>
-            <button class="payment-logout" onclick="logout()">🚪 Logout</button>
-            <div class="payment-footer">🔒 Secure payment via Stripe</div>
+  <div class="app-layout">
+    <main class="main-content">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1>Dashboard</h1>
+          <p class="page-header-sub" id="welcomeText">Welcome back</p>
         </div>
-    </div>
+        <a href="/platforms.html" class="btn btn-primary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Connect a Bot
+        </a>
+      </div>
 
-    <!-- Mobile sidebar overlay -->
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+      <!-- Stats Row -->
+      <div class="grid-4 dashboard-section">
 
-    <div class="dashboard">
-        <aside class="sidebar" id="sidebar">
-            <a href="/dashboard.html" class="logo">
-                <div class="logo-icon">🐾</div>
-                HostClaw
-            </a>
-
-            <nav>
-                <div class="nav-section">
-                    <div class="nav-section-title">Main</div>
-                    <a href="/dashboard.html" class="nav-item active">📊 Dashboard</a>
-                    <a href="/chat.html" class="nav-item">💬 Chat</a>
-                    <a href="/skills.html" class="nav-item">🧩 Skills</a>
-                </div>
-
-                <div class="nav-section">
-                    <div class="nav-section-title">Management</div>
-                    <a href="/agents.html" class="nav-item">🤖 My Agents</a>
-                    <a href="/settings.html" class="nav-item">🔑 AI Providers</a>
-                    <a href="/platforms.html" class="nav-item">📱 Platforms</a>
-                </div>
-
-                <div class="nav-section">
-                    <div class="nav-section-title">Account</div>
-                    <a href="/billing.html" class="nav-item">💳 Billing</a>
-                </div>
-            </nav>
-
-            <div class="user-section">
-                <div class="user-card" onclick="logout()">
-                    <div class="user-avatar" id="userAvatar">--</div>
-                    <div class="user-info">
-                        <div class="user-name" id="userName">Loading...</div>
-                        <div class="user-plan" id="userPlan">Loading...</div>
-                    </div>
-                    <span class="user-logout">🚪</span>
-                </div>
+        <!-- Messages Used -->
+        <div class="stat-card">
+          <div class="stat-icon" style="background: var(--accent-bg); color: var(--accent-light);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </div>
+          <div class="stat-value" id="statMessages">0 / 50</div>
+          <div class="stat-label">Messages Used</div>
+          <div class="stat-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" id="msgProgressFill" style="width: 0%"></div>
             </div>
-        </aside>
+          </div>
+        </div>
 
-        <main class="main-content">
-            <div class="header">
-                <div class="header-left">
-                    <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
-                    <h1 id="greeting">Dashboard</h1>
-                    <div class="header-greeting" id="greetingSub">Welcome back 👋</div>
-                </div>
-                <div class="header-right">
-                    <div class="credits-display">
-                        <span class="credits-icon">💰</span>
-                        <span class="credits-amount" id="creditsDisplay">$0.00</span>
-                        <a href="/billing.html" class="btn btn-primary btn-sm">+ Add</a>
-                    </div>
-                </div>
+        <!-- Active Bots -->
+        <div class="stat-card">
+          <div class="stat-icon" style="background: var(--success-bg); color: var(--success);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 12h.01"/><path d="M17 12h.01"/><path d="M7 12h.01"/></svg>
+          </div>
+          <div class="stat-value" id="statBots">0</div>
+          <div class="stat-label">Active Bots</div>
+        </div>
+
+        <!-- Conversations Today -->
+        <div class="stat-card">
+          <div class="stat-icon cyan-bg">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="stat-value" id="statConversations">0</div>
+          <div class="stat-label">Conversations Today</div>
+        </div>
+
+        <!-- Current Plan -->
+        <div class="stat-card">
+          <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          </div>
+          <div class="stat-value" id="statPlan">
+            <span class="badge badge-accent" id="planBadge">Free</span>
+          </div>
+          <div class="stat-label">Current Plan</div>
+        </div>
+
+      </div>
+
+      <!-- Bot Status Section -->
+      <div class="dashboard-section">
+        <div class="section-header">
+          <h2 class="section-title">Your Bots</h2>
+          <a href="/platforms.html" class="section-link">Manage all</a>
+        </div>
+        <div class="bot-grid" id="botGrid">
+          <!-- WhatsApp card -->
+          <div class="bot-card" id="botWhatsApp">
+            <div class="bot-card-icon whatsapp">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
             </div>
-
-            <!-- Stats -->
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div class="stat-icon">🤖</div>
-                        <div class="stat-trend neutral">— 0%</div>
-                    </div>
-                    <div class="stat-value" id="agentsCount">0</div>
-                    <div class="stat-label">Active Agents</div>
-                    <div class="stat-sparkline">
-                        <div class="spark-bar" style="height: 30%"></div>
-                        <div class="spark-bar" style="height: 45%"></div>
-                        <div class="spark-bar" style="height: 35%"></div>
-                        <div class="spark-bar" style="height: 60%"></div>
-                        <div class="spark-bar" style="height: 50%"></div>
-                        <div class="spark-bar" style="height: 75%"></div>
-                        <div class="spark-bar" style="height: 65%"></div>
-                        <div class="spark-bar" style="height: 80%"></div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div class="stat-icon">💬</div>
-                        <div class="stat-trend neutral">— 0%</div>
-                    </div>
-                    <div class="stat-value" id="messagesCount">0</div>
-                    <div class="stat-label">Messages Sent</div>
-                    <div class="stat-sparkline">
-                        <div class="spark-bar" style="height: 20%"></div>
-                        <div class="spark-bar" style="height: 35%"></div>
-                        <div class="spark-bar" style="height: 30%"></div>
-                        <div class="spark-bar" style="height: 55%"></div>
-                        <div class="spark-bar" style="height: 40%"></div>
-                        <div class="spark-bar" style="height: 65%"></div>
-                        <div class="spark-bar" style="height: 50%"></div>
-                        <div class="spark-bar" style="height: 70%"></div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div class="stat-icon">📱</div>
-                        <div class="stat-trend neutral">— 0%</div>
-                    </div>
-                    <div class="stat-value" id="platformsCount">0</div>
-                    <div class="stat-label">Platforms</div>
-                    <div class="stat-sparkline">
-                        <div class="spark-bar" style="height: 10%"></div>
-                        <div class="spark-bar" style="height: 25%"></div>
-                        <div class="spark-bar" style="height: 20%"></div>
-                        <div class="spark-bar" style="height: 40%"></div>
-                        <div class="spark-bar" style="height: 35%"></div>
-                        <div class="spark-bar" style="height: 55%"></div>
-                        <div class="spark-bar" style="height: 45%"></div>
-                        <div class="spark-bar" style="height: 60%"></div>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-header">
-                        <div class="stat-icon">🧩</div>
-                        <div class="stat-trend neutral">— 0%</div>
-                    </div>
-                    <div class="stat-value" id="skillsCount">0</div>
-                    <div class="stat-label">Active Skills</div>
-                    <div class="stat-sparkline">
-                        <div class="spark-bar" style="height: 15%"></div>
-                        <div class="spark-bar" style="height: 30%"></div>
-                        <div class="spark-bar" style="height: 25%"></div>
-                        <div class="spark-bar" style="height: 45%"></div>
-                        <div class="spark-bar" style="height: 40%"></div>
-                        <div class="spark-bar" style="height: 60%"></div>
-                        <div class="spark-bar" style="height: 55%"></div>
-                        <div class="spark-bar" style="height: 70%"></div>
-                    </div>
-                </div>
+            <div class="bot-card-info">
+              <div class="bot-card-name">WhatsApp</div>
+              <div class="bot-card-status">
+                <span class="status-dot offline" id="waStatusDot"></span>
+                <span id="waStatusText">Not connected</span>
+              </div>
+              <div class="bot-card-botname" id="waBotName"></div>
             </div>
+            <a href="/platforms.html" class="btn btn-sm btn-secondary" id="waAction">Connect</a>
+          </div>
 
-            <!-- Content -->
-            <div class="content-grid">
-                <!-- Quick Actions -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Quick Actions</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="quick-actions">
-                            <a href="/chat.html" class="action-btn">
-                                <div class="action-icon">💬</div>
-                                <div>
-                                    <div class="action-text">Start Chat</div>
-                                    <div class="action-desc">Talk to your AI</div>
-                                </div>
-                            </a>
-                            <a href="/agents.html" class="action-btn">
-                                <div class="action-icon">🤖</div>
-                                <div>
-                                    <div class="action-text">Create Agent</div>
-                                    <div class="action-desc">Build a new bot</div>
-                                </div>
-                            </a>
-                            <a href="/settings.html" class="action-btn">
-                                <div class="action-icon">🔑</div>
-                                <div>
-                                    <div class="action-text">AI Provider</div>
-                                    <div class="action-desc">Add API keys</div>
-                                </div>
-                            </a>
-                            <a href="/platforms.html" class="action-btn">
-                                <div class="action-icon">📱</div>
-                                <div>
-                                    <div class="action-text">Platforms</div>
-                                    <div class="action-desc">Connect channels</div>
-                                </div>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Plan & Status -->
-                <div class="card">
-                    <div class="card-body" style="padding: 0;">
-                        <!-- Plan -->
-                        <div class="plan-card">
-                            <div class="plan-badge">✨ Current Plan</div>
-                            <div class="plan-name" id="currentPlan">Starter</div>
-                            <div class="plan-desc">Pay once, own it forever. No subscriptions.</div>
-                            <div class="plan-features">
-                                <div class="plan-feature"><span class="check">✓</span> Unlimited Agents</div>
-                                <div class="plan-feature"><span class="check">✓</span> All Platforms</div>
-                                <div class="plan-feature"><span class="check">✓</span> Chat Access</div>
-                            </div>
-                            <a href="/billing.html" class="btn btn-primary" style="width: 100%; justify-content: center;">
-                                Upgrade to Pro &rarr;
-                            </a>
-                        </div>
-
-                        <!-- System Status -->
-                        <div style="padding: 1.25rem 1.5rem; border-top: 1px solid var(--border);">
-                            <div style="font-weight: 600; font-size: 0.85rem; margin-bottom: 0.75rem; color: var(--text-secondary);">System Status</div>
-                            <div class="status-row">
-                                <div class="status-dot green"></div>
-                                <div class="status-label">API Server</div>
-                                <div class="status-value">Operational</div>
-                            </div>
-                            <div class="status-row">
-                                <div class="status-dot green"></div>
-                                <div class="status-label">AI Gateway</div>
-                                <div class="status-value">Online</div>
-                            </div>
-                            <div class="status-row">
-                                <div class="status-dot green"></div>
-                                <div class="status-label">Webhooks</div>
-                                <div class="status-value">Active</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+          <!-- Telegram card -->
+          <div class="bot-card" id="botTelegram">
+            <div class="bot-card-icon telegram">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
             </div>
-        </main>
-    </div>
+            <div class="bot-card-info">
+              <div class="bot-card-name">Telegram</div>
+              <div class="bot-card-status">
+                <span class="status-dot offline" id="tgStatusDot"></span>
+                <span id="tgStatusText">Not connected</span>
+              </div>
+              <div class="bot-card-botname" id="tgBotName"></div>
+            </div>
+            <a href="/platforms.html" class="btn btn-sm btn-secondary" id="tgAction">Connect</a>
+          </div>
+        </div>
+      </div>
 
-    <script>
-        const API_URL = 'https://hostclaw-api.onrender.com';
+      <!-- Quick Actions -->
+      <div class="dashboard-section">
+        <div class="section-header">
+          <h2 class="section-title">Quick Actions</h2>
+        </div>
+        <div class="action-grid">
+          <a href="/platforms.html" class="action-card">
+            <div class="action-card-icon green">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            </div>
+            <div class="action-card-title">Connect WhatsApp</div>
+            <div class="action-card-desc">Link your WhatsApp Business account to start automating conversations.</div>
+            <div class="action-card-arrow">
+              Get started
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
 
-        // OAuth callback
-        const urlParams = new URLSearchParams(window.location.search);
-        const oauthToken = urlParams.get('token');
-        if (oauthToken) {
-            localStorage.setItem('token', oauthToken);
-            window.history.replaceState({}, document.title, window.location.pathname);
+          <a href="/platforms.html" class="action-card">
+            <div class="action-card-icon blue">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            </div>
+            <div class="action-card-title">Connect Telegram</div>
+            <div class="action-card-desc">Set up your Telegram bot and let AI handle incoming messages automatically.</div>
+            <div class="action-card-arrow">
+              Get started
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+
+          <a href="/agents.html" class="action-card">
+            <div class="action-card-icon purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M3 21v-2a7 7 0 0 1 7-7h4a7 7 0 0 1 7 7v2"/></svg>
+            </div>
+            <div class="action-card-title">Create AI Agent</div>
+            <div class="action-card-desc">Build a custom AI agent with specific instructions, personality, and knowledge.</div>
+            <div class="action-card-arrow">
+              Get started
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="dashboard-section">
+        <div class="section-header">
+          <h2 class="section-title">Recent Activity</h2>
+          <a href="/chat.html" class="section-link">View all</a>
+        </div>
+        <div class="card">
+          <div id="activityList" style="padding: 0.5rem 1.5rem;">
+            <div class="empty-state" id="activityEmpty">
+              <div class="empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div class="empty-title">No recent messages</div>
+              <div class="empty-desc">Connect a bot and start chatting to see activity here.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="/js/shared.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script>
+    // API_URL is defined in shared.js, no need to redefine
+
+    // Handle OAuth callback token from URL
+    (function handleOAuthCallback() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const oauthToken = urlParams.get('token');
+      if (oauthToken) {
+        localStorage.setItem('token', oauthToken);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    })();
+
+    requireAuth();
+
+    async function loadDashboard() {
+      await Promise.allSettled([
+        loadCredits(),
+        loadPlatformStatus(),
+        loadRecentActivity(),
+        loadWelcome()
+      ]);
+    }
+
+    async function loadWelcome() {
+      try {
+        const profile = await api('/api/auth/profile');
+        const user = profile.user || profile;
+        const name = user.name || '';
+        if (name) {
+          document.getElementById('welcomeText').textContent = 'Welcome back, ' + name.split(' ')[0];
+        }
+      } catch (e) {
+        // Profile endpoint may not be available
+      }
+    }
+
+    async function loadCredits() {
+      try {
+        const data = await api('/api/billing/credits');
+
+        const count = data.message_count || 0;
+        const limit = data.message_limit;
+        const isUnlimited = data.is_unlimited;
+        const planType = data.plan_type || 'free';
+
+        // Messages stat
+        const msgEl = document.getElementById('statMessages');
+        const fillEl = document.getElementById('msgProgressFill');
+
+        if (isUnlimited) {
+          msgEl.textContent = formatNumber(count) + ' sent';
+          fillEl.style.width = '100%';
+          fillEl.style.opacity = '0.3';
+        } else {
+          const total = limit || 50;
+          const pct = Math.min(100, (count / total) * 100);
+          msgEl.textContent = formatNumber(count) + ' / ' + formatNumber(total);
+          fillEl.style.width = pct + '%';
         }
 
-        const token = localStorage.getItem('token');
-        if (!token) window.location.href = '/login.html';
+        // Plan badge
+        const planBadge = document.getElementById('planBadge');
+        const PLAN_CONFIG = {
+          free: { label: 'Free', className: 'badge-accent' },
+          paid: { label: 'Paid', className: 'badge-success' },
+          unlimited: { label: 'Unlimited', className: 'badge-success' },
+          expired: { label: 'Expired', className: 'badge-danger' }
+        };
+        const plan = PLAN_CONFIG[planType] || PLAN_CONFIG.free;
+        planBadge.textContent = plan.label;
+        planBadge.className = 'badge ' + plan.className;
 
-        let user = {};
+      } catch (e) {
+        showToast('Failed to load usage data', 'error');
+      }
+    }
 
-        // Time-based greeting
-        function setGreeting() {
-            const hour = new Date().getHours();
-            const name = '';
-            let greeting = 'Good evening';
-            let emoji = '🌙';
-            if (hour < 12) { greeting = 'Good morning'; emoji = '☀️'; }
-            else if (hour < 18) { greeting = 'Good afternoon'; emoji = '🌤️'; }
+    async function loadPlatformStatus() {
+      try {
+        const data = await api('/api/platforms/status');
+        const platforms = data.platforms || data || [];
 
-            document.getElementById('greetingSub').textContent = `${greeting} ${emoji}`;
-        }
-        setGreeting();
+        let activeBotCount = 0;
 
-        // Sidebar toggle (mobile)
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
-            document.getElementById('sidebarOverlay').classList.toggle('open');
-        }
+        // WhatsApp status
+        const wa = Array.isArray(platforms)
+          ? platforms.find(p => p.platform === 'whatsapp')
+          : platforms.whatsapp;
 
-        async function loadUserData() {
-            try {
-                const response = await fetch(`${API_URL}/api/auth/profile`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    user = data.user || data;
-                    updateUI();
-                    checkPayment();
-                } else {
-                    logout();
-                }
-            } catch (error) {
-                console.error('Failed to load user:', error);
-            }
+        if (wa && wa.connected) {
+          activeBotCount++;
+          document.getElementById('waStatusDot').className = 'status-dot online';
+          document.getElementById('waStatusText').textContent = 'Connected';
+          document.getElementById('waAction').textContent = 'Manage';
+          if (wa.bot_name || wa.name) {
+            document.getElementById('waBotName').textContent = wa.bot_name || wa.name;
+          }
         }
 
-        function updateUI() {
-            const name = user.name || 'User';
-            document.getElementById('userName').textContent = name;
-            document.getElementById('userAvatar').textContent = name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-            document.getElementById('userPlan').textContent = user.plan || 'Starter';
-            document.getElementById('creditsDisplay').textContent = '$' + parseFloat(user.credits || 0).toFixed(2);
-            document.getElementById('currentPlan').textContent = user.plan || 'Starter';
+        // Telegram status
+        const tg = Array.isArray(platforms)
+          ? platforms.find(p => p.platform === 'telegram')
+          : platforms.telegram;
 
-            // Update greeting with name
-            const hour = new Date().getHours();
-            let emoji = '🌙';
-            if (hour < 12) emoji = '☀️';
-            else if (hour < 18) emoji = '🌤️';
-            document.getElementById('greetingSub').textContent = `${document.getElementById('greetingSub').textContent.split(' ').slice(0, 2).join('')} ${name} ${emoji}`;
-
-            document.getElementById('agentsCount').textContent = '0';
-            document.getElementById('messagesCount').textContent = '0';
-            document.getElementById('platformsCount').textContent = '0';
-            document.getElementById('skillsCount').textContent = '0';
+        if (tg && tg.connected) {
+          activeBotCount++;
+          document.getElementById('tgStatusDot').className = 'status-dot online';
+          document.getElementById('tgStatusText').textContent = 'Connected';
+          document.getElementById('tgAction').textContent = 'Manage';
+          if (tg.bot_name || tg.name) {
+            document.getElementById('tgBotName').textContent = tg.bot_name || tg.name;
+          }
         }
 
-        function checkPayment() {
-            const hasPaid = user.has_paid === true || user.has_paid == 1 || user.plan !== 'starter' || parseFloat(user.credits || 0) > 0;
-            let hasOwnApiKey = false;
-            if (user.api_providers) {
-                try {
-                    const providers = typeof user.api_providers === 'string' ? JSON.parse(user.api_providers) : user.api_providers;
-                    hasOwnApiKey = Object.keys(providers).length > 0;
-                } catch (e) {}
-            }
-            if (!hasPaid && !hasOwnApiKey) {
-                document.getElementById('paymentWall').style.display = 'flex';
-            }
+        document.getElementById('statBots').textContent = activeBotCount;
+
+      } catch (e) {
+        // Platform status endpoint may not be available yet
+        document.getElementById('statBots').textContent = '0';
+      }
+    }
+
+    async function loadRecentActivity() {
+      try {
+        const data = await api('/api/chat/history');
+        const messages = data.messages || data.history || data || [];
+
+        if (!Array.isArray(messages) || messages.length === 0) {
+          return;
         }
 
-        async function handlePayment() {
-            try {
-                const response = await fetch(`${API_URL}/api/billing/setup-fee`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                const data = await response.json();
-                if (response.ok && data.url) {
-                    window.location.href = data.url;
-                } else {
-                    alert(data.error || 'Payment error. Please try again.');
-                }
-            } catch (error) {
-                console.error('Payment error:', error);
-                alert('Payment system unavailable. Please try again later.');
-            }
+        // Count unique conversations today
+        const today = new Date().toDateString();
+        const todayConvos = new Set();
+        messages.forEach(function(msg) {
+          if (msg.created_at && new Date(msg.created_at).toDateString() === today) {
+            todayConvos.add(msg.conversation_id || msg.sender || msg.from);
+          }
+        });
+        document.getElementById('statConversations').textContent = todayConvos.size;
+
+        // Show last 5 messages
+        const recent = messages.slice(0, 5);
+        const listEl = document.getElementById('activityList');
+        const emptyEl = document.getElementById('activityEmpty');
+
+        if (recent.length > 0) {
+          emptyEl.style.display = 'none';
+
+          const fragment = document.createDocumentFragment();
+          recent.forEach(function(msg) {
+            const platform = msg.platform || 'whatsapp';
+            const isWhatsApp = platform.toLowerCase().includes('whatsapp');
+            const iconClass = isWhatsApp ? 'whatsapp' : 'telegram';
+            const iconSvg = isWhatsApp
+              ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/></svg>'
+              : '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>';
+
+            const item = document.createElement('div');
+            item.className = 'activity-item';
+            item.innerHTML =
+              '<div class="activity-icon ' + iconClass + '">' + iconSvg + '</div>' +
+              '<div class="activity-content">' +
+                '<div class="activity-message">' + escapeHtml(msg.content || msg.message || msg.text || '') + '</div>' +
+                '<div class="activity-meta">' +
+                  (msg.sender || msg.from || platform) +
+                  (msg.created_at ? ' &middot; ' + timeAgo(msg.created_at) : '') +
+                '</div>' +
+              '</div>';
+            fragment.appendChild(item);
+          });
+
+          listEl.appendChild(fragment);
         }
 
-        function logout() {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login.html';
-        }
+      } catch (e) {
+        // Chat history endpoint may not be available
+      }
+    }
 
-        loadUserData();
-    </script>
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    loadDashboard();
+  </script>
 </body>
 </html>

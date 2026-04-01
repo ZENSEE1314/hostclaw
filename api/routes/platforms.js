@@ -83,10 +83,17 @@ router.post('/whatsapp/start', authenticate, async (req, res) => {
           connected_at: new Date().toISOString()
         });
       },
-      // onMessage: AI reply
+      // onMessage: AI reply with message deduction
       async (chatJid, text, sock) => {
         const user = await User.findById(userId);
         if (!user) return;
+
+        // Check message balance
+        if (!User.canSendMessage(user)) {
+          await sock.sendMessage(chatJid, { text: '⚠️ Message limit reached. Please upgrade your plan at hostclaw.ai to continue.' });
+          return;
+        }
+
         const providers = parseProviders(user);
         const defProv = user.default_provider || 'openai';
         const providerConfig = providers[defProv] || providers[Object.keys(providers)[0]];
@@ -96,6 +103,9 @@ router.post('/whatsapp/start', authenticate, async (req, res) => {
         }
         const aiRes = await generateAIResponse({ message: text, provider: defProv, providerConfig, skills: [] });
         await sock.sendMessage(chatJid, { text: aiRes.content });
+
+        // Deduct message after successful response
+        await User.deductMessage(userId);
       }
     );
     res.json({ message: 'WhatsApp QR session started' });
@@ -168,9 +178,13 @@ router.post('/telegram/connect', authenticate, async (req, res) => {
     });
 
     // Set webhook — non-fatal
-    const webhookUrl = `${API_BASE}/webhooks/telegram/${req.user.userId}`;
+    const webhookBase = `${req.protocol}://${req.get('host')}`;
+    const webhookUrl = `${webhookBase}/webhooks/telegram/${req.user.userId}`;
     try {
-      await axios.post(`https://api.telegram.org/bot${botToken}/setWebhook`, { url: webhookUrl }, { timeout: 10000 });
+      const webhookRes = await axios.post(`https://api.telegram.org/bot${botToken}/setWebhook`, { url: webhookUrl }, { timeout: 10000 });
+      if (!webhookRes.data.ok) {
+        console.warn('Telegram webhook setup returned not-ok:', webhookRes.data.description);
+      }
     } catch (e) {
       console.warn('Telegram webhook setup failed (non-fatal):', e.message);
     }
@@ -293,8 +307,9 @@ router.post('/line/connect', authenticate, async (req, res) => {
 
     // Set webhook — non-fatal
     try {
+      const lineWebhookBase = `${req.protocol}://${req.get('host')}`;
       await axios.put('https://api.line.me/v2/bot/channel/webhook/endpoint', {
-        webhook_endpoint: `${API_BASE}/webhooks/line/${req.user.userId}`
+        webhook_endpoint: `${lineWebhookBase}/webhooks/line/${req.user.userId}`
       }, {
         headers: { 'Authorization': `Bearer ${channelAccessToken}` },
         timeout: 10000
@@ -369,6 +384,28 @@ router.post('/signal/connect', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Signal connection error:', error);
     res.status(500).json({ error: 'Failed to connect Signal: ' + error.message });
+  }
+});
+
+// ===== TELEGRAM: RE-VERIFY WEBHOOK =====
+router.post('/telegram/webhook', authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    const platforms = parsePlatforms(user);
+    const tg = platforms.telegram;
+    if (!tg || tg.status !== 'connected') {
+      return res.status(400).json({ error: 'Telegram is not connected' });
+    }
+    const botToken = Buffer.from(tg.bot_token, 'base64').toString();
+    const webhookUrl = `${req.protocol}://${req.get('host')}/webhooks/telegram/${req.user.userId}`;
+    const webhookRes = await axios.post(`https://api.telegram.org/bot${botToken}/setWebhook`, { url: webhookUrl }, { timeout: 10000 });
+    if (!webhookRes.data.ok) {
+      return res.status(400).json({ error: 'Telegram rejected webhook: ' + webhookRes.data.description });
+    }
+    res.json({ message: 'Webhook updated', url: webhookUrl });
+  } catch (error) {
+    console.error('Telegram webhook re-verify error:', error);
+    res.status(500).json({ error: 'Failed to update webhook: ' + error.message });
   }
 });
 

@@ -3,178 +3,535 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Billing - HostClaw.ai</title>
+    <title>Billing &amp; Plans - HostClaw.ai</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="/css/shared.css" rel="stylesheet">
     <style>
-        :root {
-            --primary: #6366f1;
-            --primary-light: #818cf8;
-            --secondary: #06b6d4;
-            --dark: #0f0f23;
-            --darker: #0a0a1a;
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.1);
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --success: #10b981;
+        /* Plan Banner */
+        .plan-banner {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.14) 0%, rgba(6, 182, 212, 0.08) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: var(--radius-xl);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1.5rem;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--darker); color: var(--text); min-height: 100vh; }
-        .container { max-width: 600px; margin: 0 auto; padding: 2rem; }
-        
-        .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
-        .back-btn { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem 1rem; color: var(--text); text-decoration: none; }
-        h1 { font-size: 1.75rem; }
-        
-        .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; }
-        .card-title { font-weight: 600; font-size: 1.125rem; margin-bottom: 1rem; }
-        
-        .credits-display { text-align: center; padding: 2rem; }
-        .credits-amount { font-size: 3rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        
-        .packages { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
-        .package { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; text-align: center; cursor: pointer; transition: all 0.2s; }
-        .package:hover { border-color: var(--primary); }
-        .package.popular { border-color: var(--primary); }
-        .package-amount { font-size: 2rem; font-weight: 700; }
-        .package-price { color: var(--text-muted); margin-bottom: 1rem; }
-        
-        .btn { width: 100%; padding: 0.875rem; border-radius: 10px; font-weight: 600; cursor: pointer; border: none; }
-        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
-        
-        .setup-fee { background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(6,182,212,0.15)); border: 2px solid var(--primary); border-radius: 16px; padding: 2rem; text-align: center; margin-bottom: 2rem; }
-        .setup-price { font-size: 2.5rem; font-weight: 800; color: var(--primary-light); }
-        
-        .payment-wall { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .payment-card { background: var(--dark); border: 1px solid var(--border); border-radius: 24px; padding: 3rem; text-align: center; max-width: 450px; }
+
+        .plan-banner-label {
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 0.375rem;
+        }
+
+        .plan-banner-name {
+            font-size: 2rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+        }
+
+        .plan-usage-text {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-usage-text strong {
+            color: var(--text);
+            font-weight: 700;
+        }
+
+        .plan-usage-bar {
+            width: 100%;
+            max-width: 360px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .plan-usage-fill {
+            height: 100%;
+            background: var(--gradient);
+            border-radius: 100px;
+            transition: width 0.6s ease;
+        }
+
+        .plan-usage-fill.warning { background: var(--warning); }
+        .plan-usage-fill.danger { background: var(--danger); }
+
+        .plan-expiry {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            margin-top: 0.5rem;
+        }
+
+        /* Pricing section */
+        .pricing-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-label {
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+        }
+
+        .pricing-card .btn {
+            width: 100%;
+        }
+
+        .pricing-card.is-current {
+            border-color: var(--success);
+            background: linear-gradient(to bottom, rgba(34, 197, 94, 0.06), var(--bg-card));
+        }
+
+        .pricing-card.is-current .pricing-badge {
+            background: var(--success);
+        }
+
+        .current-plan-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            background: var(--success-bg);
+            color: var(--success);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+            padding: 0.625rem 1.25rem;
+            border-radius: var(--radius);
+            font-size: 0.875rem;
+            font-weight: 600;
+            width: 100%;
+            justify-content: center;
+        }
+
+        /* Free tier info */
+        .free-tier-info {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 1rem 1.25rem;
+            margin-bottom: 2rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .free-tier-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: var(--radius-sm);
+            background: var(--accent-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Referral card */
+        .referral-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem;
+        }
+
+        .referral-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .referral-title {
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .referral-subtitle {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+        }
+
+        .referral-code-box {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 0.875rem 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .referral-code {
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            flex: 1;
+        }
+
+        .referral-stats {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .referral-stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--accent-light);
+            line-height: 1;
+        }
+
+        .referral-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .referral-note {
+            font-size: 0.8125rem;
+            color: var(--text-muted);
+            margin-top: 1.25rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-secondary) 25%, var(--bg-elevated) 50%, var(--bg-secondary) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s ease infinite;
+            border-radius: var(--radius-sm);
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        @media (max-width: 768px) {
+            .plan-banner {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .plan-usage-bar {
+                max-width: 100%;
+            }
+
+            .referral-stats {
+                gap: 1.5rem;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="payment-wall" id="paymentWall" style="display: none;">
-        <div class="payment-card">
-            <div style="font-size: 4rem;">💳</div>
-            <div style="font-size: 1.5rem; font-weight: 700; margin: 1rem 0;">One-Time Setup Fee</div>
-            <div style="font-size: 2.5rem; font-weight: 800; color: var(--primary-light);">$500</div>
-            <p style="margin: 1.5rem 0; color: var(--text-muted);">Pay once, unlock all features forever!</p>
-            <button class="btn btn-primary" onclick="paySetupFee()">Pay $500 &rarr;</button>
+    <div class="app-layout">
+        <div class="main-content">
+
+            <!-- Page Header -->
+            <div class="page-header">
+                <div>
+                    <h1>Billing &amp; Plans</h1>
+                    <div class="page-header-sub">Manage your subscription and message credits</div>
+                </div>
+            </div>
+
+            <!-- Current Plan Banner -->
+            <div class="plan-banner" id="planBanner">
+                <div>
+                    <div class="plan-banner-label">Your Plan</div>
+                    <div class="plan-banner-name" id="planName">Free</div>
+                    <div class="plan-usage-text" id="planUsageText">
+                        <strong id="usageUsed">0</strong> / <strong id="usageLimit">50</strong> messages used
+                    </div>
+                    <div class="plan-usage-bar">
+                        <div class="plan-usage-fill" id="planUsageFill" style="width: 0%"></div>
+                    </div>
+                    <div class="plan-expiry hidden" id="planExpiry"></div>
+                </div>
+                <div>
+                    <a href="#pricing" class="btn btn-primary btn-lg" id="upgradeCta">Upgrade</a>
+                </div>
+            </div>
+
+            <!-- Pricing Cards -->
+            <div class="pricing-section" id="pricing">
+                <div class="section-label">Choose a Plan</div>
+                <div class="grid-4" id="pricingGrid">
+
+                    <!-- 1,000 Messages -->
+                    <div class="pricing-card" id="card-1k">
+                        <div class="pricing-name">1,000 Messages</div>
+                        <div class="pricing-price">$49</div>
+                        <div class="pricing-period">One-time purchase</div>
+                        <ul class="pricing-features">
+                            <li>1,000 bot replies</li>
+                            <li>All AI providers</li>
+                            <li>WhatsApp + Telegram</li>
+                            <li>Never expires</li>
+                        </ul>
+                        <button class="btn btn-secondary" onclick="checkout('1k')">Get Started</button>
+                    </div>
+
+                    <!-- 5,000 Messages -->
+                    <div class="pricing-card featured" id="card-5k">
+                        <div class="pricing-badge">Most Popular</div>
+                        <div class="pricing-name">5,000 Messages</div>
+                        <div class="pricing-price">$99</div>
+                        <div class="pricing-period">One-time purchase</div>
+                        <ul class="pricing-features">
+                            <li>5,000 bot replies</li>
+                            <li>All AI providers</li>
+                            <li>WhatsApp + Telegram</li>
+                            <li>Priority support</li>
+                            <li>Never expires</li>
+                        </ul>
+                        <button class="btn btn-primary" onclick="checkout('5k')">Upgrade</button>
+                    </div>
+
+                    <!-- Unlimited Monthly -->
+                    <div class="pricing-card" id="card-unlimited-monthly">
+                        <div class="pricing-name">Unlimited Monthly</div>
+                        <div class="pricing-price">$299</div>
+                        <div class="pricing-period">per month</div>
+                        <ul class="pricing-features">
+                            <li>Unlimited bot replies</li>
+                            <li>All AI providers</li>
+                            <li>All platforms</li>
+                            <li>Priority support</li>
+                            <li>Analytics dashboard</li>
+                        </ul>
+                        <button class="btn btn-secondary" onclick="checkout('unlimited-monthly')">Upgrade</button>
+                    </div>
+
+                    <!-- Unlimited Yearly -->
+                    <div class="pricing-card" id="card-unlimited-yearly">
+                        <div class="pricing-badge">Best Value</div>
+                        <div class="pricing-name">Unlimited Yearly</div>
+                        <div class="pricing-price">$2,999</div>
+                        <div class="pricing-period">per year</div>
+                        <ul class="pricing-features">
+                            <li>Unlimited bot replies</li>
+                            <li>All AI providers</li>
+                            <li>All platforms</li>
+                            <li>Priority support</li>
+                            <li>Analytics dashboard</li>
+                            <li>Save $589/year</li>
+                            <li>Dedicated support</li>
+                        </ul>
+                        <button class="btn btn-primary" onclick="checkout('unlimited-yearly')">Upgrade</button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Free Tier Info -->
+            <div class="free-tier-info">
+                <div class="free-tier-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                </div>
+                All new accounts include 50 free messages to get started.
+            </div>
+
+            <!-- Referral Section -->
+            <div class="referral-card" id="referralSection">
+                <div class="referral-header">
+                    <div>
+                        <div class="referral-title">Referral Program</div>
+                        <div class="referral-subtitle">Share and earn 10% of your referrals' message purchases</div>
+                    </div>
+                </div>
+                <div class="referral-code-box">
+                    <span class="referral-code" id="referralCode">------</span>
+                    <button class="btn btn-sm btn-secondary" onclick="copyReferralCode()">Copy</button>
+                </div>
+                <div class="referral-stats">
+                    <div>
+                        <div class="referral-stat-value" id="referralCount">0</div>
+                        <div class="referral-stat-label">Referrals</div>
+                    </div>
+                    <div>
+                        <div class="referral-stat-value" id="referralBonus">0</div>
+                        <div class="referral-stat-label">Bonus Messages Earned</div>
+                    </div>
+                </div>
+                <div class="referral-note">
+                    When someone signs up with your code and purchases messages, you earn 10% of their purchase as bonus messages.
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <div class="container">
-        <div class="header">
-            <button class="back-btn" onclick="history.back()">← Back</button>
-            <h1>Billing</h1>
-        </div>
-
-        <div class="setup-fee">
-            <div class="setup-price">$500</div>
-            <p>One-time setup fee to unlock all features</p>
-            <button class="btn btn-primary" style="margin-top: 1rem; max-width: 200px;" onclick="paySetupFee()">Pay Now</button>
-        </div>
-
-        <div class="card">
-            <div class="card-title">Your Credits</div>
-            <div class="credits-display">
-                <div class="credits-amount" id="creditsDisplay">$0.00</div>
-                <p style="color: var(--text-muted); margin-top: 0.5rem;">Available for AI usage</p>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-title">Add Credits</div>
-            <div class="packages">
-                <div class="package" onclick="addCredits(5)">
-                    <div class="package-amount">$5</div>
-                    <div class="package-price">$5.00</div>
-                    <button class="btn btn-primary">Buy</button>
-                </div>
-                <div class="package popular" onclick="addCredits(20)">
-                    <div class="package-amount">$20</div>
-                    <div class="package-price">$20.00</div>
-                    <button class="btn btn-primary">Buy</button>
-                </div>
-                <div class="package" onclick="addCredits(50)">
-                    <div class="package-amount">$50</div>
-                    <div class="package-price">$50.00</div>
-                    <button class="btn btn-primary">Buy</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <script src="/js/shared.js"></script>
+    <script src="/js/sidebar.js"></script>
     <script>
-        const API_URL = 'https://hostclaw-api.onrender.com';
-        const token = localStorage.getItem('token');
-        
-        if (!token) window.location.href = '/login.html';
+        requireAuth();
 
-        // Check for payment success
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('paid') === 'success') {
-            alert('Payment successful! Now let\'s set up your AI provider.');
-            window.location.href = '/settings.html?setup=1';
-        }
+        const PLAN_CARD_MAP = {
+            '1k': 'card-1k',
+            '5k': 'card-5k',
+            'unlimited-monthly': 'card-unlimited-monthly',
+            'unlimited-yearly': 'card-unlimited-yearly'
+        };
 
-        async function loadCredits() {
+        async function loadUsage() {
             try {
-                const res = await fetch(`${API_URL}/api/auth/profile`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    const user = data.user || data;
-                    document.getElementById('creditsDisplay').textContent = '$' + parseFloat(user.credits || 0).toFixed(2);
-                    
-                    // Show payment wall if not paid
-                    if (!user.has_paid && user.plan === 'starter') {
-                        document.getElementById('paymentWall').style.display = 'flex';
-                    }
-                }
-            } catch(e) { console.error(e); }
-        }
+                const data = await api('/api/billing/usage');
 
-        async function paySetupFee() {
-            try {
-                const res = await fetch(`${API_URL}/api/billing/setup-fee`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
+                const planName = document.getElementById('planName');
+                const usageUsed = document.getElementById('usageUsed');
+                const usageLimit = document.getElementById('usageLimit');
+                const usageFill = document.getElementById('planUsageFill');
+                const usageText = document.getElementById('planUsageText');
+                const expiry = document.getElementById('planExpiry');
+                const upgradeCta = document.getElementById('upgradeCta');
+
+                const planType = data.plan_type || 'free';
+                const PLAN_LABELS = { free: 'Free', paid: 'Paid', unlimited: 'Unlimited' };
+                planName.textContent = PLAN_LABELS[planType] || 'Free';
+
+                const used = data.message_count || 0;
+                const limit = data.message_limit || 50;
+                const isUnlimited = data.is_unlimited;
+
+                if (isUnlimited) {
+                    usageText.innerHTML = '<strong>' + formatNumber(used) + '</strong> messages sent';
+                    usageFill.style.width = '100%';
+                    usageFill.style.opacity = '0.3';
+
+                    if (data.expiry_date) {
+                        expiry.textContent = 'Expires: ' + new Date(data.expiry_date).toLocaleDateString();
+                        expiry.classList.remove('hidden');
                     }
-                });
-                const data = await res.json();
-                if (data.url) {
-                    window.location.href = data.url;
+
+                    upgradeCta.classList.add('hidden');
                 } else {
-                    alert(data.error || 'Payment error');
+                    usageUsed.textContent = formatNumber(used);
+                    usageLimit.textContent = formatNumber(limit);
+
+                    const pct = Math.min(100, (used / limit) * 100);
+                    usageFill.style.width = pct + '%';
+
+                    if (pct > 90) usageFill.classList.add('danger');
+                    else if (pct > 70) usageFill.classList.add('warning');
                 }
-            } catch(e) {
-                alert('Payment unavailable');
+
+                markCurrentPlan(data);
+            } catch (err) {
+                console.error('Failed to load usage:', err);
             }
         }
 
-        async function addCredits(amount) {
-            try {
-                const res = await fetch(`${API_URL}/api/billing/credits`, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ amount })
-                });
-                const data = await res.json();
-                if (data.url) {
-                    window.location.href = data.url;
-                } else {
-                    alert(data.error || 'Payment error');
+        function markCurrentPlan(data) {
+            const planType = data.plan_type || 'free';
+            let currentCardId = null;
+
+            if (planType === 'unlimited') {
+                currentCardId = data.billing_period === 'yearly'
+                    ? 'card-unlimited-yearly'
+                    : 'card-unlimited-monthly';
+            } else if (planType === 'paid' && data.current_package) {
+                currentCardId = PLAN_CARD_MAP[data.current_package];
+            }
+
+            if (currentCardId) {
+                const card = document.getElementById(currentCardId);
+                if (card) {
+                    card.classList.add('is-current');
+
+                    const existingBadge = card.querySelector('.pricing-badge');
+                    if (existingBadge) existingBadge.textContent = 'Current Plan';
+                    else {
+                        const badge = document.createElement('div');
+                        badge.className = 'pricing-badge';
+                        badge.textContent = 'Current Plan';
+                        card.prepend(badge);
+                    }
+
+                    const btn = card.querySelector('.btn');
+                    if (btn) {
+                        btn.outerHTML = '<div class="current-plan-badge"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>Current Plan</div>';
+                    }
                 }
-            } catch(e) {
-                alert('Payment unavailable');
             }
         }
 
-        loadCredits();
+        async function loadReferral() {
+            try {
+                const data = await api('/api/billing/referral');
+
+                document.getElementById('referralCode').textContent = data.my_referral_code || '------';
+                document.getElementById('referralCount').textContent = data.referral_count || 0;
+                document.getElementById('referralBonus').textContent = formatNumber(data.bonus_messages || 0);
+            } catch (err) {
+                console.error('Failed to load referral:', err);
+            }
+        }
+
+        async function checkout(packageId) {
+            try {
+                const data = await api('/api/billing/credits/checkout', {
+                    method: 'POST',
+                    body: JSON.stringify({ package: packageId })
+                });
+
+                if (data.url) {
+                    window.location.href = data.url;
+                } else {
+                    showToast(data.error || 'Could not start checkout. Try again.', 'error');
+                }
+            } catch (err) {
+                showToast(err.message || 'Network error. Please try again.', 'error');
+            }
+        }
+
+        function copyReferralCode() {
+            const code = document.getElementById('referralCode').textContent;
+            if (code === '------') return;
+
+            navigator.clipboard.writeText(code).then(() => {
+                showToast('Referral code copied to clipboard', 'success');
+            }).catch(() => {
+                showToast('Failed to copy code', 'error');
+            });
+        }
+
+        function handlePurchaseSuccess() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('purchase') === 'success') {
+                showToast('Payment successful! Your messages have been added.', 'success', 6000);
+                history.replaceState({}, '', '/billing.html');
+            }
+        }
+
+        handlePurchaseSuccess();
+        loadUsage();
+        loadReferral();
     </script>
 </body>
 </html>

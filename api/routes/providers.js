@@ -36,8 +36,12 @@ router.post('/', authenticate, async (req, res) => {
     
     console.log('Save provider request:', { provider, model, userId: req.user.userId });
     
-    if (!provider || !apiKey) {
-      return res.status(400).json({ error: 'Provider and API key required' });
+    if (!provider) {
+      return res.status(400).json({ error: 'Provider is required' });
+    }
+    // openclaw doesn't require an API key (server-hosted)
+    if (!apiKey && provider !== 'openclaw') {
+      return res.status(400).json({ error: 'API key required for ' + provider });
     }
     
     // Get current user
@@ -63,9 +67,9 @@ router.post('/', authenticate, async (req, res) => {
     
     console.log('Current providers:', Object.keys(providers));
     
-    // Encrypt and save API key
+    // Encrypt and save API key (openclaw has no key)
     providers[provider] = {
-      apiKey: encrypt(apiKey),
+      apiKey: apiKey ? encrypt(apiKey) : null,
       model: model || getDefaultModel(provider),
       addedAt: new Date().toISOString()
     };
@@ -192,7 +196,8 @@ function getDefaultModel(provider) {
     gemini: 'gemini-1.5-flash',
     deepseek: 'deepseek-chat',
     groq: 'llama-3.1-70b-versatile',
-    kimi: 'moonshot-v1-8k'
+    kimi: 'moonshot-v1-8k',
+    openclaw: 'openclaw:main'
   };
   return defaults[provider] || 'gpt-4o';
 }

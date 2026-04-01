@@ -2,8 +2,317 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0;url=/settings.html">
-    <script>window.location.replace('/settings.html');</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Providers - HostClaw.ai</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="/css/shared.css" rel="stylesheet">
+    <style>
+        .provider-card { position: relative; }
+        .provider-icon {
+            width: 48px; height: 48px; border-radius: var(--radius);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; font-weight: 800; flex-shrink: 0;
+        }
+        .provider-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; }
+        .provider-name { font-size: 1rem; font-weight: 600; }
+        .provider-status { margin-left: auto; }
+        .provider-form { display: flex; flex-direction: column; gap: 1rem; }
+        .key-display {
+            display: flex; align-items: center; gap: 0.5rem;
+            background: var(--bg-secondary); padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-sm); font-family: monospace;
+            font-size: 0.8rem; color: var(--text-secondary);
+        }
+        .default-card {
+            background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(6,182,212,0.04));
+            border-color: rgba(99,102,241,0.2);
+        }
+        .info-banner {
+            background: var(--accent-bg); border: 1px solid rgba(99,102,241,0.15);
+            border-radius: var(--radius-lg); padding: 1.25rem 1.5rem;
+            margin-bottom: 2rem; display: flex; align-items: flex-start; gap: 0.75rem;
+        }
+        .info-banner svg { flex-shrink: 0; margin-top: 2px; }
+        .default-select-row {
+            display: flex; align-items: center; gap: 1rem;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: var(--radius-lg); padding: 1.25rem 1.5rem; margin-bottom: 2rem;
+        }
+    </style>
 </head>
-<body></body>
+<body>
+<div class="app-layout">
+    <div class="main-content">
+        <div class="page-header">
+            <div>
+                <h1>AI Providers</h1>
+                <p class="page-header-sub">Configure which AI powers your bots</p>
+            </div>
+        </div>
+
+        <!-- Info Banner -->
+        <div class="info-banner">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div>
+                <div style="font-size:0.9rem;font-weight:600;margin-bottom:0.25rem">No setup required</div>
+                <div class="text-secondary" style="font-size:0.85rem">HostClaw provides AI for your bots by default. Optionally, add your own API keys for direct provider access and potentially lower costs.</div>
+            </div>
+        </div>
+
+        <!-- HostClaw Default -->
+        <div class="card default-card mb-3">
+            <div class="provider-header">
+                <div class="provider-icon" style="background:var(--accent-bg)">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="hc" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#06b6d4"/></linearGradient></defs><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="url(#hc)"/></svg>
+                </div>
+                <div>
+                    <div class="provider-name">HostClaw AI (Default)</div>
+                    <div class="text-muted" style="font-size:0.8rem">Powered by GPT-4o Mini</div>
+                </div>
+                <span class="badge badge-success provider-status">Active</span>
+            </div>
+            <p class="text-secondary" style="font-size:0.85rem">Included with your message plan. No API key needed. Your bots will use this provider automatically unless you configure your own keys below.</p>
+        </div>
+
+        <!-- Default Provider Selector -->
+        <div class="default-select-row">
+            <div style="flex:1">
+                <div style="font-size:0.9rem;font-weight:600;margin-bottom:0.25rem">Default Provider</div>
+                <div class="text-muted" style="font-size:0.8rem">Used when your bot responds to messages</div>
+            </div>
+            <select id="defaultProvider" class="form-select" style="width:auto;min-width:180px" onchange="setDefaultProvider()">
+                <option value="openai">OpenAI</option>
+                <option value="anthropic">Anthropic (Claude)</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="groq">Groq</option>
+                <option value="kimi">Kimi (Moonshot)</option>
+            </select>
+        </div>
+
+        <!-- Provider Cards Grid -->
+        <div class="grid-3" id="providersGrid">
+            <!-- OpenAI -->
+            <div class="card provider-card" id="card-openai">
+                <div class="provider-header">
+                    <div class="provider-icon" style="background:rgba(16,163,127,0.1);color:#10a37f">AI</div>
+                    <div>
+                        <div class="provider-name">OpenAI</div>
+                        <div class="text-muted" style="font-size:0.75rem">GPT-4o, GPT-4 Turbo</div>
+                    </div>
+                    <span class="badge badge-accent provider-status" id="status-openai">Not Set</span>
+                </div>
+                <div class="provider-form" id="form-openai">
+                    <input type="password" class="form-input" id="key-openai" placeholder="sk-...">
+                    <select class="form-select" id="model-openai">
+                        <option value="gpt-4o">GPT-4o</option>
+                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                        <option value="gpt-4o-mini">GPT-4o Mini</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                    </select>
+                    <div style="display:flex;gap:0.5rem">
+                        <button class="btn btn-primary btn-sm" style="flex:1" onclick="saveProvider('openai')">Save</button>
+                        <button class="btn btn-danger btn-sm" onclick="removeProvider('openai')">Remove</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anthropic -->
+            <div class="card provider-card" id="card-anthropic">
+                <div class="provider-header">
+                    <div class="provider-icon" style="background:rgba(204,120,50,0.1);color:#cc7832">C</div>
+                    <div>
+                        <div class="provider-name">Anthropic</div>
+                        <div class="text-muted" style="font-size:0.75rem">Claude 3.5 Sonnet, Haiku</div>
+                    </div>
+                    <span class="badge badge-accent provider-status" id="status-anthropic">Not Set</span>
+                </div>
+                <div class="provider-form" id="form-anthropic">
+                    <input type="password" class="form-input" id="key-anthropic" placeholder="sk-ant-...">
+                    <select class="form-select" id="model-anthropic">
+                        <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                        <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                        <option value="claude-3-opus-20240229">Claude 3 Opus</option>
+                    </select>
+                    <div style="display:flex;gap:0.5rem">
+                        <button class="btn btn-primary btn-sm" style="flex:1" onclick="saveProvider('anthropic')">Save</button>
+                        <button class="btn btn-danger btn-sm" onclick="removeProvider('anthropic')">Remove</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gemini -->
+            <div class="card provider-card" id="card-gemini">
+                <div class="provider-header">
+                    <div class="provider-icon" style="background:rgba(66,133,244,0.1);color:#4285f4">G</div>
+                    <div>
+                        <div class="provider-name">Google Gemini</div>
+                        <div class="text-muted" style="font-size:0.75rem">Gemini 1.5 Flash, Pro</div>
+                    </div>
+                    <span class="badge badge-accent provider-status" id="status-gemini">Not Set</span>
+                </div>
+                <div class="provider-form" id="form-gemini">
+                    <input type="password" class="form-input" id="key-gemini" placeholder="API key...">
+                    <select class="form-select" id="model-gemini">
+                        <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                        <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+                    </select>
+                    <div style="display:flex;gap:0.5rem">
+                        <button class="btn btn-primary btn-sm" style="flex:1" onclick="saveProvider('gemini')">Save</button>
+                        <button class="btn btn-danger btn-sm" onclick="removeProvider('gemini')">Remove</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DeepSeek -->
+            <div class="card provider-card" id="card-deepseek">
+                <div class="provider-header">
+                    <div class="provider-icon" style="background:rgba(0,122,255,0.1);color:#007aff">DS</div>
+                    <div>
+                        <div class="provider-name">DeepSeek</div>
+                        <div class="text-muted" style="font-size:0.75rem">DeepSeek Chat, Coder</div>
+                    </div>
+                    <span class="badge badge-accent provider-status" id="status-deepseek">Not Set</span>
+                </div>
+                <div class="provider-form" id="form-deepseek">
+                    <input type="password" class="form-input" id="key-deepseek" placeholder="API key...">
+                    <select class="form-select" id="model-deepseek">
+                        <option value="deepseek-chat">DeepSeek Chat</option>
+                        <option value="deepseek-coder">DeepSeek Coder</option>
+                    </select>
+                    <div style="display:flex;gap:0.5rem">
+                        <button class="btn btn-primary btn-sm" style="flex:1" onclick="saveProvider('deepseek')">Save</button>
+                        <button class="btn btn-danger btn-sm" onclick="removeProvider('deepseek')">Remove</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Groq -->
+            <div class="card provider-card" id="card-groq">
+                <div class="provider-header">
+                    <div class="provider-icon" style="background:rgba(245,158,11,0.1);color:#f59e0b">GQ</div>
+                    <div>
+                        <div class="provider-name">Groq</div>
+                        <div class="text-muted" style="font-size:0.75rem">Llama 3.1, Mixtral</div>
+                    </div>
+                    <span class="badge badge-accent provider-status" id="status-groq">Not Set</span>
+                </div>
+                <div class="provider-form" id="form-groq">
+                    <input type="password" class="form-input" id="key-groq" placeholder="gsk_...">
+                    <select class="form-select" id="model-groq">
+                        <option value="llama-3.1-70b-versatile">Llama 3.1 70B</option>
+                        <option value="llama-3.1-8b-instant">Llama 3.1 8B</option>
+                        <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+                    </select>
+                    <div style="display:flex;gap:0.5rem">
+                        <button class="btn btn-primary btn-sm" style="flex:1" onclick="saveProvider('groq')">Save</button>
+                        <button class="btn btn-danger btn-sm" onclick="removeProvider('groq')">Remove</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kimi -->
+            <div class="card provider-card" id="card-kimi">
+                <div class="provider-header">
+                    <div class="provider-icon" style="background:rgba(139,92,246,0.1);color:#8b5cf6">K</div>
+                    <div>
+                        <div class="provider-name">Kimi (Moonshot)</div>
+                        <div class="text-muted" style="font-size:0.75rem">Moonshot v1</div>
+                    </div>
+                    <span class="badge badge-accent provider-status" id="status-kimi">Not Set</span>
+                </div>
+                <div class="provider-form" id="form-kimi">
+                    <input type="password" class="form-input" id="key-kimi" placeholder="API key...">
+                    <select class="form-select" id="model-kimi">
+                        <option value="moonshot-v1-8k">Moonshot v1 8K</option>
+                        <option value="moonshot-v1-32k">Moonshot v1 32K</option>
+                    </select>
+                    <div style="display:flex;gap:0.5rem">
+                        <button class="btn btn-primary btn-sm" style="flex:1" onclick="saveProvider('kimi')">Save</button>
+                        <button class="btn btn-danger btn-sm" onclick="removeProvider('kimi')">Remove</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="/js/shared.js"></script>
+<script src="/js/sidebar.js"></script>
+<script>
+    requireAuth();
+
+    const PROVIDERS = ['openai', 'anthropic', 'gemini', 'deepseek', 'groq', 'kimi'];
+
+    (async function loadProviders() {
+        try {
+            const data = await api('/api/providers');
+            const providers = data.providers || data;
+            const configured = typeof providers === 'object' ? providers : {};
+            const defaultProv = data.default_provider || 'openai';
+
+            document.getElementById('defaultProvider').value = defaultProv;
+
+            PROVIDERS.forEach(p => {
+                const statusEl = document.getElementById(`status-${p}`);
+                if (configured[p]) {
+                    statusEl.textContent = 'Configured';
+                    statusEl.className = 'badge badge-success provider-status';
+                    document.getElementById(`key-${p}`).placeholder = 'Key saved (enter new to replace)';
+                    if (configured[p].model) {
+                        const modelSelect = document.getElementById(`model-${p}`);
+                        if (modelSelect) modelSelect.value = configured[p].model;
+                    }
+                }
+            });
+        } catch (e) {
+            console.error('Failed to load providers:', e);
+        }
+    })();
+
+    async function saveProvider(provider) {
+        const keyInput = document.getElementById(`key-${provider}`);
+        const modelSelect = document.getElementById(`model-${provider}`);
+        const apiKey = keyInput.value.trim();
+        const model = modelSelect.value;
+
+        if (!apiKey) { showToast('Please enter an API key', 'error'); return; }
+
+        try {
+            await api('/api/providers', {
+                method: 'POST',
+                body: JSON.stringify({ provider, apiKey, model })
+            });
+            showToast(`${provider} saved`, 'success');
+            keyInput.value = '';
+            keyInput.placeholder = 'Key saved (enter new to replace)';
+            const statusEl = document.getElementById(`status-${provider}`);
+            statusEl.textContent = 'Configured';
+            statusEl.className = 'badge badge-success provider-status';
+        } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function removeProvider(provider) {
+        try {
+            await api(`/api/providers/${provider}`, { method: 'DELETE' });
+            showToast(`${provider} removed`, 'success');
+            const statusEl = document.getElementById(`status-${provider}`);
+            statusEl.textContent = 'Not Set';
+            statusEl.className = 'badge badge-accent provider-status';
+            document.getElementById(`key-${provider}`).placeholder = 'API key...';
+        } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    async function setDefaultProvider() {
+        const provider = document.getElementById('defaultProvider').value;
+        try {
+            await api('/api/providers/default', {
+                method: 'PUT',
+                body: JSON.stringify({ provider })
+            });
+            showToast(`Default provider set to ${provider}`, 'success');
+        } catch (e) { showToast(e.message, 'error'); }
+    }
+</script>
+</body>
 </html>

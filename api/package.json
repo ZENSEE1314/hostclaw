@@ -35,7 +35,8 @@
     "nodemailer": "^6.9.7",
     "@whiskeysockets/baileys": "^6.7.18",
     "@hapi/boom": "^10.0.1",
-    "qrcode": "^1.5.3"
+    "qrcode": "^1.5.3",
+    "openclaw": "latest"
   },
   "devDependencies": {
     "eslint": "^8.56.0",
@@ -44,7 +45,7 @@
     "supertest": "^6.3.3"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0"
   },
   "keywords": [
     "openclaw",

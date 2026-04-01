@@ -2,7 +2,7 @@ const { query } = require('../config/database');
 const bcrypt = require('bcryptjs');
 
 class User {
-  static async createUser({ email, password, name, plan = 'starter', credits = 20, has_paid = false, referral_code = null, applied_coupon = null }) {
+  static async createUser({ email, password, name, plan = 'starter', credits = 10, has_paid = false, referral_code = null, applied_coupon = null, my_referral_code = null, referred_by = null }) {
     // Normalize email to lowercase
     const normalizedEmail = email.toLowerCase().trim();
     
@@ -14,9 +14,9 @@ class User {
     
     try {
       await query(
-        `INSERT INTO users (id, email, password, name, plan, credits, has_paid, referral_code, applied_coupon, api_providers, skills, default_provider) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '{}', '[]', 'openai')`,
-        [userId, normalizedEmail, password, name, plan, credits, has_paid ? 1 : 0, referral_code, applied_coupon]
+        `INSERT INTO users (id, email, password, name, plan, credits, has_paid, referral_code, applied_coupon, my_referral_code, referred_by, api_providers, skills, default_provider)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, '{}', '[]', 'openai')`,
+        [userId, normalizedEmail, password, name, plan, credits, has_paid ? 1 : 0, referral_code, applied_coupon, my_referral_code, referred_by]
       );
       
       // Fetch the created user
@@ -64,10 +64,18 @@ class User {
 
   static async findById(id) {
     const result = await query(
-      'SELECT id, email, name, plan, credits, has_paid, api_providers, skills, platforms, default_provider, stripe_customer_id, gateway_config, created_at FROM users WHERE id = $1',
+      'SELECT id, email, name, plan, credits, has_paid, api_providers, skills, platforms, default_provider, stripe_customer_id, stripe_subscription_id, gateway_config, my_referral_code, referred_by, message_count, message_limit, plan_type, plan_expires_at, created_at FROM users WHERE id = $1',
       [id]
     );
     return result.rows[0];
+  }
+
+  static async findByMyReferralCode(code) {
+    const result = await query(
+      'SELECT id, email, name, credits FROM users WHERE UPPER(my_referral_code) = UPPER($1)',
+      [code]
+    );
+    return result.rows[0] || null;
   }
 
   static async updateCredits(userId, amount) {
@@ -334,6 +342,87 @@ class User {
       [hashedPassword, userId]
     );
     return result.rows[0];
+  }
+
+  // ===== MESSAGE-BASED BILLING =====
+
+  static canSendMessage(user) {
+    if (!user) return false;
+    const planType = user.plan_type || 'free';
+
+    // Unlimited plan — check expiry
+    if (planType === 'unlimited') {
+      if (user.plan_expires_at && new Date(user.plan_expires_at) < new Date()) {
+        return false; // expired
+      }
+      return true;
+    }
+
+    // Free or paid — check message count vs limit
+    const count = parseInt(user.message_count) || 0;
+    const limit = parseInt(user.message_limit) || 50;
+    return count < limit;
+  }
+
+  static async deductMessage(userId) {
+    // Try unlimited path first (atomic: checks plan_type and expiry in SQL)
+    const unlimitedResult = await query(
+      `UPDATE users SET message_count = message_count + 1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND plan_type = 'unlimited' AND (plan_expires_at IS NULL OR plan_expires_at > CURRENT_TIMESTAMP)
+       RETURNING message_count`,
+      [userId]
+    );
+    if (unlimitedResult.rows.length > 0) return true;
+
+    // For free/paid: atomic check-and-increment
+    const result = await query(
+      'UPDATE users SET message_count = message_count + 1, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND message_count < message_limit RETURNING message_count',
+      [userId]
+    );
+    return result.rows.length > 0;
+  }
+
+  static async addMessages(userId, count, planType, expiresAt) {
+    if (planType === 'unlimited') {
+      await query(
+        'UPDATE users SET plan_type = $1, plan_expires_at = $2, has_paid = 1, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+        [planType, expiresAt, userId]
+      );
+    } else {
+      // Top-up: add to message_limit
+      await query(
+        'UPDATE users SET message_limit = message_limit + $1, plan_type = $2, has_paid = 1, updated_at = CURRENT_TIMESTAMP WHERE id = $3',
+        [count, planType || 'paid', userId]
+      );
+    }
+  }
+
+  static async getMessageBalance(userId) {
+    const user = await this.findById(userId);
+    if (!user) return null;
+    const count = parseInt(user.message_count) || 0;
+    const limit = parseInt(user.message_limit) || 50;
+    const planType = user.plan_type || 'free';
+    const isUnlimited = planType === 'unlimited';
+    const expired = isUnlimited && user.plan_expires_at && new Date(user.plan_expires_at) < new Date();
+
+    return {
+      message_count: count,
+      message_limit: isUnlimited ? null : limit,
+      remaining: isUnlimited ? (expired ? 0 : -1) : Math.max(0, limit - count),
+      plan_type: expired ? 'expired' : planType,
+      plan_expires_at: user.plan_expires_at,
+      is_unlimited: isUnlimited && !expired
+    };
+  }
+
+  static async renewUnlimitedPlan(userId, durationDays) {
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + durationDays);
+    await query(
+      'UPDATE users SET message_count = 0, plan_expires_at = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [expiresAt.toISOString(), userId]
+    );
   }
 
   // Check if user is admin (first user or has admin email)
