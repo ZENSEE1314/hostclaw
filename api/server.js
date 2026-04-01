@@ -147,6 +147,54 @@ app.get('/health', async (req, res) => {
   }
 });
 
+// Debug: test full Telegram message flow
+app.get('/debug/telegram-test', async (req, res) => {
+  try {
+    const User = require('./models/user');
+    const Chat = require('./models/chat');
+    const { generateAIResponse } = require('./services/ai');
+    const userId = 'b7f44e65-5939-47ef-b7c5-f8c913d3a7d8';
+    const steps = [];
+
+    // Step 1: Find user
+    const user = await User.findById(userId);
+    steps.push({ step: 'findUser', ok: !!user, plan: user?.plan_type, msgCount: user?.message_count, msgLimit: user?.message_limit });
+
+    // Step 2: Check canSendMessage
+    const canSend = User.canSendMessage(user);
+    steps.push({ step: 'canSendMessage', ok: canSend });
+
+    // Step 3: Deduct message
+    const deducted = await User.deductMessage(userId);
+    steps.push({ step: 'deductMessage', ok: deducted });
+
+    // Step 4: Save chat message
+    try {
+      const saved = await Chat.saveMessage({ user_id: userId, session_id: 'debug_test', role: 'user', content: 'debug test' });
+      steps.push({ step: 'saveMessage', ok: true, id: saved?.id });
+    } catch (e) {
+      steps.push({ step: 'saveMessage', ok: false, error: e.message });
+    }
+
+    // Step 5: Generate AI response
+    try {
+      const aiRes = await generateAIResponse({ message: 'say hello in 5 words', provider: undefined, providerConfig: null, skills: [] });
+      steps.push({ step: 'generateAI', ok: !aiRes.error, model: aiRes.model, reply: aiRes.content?.substring(0, 100), error: aiRes.error });
+    } catch (e) {
+      steps.push({ step: 'generateAI', ok: false, error: e.message });
+    }
+
+    // Step 6: Check platforms config
+    const platforms = typeof user.platforms === 'string' ? JSON.parse(user.platforms || '{}') : (user.platforms || {});
+    const tg = platforms.telegram;
+    steps.push({ step: 'telegramConfig', ok: tg?.status === 'connected', botName: tg?.bot_name, hasToken: !!tg?.bot_token });
+
+    res.json({ steps, allPassed: steps.every(s => s.ok) });
+  } catch (e) {
+    res.json({ error: e.message, stack: e.stack?.substring(0, 500) });
+  }
+});
+
 // Debug endpoint - check database
 app.get('/debug/db', async (req, res) => {
   try {
