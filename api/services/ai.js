@@ -367,7 +367,7 @@ function getDefaultModel(provider) {
     kimi: 'moonshot-v1-8k',
     gemini: 'gemini-1.5-flash',
     deepseek: 'deepseek-chat',
-    groq: 'llama-3.1-70b-versatile',
+    groq: 'llama-3.3-70b-versatile',
     nvidia: 'meta/llama-3.1-8b-instruct'
   };
   return models[provider] || 'gpt-4o';
