@@ -63,32 +63,30 @@ async function generateAIResponse({ message, provider, providerConfig, skills })
   }
 
   if (!decryptedKey) {
-    // Try HostClaw shared key for the requested provider
-    decryptedKey = getHostClawKey(resolvedProvider);
+    // Find the best available server-side API key
+    // Priority: user's configured default > HOSTCLAW_DEFAULT_PROVIDER > first available
+    const searchOrder = [];
 
-    // If no key for this provider, try the configured default
-    if (!decryptedKey) {
-      const defaultProvider = process.env.HOSTCLAW_DEFAULT_PROVIDER || 'openai';
-      decryptedKey = getHostClawKey(defaultProvider);
-      if (decryptedKey) {
-        resolvedProvider = defaultProvider;
-        resolvedModel = process.env.HOSTCLAW_DEFAULT_MODEL || getDefaultModel(defaultProvider);
-      }
+    // 1. Try the requested provider
+    if (resolvedProvider) searchOrder.push(resolvedProvider);
+
+    // 2. Try configured default
+    const defaultProv = process.env.HOSTCLAW_DEFAULT_PROVIDER;
+    if (defaultProv && !searchOrder.includes(defaultProv)) searchOrder.push(defaultProv);
+
+    // 3. Try all providers (prefer anthropic/groq for reliability)
+    for (const p of ['anthropic', 'groq', 'openai', 'deepseek', 'gemini', 'kimi', 'nvidia']) {
+      if (!searchOrder.includes(p)) searchOrder.push(p);
     }
 
-    // Last resort: try every provider until we find one with a key
-    // Order by reliability/speed: groq (fast+free) > anthropic > openai > others
-    if (!decryptedKey) {
-      const providers = ['groq', 'anthropic', 'openai', 'deepseek', 'gemini', 'kimi', 'nvidia'];
-      for (const p of providers) {
-        const key = getHostClawKey(p);
-        if (key) {
-          decryptedKey = key;
-          resolvedProvider = p;
-          resolvedModel = getDefaultModel(p);
-          console.log(`AI fallback: using ${p} server key`);
-          break;
-        }
+    for (const p of searchOrder) {
+      const key = getHostClawKey(p);
+      if (key) {
+        decryptedKey = key;
+        resolvedProvider = p;
+        resolvedModel = process.env.HOSTCLAW_DEFAULT_MODEL || getDefaultModel(p);
+        console.log(`AI: using server-side ${p} key`);
+        break;
       }
     }
   }
