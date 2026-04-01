@@ -2,11 +2,12 @@ const { query } = require('../config/database');
 
 class Chat {
   static async saveMessage({ user_id, session_id, role, content, model, tokens }) {
+    const id = require('crypto').randomUUID();
     const result = await query(
-      `INSERT INTO chat_messages (user_id, session_id, role, content, model, tokens, created_at) 
-       VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP) 
+      `INSERT INTO chat_messages (id, user_id, session_id, role, content, model, tokens, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP)
        RETURNING *`,
-      [user_id, session_id, role, content, model || null, tokens || null]
+      [id, user_id, session_id, role, content, model || null, tokens || null]
     );
     return result.rows[0];
   }
