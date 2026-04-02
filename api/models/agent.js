@@ -30,7 +30,7 @@ class Agent {
   }
 
   static async update(id, userId, updates) {
-    const allowedFields = ['name', 'description', 'model', 'channels', 'config', 'system_prompt', 'bot_type', 'business_name', 'knowledge_base', 'bookings'];
+    const allowedFields = ['name', 'description', 'model', 'channels', 'config', 'system_prompt', 'bot_type', 'business_name', 'knowledge_base', 'bookings', 'linked_platforms'];
     const setClause = [];
     const values = [];
     let paramCount = 1;
@@ -98,7 +98,8 @@ class Agent {
       channels: parseJson(agent.channels, []),
       config: parseJson(agent.config, {}),
       knowledge_base: parseJson(agent.knowledge_base, []),
-      bookings: parseJson(agent.bookings, [])
+      bookings: parseJson(agent.bookings, []),
+      linked_platforms: parseJson(agent.linked_platforms, [])
     };
   }
 
@@ -146,13 +147,23 @@ class Agent {
     return true;
   }
 
-  // Find first agent for a user (default agent for platform messages)
-  static async findDefaultForUser(userId) {
+  // Find agent linked to a specific platform, or fall back to first agent
+  static async findForPlatform(userId, platform) {
     const result = await query(
-      `SELECT * FROM agents WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1`,
+      `SELECT * FROM agents WHERE user_id = $1 ORDER BY created_at ASC`,
       [userId]
     );
-    return result.rows[0] ? this.formatAgent(result.rows[0]) : null;
+    const agents = result.rows.map(a => this.formatAgent(a));
+    // Find agent explicitly linked to this platform
+    const linked = agents.find(a => (a.linked_platforms || []).includes(platform));
+    if (linked) return linked;
+    // Fall back to first agent
+    return agents[0] || null;
+  }
+
+  // Alias for backward compatibility
+  static async findDefaultForUser(userId) {
+    return this.findForPlatform(userId, 'default');
   }
 }
 

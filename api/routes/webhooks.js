@@ -579,9 +579,9 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
     // Fetch conversation history for context (last 10 messages)
     const chatHistory = await Chat.getSessionHistory(user.id, sessionId, 10);
 
-    // Find user's default agent for bot personality and knowledge base
+    // Find the agent linked to this platform (or fall back to default)
     const Agent = require('../models/agent');
-    const agent = await Agent.findDefaultForUser(user.id);
+    const agent = await Agent.findForPlatform(user.id, platform);
 
     // Get AI response — pick best available provider
     const allProviders = parseProviders(user);

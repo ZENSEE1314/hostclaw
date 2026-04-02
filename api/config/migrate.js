@@ -188,6 +188,11 @@ async function migrate() {
       console.log('✅ Column agents.bookings ready');
     } catch (e) { console.log('ℹ️ agents.bookings:', e.message); }
 
+    try {
+      await query(`ALTER TABLE agents ADD COLUMN IF NOT EXISTS linked_platforms TEXT DEFAULT '[]'`);
+      console.log('✅ Column agents.linked_platforms ready');
+    } catch (e) { console.log('ℹ️ agents.linked_platforms:', e.message); }
+
     console.log('✅ All migrations complete!');
     return true;
   } catch (err) {
