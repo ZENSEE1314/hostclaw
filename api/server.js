@@ -33,6 +33,8 @@ const platformsRoutes = require('./routes/platforms');
 const debugRoutes = require('./routes/debug');
 const contactsRoutes = require('./routes/contacts');
 const siteSettingsRoutes = require('./routes/site-settings');
+const creativeRoutes = require('./routes/creative');
+const scraperRoutes = require('./routes/scraper');
 const { errorHandler } = require('./middleware/error');
 const { initDb } = require('./config/database');
 
@@ -285,6 +287,8 @@ app.use('/api/platforms', platformsRoutes);
 app.use('/api/debug', debugRoutes);
 app.use('/api/contacts', contactsRoutes);
 app.use('/api/site-settings', siteSettingsRoutes);
+app.use('/api/creative', creativeRoutes);
+app.use('/api/scraper', scraperRoutes);
 app.use('/webhooks', webhookRoutes);
 
 // Error handling

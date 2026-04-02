@@ -567,35 +567,96 @@
         <button class="btn btn-primary" onclick="openModal('addContactModal')">Add Your First Contact</button>
       </div>
 
-      <!-- Image Generator Section -->
+      <!-- AI Image Generator -->
       <div class="promo-card">
         <div class="promo-card-header">
           <div class="promo-card-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
           </div>
           <div>
-            <div class="promo-card-title">Create Promotional Content</div>
-            <div class="promo-card-desc">Generate images for your broadcast campaigns</div>
+            <div class="promo-card-title">AI Image Generator</div>
+            <div class="promo-card-desc">Describe what you want and AI creates it (costs 1 message)</div>
           </div>
         </div>
-
         <div class="promo-form">
           <div class="form-group">
-            <label class="form-label" for="promoPrompt">Describe what you want</label>
-            <input type="text" class="form-input" id="promoPrompt" placeholder="e.g. Chinese New Year greeting for customers">
+            <label class="form-label">Describe your image</label>
+            <input type="text" class="form-input" id="promoPrompt" placeholder="e.g. Chinese New Year greeting card with red and gold theme for restaurant business">
           </div>
-          <button class="btn btn-secondary" onclick="handleGenerateImage()">Generate Image</button>
+          <div class="style-pills">
+            <button class="style-pill active" data-style="greeting" onclick="handleSelectStyle(this)">Greeting Card</button>
+            <button class="style-pill" data-style="product" onclick="handleSelectStyle(this)">Product Promo</button>
+            <button class="style-pill" data-style="festival" onclick="handleSelectStyle(this)">Festival</button>
+            <button class="style-pill" data-style="sale" onclick="handleSelectStyle(this)">Sale Banner</button>
+            <button class="style-pill" data-style="social" onclick="handleSelectStyle(this)">Social Post</button>
+            <button class="style-pill" data-style="poster" onclick="handleSelectStyle(this)">Poster</button>
+          </div>
+          <div style="display:flex;gap:0.5rem">
+            <button class="btn btn-secondary" onclick="suggestPrompts()" id="suggestBtn">Suggest Ideas</button>
+            <button class="btn btn-primary" onclick="generateImage()" id="generateBtn">Generate Image</button>
+          </div>
         </div>
-
-        <div class="style-pills">
-          <button class="style-pill active" data-style="greeting" onclick="handleSelectStyle(this)">Greeting Card</button>
-          <button class="style-pill" data-style="promo" onclick="handleSelectStyle(this)">Product Promo</button>
-          <button class="style-pill" data-style="festival" onclick="handleSelectStyle(this)">Festival</button>
-          <button class="style-pill" data-style="sale" onclick="handleSelectStyle(this)">Sale Banner</button>
+        <!-- Suggestions -->
+        <div id="suggestions" style="display:none;margin-top:1rem">
+          <p class="form-label" style="margin-bottom:0.5rem">AI suggestions (click to use):</p>
+          <div id="suggestionList" style="display:flex;flex-direction:column;gap:0.5rem"></div>
         </div>
+        <!-- Generated Image -->
+        <div id="generatedResult" style="display:none;margin-top:1rem">
+          <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center">
+            <img id="generatedImage" src="" alt="Generated image" style="max-width:100%;border-radius:var(--radius-sm);margin-bottom:0.75rem">
+            <p class="text-muted" style="font-size:0.75rem;margin-bottom:0.75rem" id="generatedPrompt"></p>
+            <div style="display:flex;gap:0.5rem;justify-content:center">
+              <a id="downloadLink" href="" download="hostclaw-image.png" class="btn btn-secondary btn-sm">Download</a>
+              <button class="btn btn-primary btn-sm" onclick="useInBroadcast()">Use in Broadcast</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        <div class="promo-placeholder" id="promoPlaceholder">
-          <p>Image generation coming soon. You can use <a href="https://www.canva.com" target="_blank" rel="noopener noreferrer">Canva</a> or any design tool and paste the image URL in the broadcast message.</p>
+      <!-- Contact Scraper -->
+      <div class="promo-card" style="margin-top:1.5rem">
+        <div class="promo-card-header">
+          <div class="promo-card-icon" style="background:rgba(6,182,212,0.1);color:var(--cyan,#06b6d4)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div>
+            <div class="promo-card-title">Import Contacts from Groups</div>
+            <div class="promo-card-desc">Scrape contacts from Telegram/Discord groups (5 messages per contact)</div>
+          </div>
+        </div>
+        <div class="promo-form">
+          <div class="grid-2" style="gap:1rem">
+            <div class="form-group">
+              <label class="form-label">Platform</label>
+              <select class="form-select" id="scrapePlatform">
+                <option value="telegram">Telegram Group</option>
+                <option value="discord">Discord Server</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" id="scrapeIdLabel">Group Username</label>
+              <input type="text" class="form-input" id="scrapeGroupId" placeholder="@groupname or group ID">
+            </div>
+          </div>
+          <p class="form-hint" style="margin-bottom:0.75rem">Your bot must be an admin in the group. Cost: 5 messages per contact imported.</p>
+          <button class="btn btn-secondary" onclick="scrapeContacts()" id="scrapeBtn">Scan Group</button>
+        </div>
+        <!-- Scrape Results -->
+        <div id="scrapeResults" style="display:none;margin-top:1rem">
+          <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:1rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+              <div>
+                <div style="font-size:0.9rem;font-weight:600" id="scrapeGroupName">Group</div>
+                <div class="text-muted" style="font-size:0.8rem" id="scrapeCount">0 contacts found</div>
+              </div>
+              <div style="text-align:right">
+                <div style="font-size:1.25rem;font-weight:700;color:var(--accent-light)" id="scrapeCost">0</div>
+                <div class="text-muted" style="font-size:0.7rem">messages cost</div>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="confirmScrape()" id="confirmScrapeBtn">Confirm & Import</button>
+          </div>
         </div>
       </div>
 
@@ -1136,14 +1197,104 @@
     }
 
     /* Image Generator */
+    let selectedStyle = 'greeting';
+    let scrapedContacts = [];
+
     function handleSelectStyle(btn) {
       document.querySelectorAll('.style-pill').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
+      selectedStyle = btn.dataset.style;
     }
 
-    function handleGenerateImage() {
-      const placeholder = document.getElementById('promoPlaceholder');
-      placeholder.style.display = 'block';
+    // AI Image Generator
+    async function generateImage() {
+      const desc = document.getElementById('promoPrompt').value.trim();
+      if (!desc) { showToast('Describe what you want', 'error'); return; }
+      const btn = document.getElementById('generateBtn');
+      btn.disabled = true; btn.textContent = 'Generating...';
+      try {
+        const data = await api('/api/creative/generate-image', {
+          method: 'POST',
+          body: JSON.stringify({ description: desc, style: selectedStyle })
+        });
+        document.getElementById('generatedImage').src = data.image_url;
+        document.getElementById('downloadLink').href = data.image_url;
+        document.getElementById('generatedPrompt').textContent = 'AI prompt: ' + (data.prompt_used || '').substring(0, 150);
+        document.getElementById('generatedResult').style.display = 'block';
+        showToast('Image generated', 'success');
+      } catch (e) { showToast(e.message, 'error'); }
+      finally { btn.disabled = false; btn.textContent = 'Generate Image'; }
+    }
+
+    async function suggestPrompts() {
+      const desc = document.getElementById('promoPrompt').value.trim();
+      if (!desc) { showToast('Enter a description first', 'error'); return; }
+      const btn = document.getElementById('suggestBtn');
+      btn.disabled = true; btn.textContent = 'Thinking...';
+      try {
+        const data = await api('/api/creative/suggest-prompt', {
+          method: 'POST',
+          body: JSON.stringify({ description: desc, type: selectedStyle })
+        });
+        const list = document.getElementById('suggestionList');
+        list.innerHTML = (data.suggestions || []).map(s =>
+          `<div onclick="document.getElementById('promoPrompt').value=this.textContent;document.getElementById('suggestions').style.display='none'" style="padding:0.5rem 0.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:0.8rem;transition:border-color 0.2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">${escapeHtml(s)}</div>`
+        ).join('');
+        document.getElementById('suggestions').style.display = 'block';
+      } catch (e) { showToast(e.message, 'error'); }
+      finally { btn.disabled = false; btn.textContent = 'Suggest Ideas'; }
+    }
+
+    function useInBroadcast() {
+      const url = document.getElementById('generatedImage').src;
+      document.getElementById('broadcastImageUrl').value = url;
+      openModal('broadcastModal');
+      showToast('Image added to broadcast', 'success');
+    }
+
+    // Contact Scraper
+    document.getElementById('scrapePlatform').addEventListener('change', function() {
+      const label = document.getElementById('scrapeIdLabel');
+      label.textContent = this.value === 'telegram' ? 'Group Username' : 'Server ID';
+      document.getElementById('scrapeGroupId').placeholder = this.value === 'telegram' ? '@groupname or group ID' : 'Discord server ID';
+    });
+
+    async function scrapeContacts() {
+      const platform = document.getElementById('scrapePlatform').value;
+      const groupId = document.getElementById('scrapeGroupId').value.trim();
+      if (!groupId) { showToast('Enter a group ID or username', 'error'); return; }
+      const btn = document.getElementById('scrapeBtn');
+      btn.disabled = true; btn.textContent = 'Scanning...';
+      try {
+        const data = await api(`/api/scraper/${platform}`, {
+          method: 'POST',
+          body: JSON.stringify(platform === 'telegram' ? { group_username: groupId } : { server_id: groupId })
+        });
+        scrapedContacts = data.contacts || [];
+        document.getElementById('scrapeGroupName').textContent = data.group_name || 'Group';
+        document.getElementById('scrapeCount').textContent = `${data.scrapeable || 0} contacts found (${data.total_members || '?'} total members)`;
+        document.getElementById('scrapeCost').textContent = data.cost || 0;
+        document.getElementById('scrapeResults').style.display = 'block';
+        if (data.error) showToast(data.error, 'warning');
+      } catch (e) { showToast(e.message, 'error'); }
+      finally { btn.disabled = false; btn.textContent = 'Scan Group'; }
+    }
+
+    async function confirmScrape() {
+      if (scrapedContacts.length === 0) { showToast('No contacts to import', 'error'); return; }
+      const btn = document.getElementById('confirmScrapeBtn');
+      btn.disabled = true; btn.textContent = 'Importing...';
+      try {
+        const data = await api('/api/scraper/confirm', {
+          method: 'POST',
+          body: JSON.stringify({ contacts: scrapedContacts })
+        });
+        showToast(`Imported ${data.added} contacts (${data.skipped} duplicates skipped). Used ${data.messages_used} messages.`, 'success');
+        document.getElementById('scrapeResults').style.display = 'none';
+        scrapedContacts = [];
+        loadContacts();
+      } catch (e) { showToast(e.message, 'error'); }
+      finally { btn.disabled = false; btn.textContent = 'Confirm & Import'; }
     }
 
     /* Utilities */
