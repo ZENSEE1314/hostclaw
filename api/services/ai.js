@@ -101,57 +101,47 @@ async function generateAIResponse({ message, provider, providerConfig, skills })
 
   const model = resolvedModel || getDefaultModel(resolvedProvider);
 
+  // Try the resolved provider, then fall back to others on failure
+  const result = await callProvider(resolvedProvider, decryptedKey, model, message, skills);
+  if (!result.error) return result;
+
+  // Primary provider failed — try fallback providers
+  console.log(`Primary provider ${resolvedProvider} failed: ${result.content}. Trying fallbacks...`);
+  const fallbackOrder = ['groq', 'deepseek', 'openai', 'anthropic', 'gemini', 'kimi', 'nvidia'];
+  for (const p of fallbackOrder) {
+    if (p === resolvedProvider) continue;
+    const key = getHostClawKey(p);
+    if (!key) continue;
+    console.log(`Trying fallback provider: ${p}`);
+    const fallbackResult = await callProvider(p, key, getDefaultModel(p), message, skills);
+    if (!fallbackResult.error) return fallbackResult;
+    console.log(`Fallback ${p} also failed: ${fallbackResult.content}`);
+  }
+
+  // All providers failed
+  return result;
+}
+
+async function callProvider(provider, apiKey, model, message, skills) {
   try {
-    switch (resolvedProvider) {
-      case 'openai':
-        return await callOpenAI(message, decryptedKey, model, skills);
-
-      case 'anthropic':
-        return await callAnthropic(message, decryptedKey, model, skills);
-
-      case 'kimi':
-        return await callKimi(message, decryptedKey, model, skills);
-
-      case 'gemini':
-        return await callGemini(message, decryptedKey, model, skills);
-
-      case 'deepseek':
-        return await callDeepSeek(message, decryptedKey, model, skills);
-
-      case 'groq':
-        return await callGroq(message, decryptedKey, model, skills);
-
-      case 'nvidia':
-        return await callNVIDIA(message, decryptedKey, model, skills);
-
-      case 'openclaw':
-        return await callOpenClaw(message, skills);
-
-      default:
-        return {
-          content: 'Unsupported provider: ' + resolvedProvider,
-          model: 'none',
-          tokens: 0
-        };
-    }
+    const callers = {
+      openai: callOpenAI,
+      anthropic: callAnthropic,
+      kimi: callKimi,
+      gemini: callGemini,
+      deepseek: callDeepSeek,
+      groq: callGroq,
+      nvidia: callNVIDIA,
+      openclaw: (msg, key, mdl, sk) => callOpenClaw(msg, sk)
+    };
+    const fn = callers[provider];
+    if (!fn) return { content: 'Unsupported provider: ' + provider, model: 'none', tokens: 0, error: true };
+    return await fn(message, apiKey, model, skills);
   } catch (error) {
-    console.error(`Error calling ${resolvedProvider}:`, error.message);
-    const status = error.response?.status || error.status;
-    let userMessage;
-    if (status === 401 || (error.message && error.message.includes('401'))) {
-      userMessage = `⚠️ Invalid API key for ${resolvedProvider}. Please go to **Settings** and re-enter your ${resolvedProvider} API key.`;
-    } else if (status === 429 || (error.message && error.message.includes('429'))) {
-      userMessage = `⚠️ Rate limit reached for ${resolvedProvider}. Wait a moment and try again.`;
-    } else if (status === 402 || (error.message && error.message.includes('insufficient_quota'))) {
-      userMessage = `⚠️ Your ${resolvedProvider} account has no remaining quota/credits. Please top up your ${resolvedProvider} account.`;
-    } else if (status === 404) {
-      userMessage = `⚠️ Model not found for ${resolvedProvider}. Please go to **Settings** and select a different model.`;
-    } else {
-      userMessage = `⚠️ ${resolvedProvider} error: ${error.message}`;
-    }
+    console.error(`Error calling ${provider}:`, error.message);
     return {
-      content: userMessage,
-      model: resolvedProvider,
+      content: `⚠️ ${provider} error: ${error.response?.data?.error?.message || error.message}`,
+      model: provider,
       tokens: 0,
       error: true
     };
