@@ -717,19 +717,20 @@ router.post('/stripe', async (req, res) => {
   let event;
   
   try {
-    // Verify webhook signature
-    if (stripe && endpointSecret) {
-      event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    // Verify webhook signature — req.body may be Buffer (from raw parser) or object
+    const rawBody = Buffer.isBuffer(req.body) ? req.body : JSON.stringify(req.body);
+    if (stripe && endpointSecret && sig) {
+      event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
     } else {
-      // For testing without signature verification
-      event = req.body;
+      // Parse body if Buffer, or use as-is
+      event = Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString()) : req.body;
     }
   } catch (err) {
     console.log(`⚠️ Webhook signature verification failed:`, err.message);
     if (process.env.NODE_ENV === 'production') {
       return res.status(400).json({ error: 'Webhook signature verification failed' });
     }
-    event = req.body;
+    event = Buffer.isBuffer(req.body) ? JSON.parse(req.body.toString()) : req.body;
   }
 
   console.log('📨 Stripe webhook received:', event.type);

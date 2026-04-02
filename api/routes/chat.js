@@ -119,13 +119,11 @@ router.post('/message', async (req, res, next) => {
       });
     }
 
-    // Deduct credits based on tokens used
-    const cost = calculateCost(aiResponse.tokens || 0, resolvedProvider);
-    
+    // Deduct message (new message-based billing)
     try {
-      await User.deductCredits(req.user.userId, cost);
+      await User.deductMessage(req.user.userId);
     } catch (e) {
-      console.error('Failed to deduct credits:', e.message);
+      console.error('Failed to deduct message:', e.message);
     }
 
     // Save AI response
@@ -146,9 +144,8 @@ router.post('/message', async (req, res, next) => {
       message: aiResponse.content,
       model: aiResponse.model,
       tokens: aiResponse.tokens,
-      cost: cost,
-      remaining_credits: user.credits - cost,
-      skills_used: aiResponse.skillsUsed || []
+      content: aiResponse.content,
+      response: aiResponse.content
     });
   } catch (error) {
     console.error('Chat message error:', error);
@@ -228,19 +225,5 @@ router.delete('/history', async (req, res, next) => {
   }
 });
 
-function calculateCost(tokens, provider) {
-  // Rough cost calculation per 1K tokens
-  const rates = {
-    openai: 0.03,
-    anthropic: 0.03,
-    kimi: 0.015,
-    gemini: 0.005,
-    deepseek: 0.002,
-    groq: 0.005
-  };
-  
-  const rate = rates[provider] || 0.03;
-  return Math.max(0.01, (tokens / 1000) * rate);
-}
 
 module.exports = router;

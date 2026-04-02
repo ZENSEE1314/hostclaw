@@ -466,4 +466,27 @@ router.delete('/:platform', authenticate, async (req, res, next) => {
   }
 });
 
+// ===== PLATFORM CONFIG (save bot personality for platform setup wizard) =====
+router.post('/config', authenticate, async (req, res, next) => {
+  try {
+    const { system_prompt, personality } = req.body;
+    const Agent = require('../models/agent');
+    // Save to user's default agent
+    const agent = await Agent.findDefaultForUser(req.user.userId);
+    if (agent) {
+      const updates = {};
+      if (system_prompt) updates.system_prompt = system_prompt;
+      if (personality) {
+        const config = agent.config || {};
+        config.personality = personality;
+        updates.config = config;
+      }
+      if (Object.keys(updates).length > 0) {
+        await Agent.update(agent.id, req.user.userId, updates);
+      }
+    }
+    res.json({ saved: true });
+  } catch (error) { next(error); }
+});
+
 module.exports = router;

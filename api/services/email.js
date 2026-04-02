@@ -89,21 +89,7 @@ class EmailService {
     });
   }
 
-  async send({ to, subject, html }) {
-    try {
-      const info = await this.transporter.sendMail({
-        from: `"HostClaw" <${process.env.SMTP_USER}>`,
-        to,
-        subject,
-        html
-      });
-      console.log('📧 Email sent:', info.messageId);
-      return info;
-    } catch (error) {
-      console.error('❌ Email failed:', error);
-      throw error;
-    }
-  }
+  // NOTE: duplicate send() removed — the first definition (with null transporter check) is used
 
   getWelcomeTemplate(user) {
     return `
@@ -118,7 +104,7 @@ class EmailService {
         <li>💳 Set up payment collection</li>
         <li>📊 Monitor performance in real-time</li>
       </ul>
-      <p>You've received <strong>$20 in free credits</strong> to get started!</p>
+      <p>You've received <strong>50 free messages</strong> to get started!</p>
       <a href="${process.env.FRONTEND_URL}/dashboard" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%); color: white; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 600; margin-top: 20px;">
         Go to Dashboard →
       </a>
