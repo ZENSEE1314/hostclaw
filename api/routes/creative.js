@@ -104,4 +104,48 @@ router.post('/suggest-prompt', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+// Generate a system prompt from an example conversation or description
+router.post('/generate-prompt', async (req, res, next) => {
+  try {
+    const { example, bot_type, business_name } = req.body;
+    if (!example) return res.status(400).json({ error: 'Example text is required' });
+
+    const botTypeHints = {
+      personal: 'a personal AI assistant that mimics the user\'s communication style',
+      customer_service: `a customer service representative for ${business_name || 'a business'}`,
+      sales: `a sales assistant for ${business_name || 'a business'}`
+    };
+
+    const hint = botTypeHints[bot_type] || botTypeHints.personal;
+
+    const aiRes = await generateAIResponse({
+      message: `Analyze this example and generate a detailed system prompt for an AI chatbot.
+
+The bot should be: ${hint}
+
+EXAMPLE OF HOW THE BOT SHOULD COMMUNICATE:
+---
+${example.substring(0, 3000)}
+---
+
+Based on this example, generate a comprehensive system prompt that instructs the AI to:
+1. Match the tone, language, and style shown in the example
+2. Use similar vocabulary, sentence structure, and formality level
+3. Handle the same types of conversations shown
+4. Include specific instructions for greeting, responding, handling questions, and closing conversations
+
+Return ONLY the system prompt text. Do not include any explanation or meta-commentary. Start directly with "You are..." or the instructions.`,
+      provider: undefined,
+      providerConfig: null,
+      skills: []
+    });
+
+    if (aiRes.error) {
+      return res.status(500).json({ error: 'Failed to generate prompt: ' + aiRes.content });
+    }
+
+    res.json({ prompt: aiRes.content });
+  } catch (error) { next(error); }
+});
+
 module.exports = router;

@@ -845,9 +845,31 @@
           <div class="card-header">
             <h2 class="card-title">Bot Instructions</h2>
           </div>
+
+          <!-- AI Prompt Generator -->
+          <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;margin-bottom:1rem">
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+              <span style="font-size:0.85rem;font-weight:600">AI Prompt Generator</span>
+            </div>
+            <p class="text-secondary" style="font-size:0.8rem;margin-bottom:0.75rem">Paste an example of how you want the bot to reply, and AI will generate the full instructions automatically.</p>
+            <textarea id="promptExample" class="form-textarea" rows="4" placeholder="Paste an example here... e.g.:
+
+Customer: Hi, how much is the basic package?
+Bot: Hey there! Great question. Our Basic package is $49/month and includes website hosting, email support, and a free domain. Want me to set you up with a trial?
+
+Customer: Do you have anything cheaper?
+Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just getting started. I can get you signed up right now if you'd like!"></textarea>
+            <div style="display:flex;gap:0.5rem;margin-top:0.75rem">
+              <button class="btn btn-primary btn-sm" onclick="generatePromptFromExample()" id="genPromptBtn">Generate Instructions</button>
+              <button class="btn btn-outline btn-sm" onclick="document.getElementById('promptExample').value='';document.getElementById('promptExample').focus()">Clear</button>
+            </div>
+          </div>
+
           <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label">System Prompt</label>
             <textarea id="systemPromptInput" class="form-textarea" rows="6" placeholder="Tell the AI how to behave..."></textarea>
-            <p class="form-hint">This tells the AI how to behave. Leave empty to use the default for your bot type.</p>
+            <p class="form-hint">This tells the AI how to behave. Leave empty to use the default for your bot type. Use the generator above to create it from an example.</p>
           </div>
           <div class="mt-2">
             <button class="btn btn-secondary btn-sm" onclick="handleSaveSystemPrompt()">Save Instructions</button>
@@ -1418,6 +1440,30 @@
     }
 
     // ─── System Prompt ─────────────────────────────────────
+    async function generatePromptFromExample() {
+      const example = document.getElementById('promptExample').value.trim();
+      if (!example) { showToast('Paste an example first', 'error'); return; }
+      const btn = document.getElementById('genPromptBtn');
+      btn.disabled = true; btn.textContent = 'Generating...';
+      try {
+        const data = await api('/api/creative/generate-prompt', {
+          method: 'POST',
+          body: JSON.stringify({
+            example,
+            bot_type: agent.bot_type || 'personal',
+            business_name: agent.business_name || ''
+          })
+        });
+        if (data.prompt) {
+          document.getElementById('systemPromptInput').value = data.prompt;
+          showToast('Instructions generated! Review and save.', 'success');
+        } else {
+          showToast('Failed to generate', 'error');
+        }
+      } catch (e) { showToast(e.message, 'error'); }
+      finally { btn.disabled = false; btn.textContent = 'Generate Instructions'; }
+    }
+
     async function handleSaveSystemPrompt() {
       const prompt = document.getElementById('systemPromptInput').value;
       try {
