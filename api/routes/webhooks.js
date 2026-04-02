@@ -608,18 +608,34 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
       return;
     }
 
+    let finalContent = aiResponse.content;
+
+    // Handle booking confirmations from AI
+    const bookingMatch = finalContent.match(/BOOKING_CONFIRM:([^|]+)\|([^|]+)\|([^|]+)\|([^\s\n]+)/);
+    if (bookingMatch && agent) {
+      const [, date, time, name, phone] = bookingMatch;
+      const result = await Agent.addBooking(agent.id, { date: date.trim(), time: time.trim(), customer_name: name.trim(), customer_phone: phone.trim() });
+      if (result?.error === 'slot_taken') {
+        finalContent = finalContent.replace(/BOOKING_CONFIRM:[^\n]+/, '') +
+          '\n\nSorry, that time slot is already booked. Please choose a different time.';
+      } else {
+        finalContent = finalContent.replace(/BOOKING_CONFIRM:[^\n]+/, '') +
+          `\n\nBooking confirmed for ${name.trim()} on ${date.trim()} at ${time.trim()}.`;
+      }
+    }
+
     // Save AI response
     await Chat.saveMessage({
       user_id: user.id,
       session_id: sessionId,
       role: 'assistant',
-      content: aiResponse.content,
+      content: finalContent,
       model: aiResponse.model,
       tokens: aiResponse.tokens
     });
 
     // Send response
-    await sendFn(aiResponse.content);
+    await sendFn(finalContent);
 
   } catch (error) {
     console.error('Process message error:', error.message, error.stack);

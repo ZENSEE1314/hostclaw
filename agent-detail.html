@@ -217,7 +217,7 @@
 
     .bot-type-check svg { width: 14px; height: 14px; color: white; }
 
-    /* Section cards spacing */
+    /* Section cards */
     .section-card {
       margin-bottom: 1.5rem;
     }
@@ -235,7 +235,22 @@
       color: var(--text);
     }
 
-    /* Knowledge Base */
+    /* Business Info Grid */
+    .business-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
+    }
+
+    .business-grid .form-group {
+      margin-bottom: 0;
+    }
+
+    .business-grid .full-width {
+      grid-column: 1 / -1;
+    }
+
+    /* Knowledge Base Tabs */
     .kb-tabs {
       display: flex;
       gap: 0;
@@ -259,6 +274,16 @@
     .kb-tab:hover { color: var(--text); }
     .kb-tab.active { color: var(--accent-light); border-bottom-color: var(--accent); }
 
+    /* Tab panels */
+    .kb-panel {
+      display: none;
+    }
+
+    .kb-panel.active {
+      display: block;
+    }
+
+    /* KB Entries list */
     .kb-entries {
       display: flex;
       flex-direction: column;
@@ -292,21 +317,6 @@
       margin-bottom: 0.375rem;
     }
 
-    .kb-type-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 0.15rem 0.5rem;
-      border-radius: 100px;
-      font-size: 0.625rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .kb-type-badge.product { background: var(--success-bg); color: var(--success); }
-    .kb-type-badge.faq { background: var(--accent-bg); color: var(--accent-light); }
-    .kb-type-badge.info { background: var(--warning-bg); color: var(--warning); }
-
     .kb-entry-title {
       font-size: 0.9375rem;
       font-weight: 600;
@@ -322,11 +332,62 @@
       overflow: hidden;
     }
 
-    .kb-entry-price {
-      font-size: 0.875rem;
-      font-weight: 700;
+    .kb-entry-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .kb-packages {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    .kb-packages span {
       color: var(--success);
+      font-weight: 600;
+    }
+
+    .kb-url-list {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
       margin-top: 0.375rem;
+    }
+
+    .kb-url-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 100px;
+      font-size: 0.625rem;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .keyword-badges {
+      display: flex;
+      gap: 0.375rem;
+      flex-wrap: wrap;
+      margin-top: 0.375rem;
+    }
+
+    .keyword-badge {
+      display: inline-flex;
+      padding: 0.125rem 0.5rem;
+      border-radius: 100px;
+      font-size: 0.6875rem;
+      font-weight: 500;
+      background: var(--accent-bg);
+      color: var(--accent-light);
     }
 
     .kb-entry-actions {
@@ -364,37 +425,212 @@
 
     .kb-entry-actions svg { width: 14px; height: 14px; }
 
-    /* Modal entry type selector */
-    .entry-type-selector {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1.25rem;
+    /* Booking settings */
+    .booking-settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
     }
 
-    .entry-type-btn {
+    .booking-settings-grid .form-group { margin-bottom: 0; }
+
+    .days-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .day-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .day-checkbox input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .day-checkbox label {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .hours-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .hours-row .form-input {
+      max-width: 130px;
+    }
+
+    .hours-row span {
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    /* Booking list */
+    .booking-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.875rem 1rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: var(--transition);
+    }
+
+    .booking-item:hover {
+      border-color: var(--border-hover);
+    }
+
+    .booking-item + .booking-item {
+      margin-top: 0.5rem;
+    }
+
+    .booking-info {
       flex: 1;
-      padding: 0.625rem;
+      min-width: 0;
+    }
+
+    .booking-date {
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .booking-customer {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    /* Profile grid */
+    .profile-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+
+    .profile-grid .form-group { margin-bottom: 0; }
+
+    .profile-grid .full-width {
+      grid-column: 1 / -1;
+    }
+
+    /* Conversation sample cards */
+    .convo-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .convo-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .convo-card:hover {
+      border-color: var(--border-hover);
+    }
+
+    .convo-card-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .convo-card-preview {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .convo-card-delete {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      width: 24px;
+      height: 24px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+      opacity: 0;
+    }
+
+    .convo-card:hover .convo-card-delete {
+      opacity: 1;
+    }
+
+    .convo-card-delete:hover {
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.3);
+      background: var(--danger-bg);
+    }
+
+    .convo-card-delete svg { width: 12px; height: 12px; }
+
+    /* Package rows in modal */
+    .package-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+      margin-bottom: 0.5rem;
+    }
+
+    .package-row .form-input {
+      flex: 1;
+    }
+
+    .package-row .price-input {
+      width: 100px;
+      flex: none;
+    }
+
+    .package-remove {
+      width: 32px;
+      height: 32px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border);
       background: transparent;
-      color: var(--text-secondary);
-      font-size: 0.8125rem;
-      font-weight: 600;
-      font-family: inherit;
+      color: var(--text-muted);
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       transition: var(--transition);
-      text-align: center;
+      flex-shrink: 0;
+      margin-top: 1px;
     }
 
-    .entry-type-btn:hover {
-      border-color: var(--border-hover);
-      color: var(--text);
+    .package-remove:hover {
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.3);
+      background: var(--danger-bg);
     }
 
-    .entry-type-btn.active {
-      background: var(--accent-bg);
-      border-color: rgba(99, 102, 241, 0.4);
-      color: var(--accent-light);
+    .package-remove svg { width: 14px; height: 14px; }
+
+    /* Wider modal for products */
+    .modal-card.modal-wide {
+      max-width: 600px;
     }
 
     /* Danger Zone */
@@ -411,6 +647,19 @@
       color: var(--text-secondary);
       margin-bottom: 1rem;
       line-height: 1.5;
+    }
+
+    /* Section subtitle */
+    .section-subtitle {
+      font-size: 0.9375rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .section-subtitle:first-child {
+      margin-top: 0;
     }
 
     /* Loading skeleton */
@@ -455,8 +704,36 @@
         align-self: flex-end;
       }
 
-      .entry-type-selector {
-        flex-direction: column;
+      .business-grid,
+      .booking-settings-grid,
+      .profile-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .business-grid .full-width,
+      .profile-grid .full-width {
+        grid-column: auto;
+      }
+
+      .hours-row {
+        flex-wrap: wrap;
+      }
+
+      .kb-tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .convo-cards {
+        grid-template-columns: 1fr;
+      }
+
+      .package-row {
+        flex-wrap: wrap;
+      }
+
+      .package-row .price-input {
+        width: 100%;
       }
     }
   </style>
@@ -527,17 +804,39 @@
           </div>
         </div>
 
-        <!-- Business Info (conditional) -->
+        <!-- Business Info (conditional: customer_service / sales) -->
         <div id="businessInfoCard" class="card section-card hidden">
           <div class="card-header">
             <h2 class="card-title">Business Info</h2>
           </div>
-          <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" for="businessNameInput">Business Name</label>
-            <input type="text" id="businessNameInput" class="form-input" placeholder="Your business name">
+          <div class="business-grid">
+            <div class="form-group full-width">
+              <label class="form-label" for="bizName">Business Name</label>
+              <input type="text" id="bizName" class="form-input" placeholder="Your business name">
+            </div>
+            <div class="form-group full-width">
+              <label class="form-label" for="bizAddress">Address</label>
+              <input type="text" id="bizAddress" class="form-input" placeholder="123 Main St, City, State">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="bizHours">Opening Hours</label>
+              <input type="text" id="bizHours" class="form-input" placeholder="Mon-Fri 9am-5pm">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="bizEmail">Email</label>
+              <input type="email" id="bizEmail" class="form-input" placeholder="contact@business.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="bizPhone">Phone</label>
+              <input type="tel" id="bizPhone" class="form-input" placeholder="+1 234 567 8900">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="bizWebsite">Website</label>
+              <input type="url" id="bizWebsite" class="form-input" placeholder="https://your-site.com">
+            </div>
           </div>
-          <div style="margin-top: 1.25rem;">
-            <button class="btn btn-secondary btn-sm" onclick="handleSaveBusinessInfo()">Save Business Info</button>
+          <div class="mt-2">
+            <button class="btn btn-secondary btn-sm" onclick="handleSaveBusinessInfo()">Save</button>
           </div>
         </div>
 
@@ -550,7 +849,7 @@
             <textarea id="systemPromptInput" class="form-textarea" rows="6" placeholder="Tell the AI how to behave..."></textarea>
             <p class="form-hint">This tells the AI how to behave. Leave empty to use the default for your bot type.</p>
           </div>
-          <div style="margin-top: 1.25rem;">
+          <div class="mt-2">
             <button class="btn btn-secondary btn-sm" onclick="handleSaveSystemPrompt()">Save Instructions</button>
           </div>
         </div>
@@ -559,26 +858,148 @@
         <div class="card section-card">
           <div class="card-header">
             <h2 class="card-title">Knowledge Base</h2>
-            <button class="btn btn-primary btn-sm" onclick="handleOpenAddEntry()">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              Add Entry
-            </button>
           </div>
 
-          <div class="kb-tabs">
-            <button class="kb-tab active" data-filter="all" onclick="handleKBFilter('all', this)">All</button>
-            <button class="kb-tab" data-filter="product" onclick="handleKBFilter('product', this)">Products</button>
-            <button class="kb-tab" data-filter="faq" onclick="handleKBFilter('faq', this)">FAQs</button>
-            <button class="kb-tab" data-filter="info" onclick="handleKBFilter('info', this)">Custom</button>
+          <div class="kb-tabs" role="tablist">
+            <button class="kb-tab active" data-tab="products" onclick="switchKBTab('products', this)" role="tab" aria-selected="true">Products</button>
+            <button class="kb-tab" data-tab="faqs" onclick="switchKBTab('faqs', this)" role="tab" aria-selected="false">FAQs</button>
+            <button class="kb-tab" data-tab="bookings" onclick="switchKBTab('bookings', this)" role="tab" aria-selected="false">Bookings</button>
+            <button class="kb-tab" data-tab="personal" id="personalTab" onclick="switchKBTab('personal', this)" role="tab" aria-selected="false">Personal</button>
           </div>
 
-          <div id="kbEntries" class="kb-entries"></div>
-          <div id="kbEmpty" class="empty-state hidden">
-            <div class="empty-icon">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <!-- Products Panel -->
+          <div class="kb-panel active" id="panelProducts" role="tabpanel">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-secondary" style="font-size:0.8125rem" id="productCount">0 products</span>
+              <button class="btn btn-primary btn-sm" onclick="openProductModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Product
+              </button>
             </div>
-            <div class="empty-title">No knowledge base entries yet</div>
-            <div class="empty-desc">Add products, FAQs, or company info to make your bot smarter.</div>
+            <div id="productList" class="kb-entries"></div>
+            <div id="productEmpty" class="empty-state hidden">
+              <div class="empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+              </div>
+              <div class="empty-title">No products yet</div>
+              <div class="empty-desc">Add products with descriptions, pricing, and packages for your bot to reference.</div>
+            </div>
+          </div>
+
+          <!-- FAQs Panel -->
+          <div class="kb-panel" id="panelFaqs" role="tabpanel">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-secondary" style="font-size:0.8125rem" id="faqCount">0 FAQs</span>
+              <button class="btn btn-primary btn-sm" onclick="openFAQModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add FAQ
+              </button>
+            </div>
+            <div id="faqList" class="kb-entries"></div>
+            <div id="faqEmpty" class="empty-state hidden">
+              <div class="empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              </div>
+              <div class="empty-title">No FAQs yet</div>
+              <div class="empty-desc">Add frequently asked questions so your bot can answer common queries instantly.</div>
+            </div>
+          </div>
+
+          <!-- Bookings Panel -->
+          <div class="kb-panel" id="panelBookings" role="tabpanel">
+            <h3 class="section-subtitle">Booking Settings</h3>
+            <div class="booking-settings-grid">
+              <div class="form-group">
+                <label class="form-label" for="slotDuration">Slot Duration</label>
+                <select id="slotDuration" class="form-select">
+                  <option value="30">30 minutes</option>
+                  <option value="60">60 minutes</option>
+                  <option value="90">90 minutes</option>
+                  <option value="120">120 minutes</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Available Hours</label>
+                <div class="hours-row">
+                  <input type="time" id="hoursStart" class="form-input" value="09:00">
+                  <span>to</span>
+                  <input type="time" id="hoursEnd" class="form-input" value="17:00">
+                </div>
+              </div>
+            </div>
+            <div class="form-group mt-2">
+              <label class="form-label">Available Days</label>
+              <div class="days-grid">
+                <div class="day-checkbox"><input type="checkbox" id="dayMon" value="Mon" checked><label for="dayMon">Mon</label></div>
+                <div class="day-checkbox"><input type="checkbox" id="dayTue" value="Tue" checked><label for="dayTue">Tue</label></div>
+                <div class="day-checkbox"><input type="checkbox" id="dayWed" value="Wed" checked><label for="dayWed">Wed</label></div>
+                <div class="day-checkbox"><input type="checkbox" id="dayThu" value="Thu" checked><label for="dayThu">Thu</label></div>
+                <div class="day-checkbox"><input type="checkbox" id="dayFri" value="Fri" checked><label for="dayFri">Fri</label></div>
+                <div class="day-checkbox"><input type="checkbox" id="daySat" value="Sat"><label for="daySat">Sat</label></div>
+                <div class="day-checkbox"><input type="checkbox" id="daySun" value="Sun"><label for="daySun">Sun</label></div>
+              </div>
+            </div>
+            <div class="mt-2">
+              <button class="btn btn-secondary btn-sm" onclick="handleSaveBookingConfig()">Save Settings</button>
+            </div>
+
+            <hr class="divider">
+
+            <h3 class="section-subtitle">Upcoming Bookings</h3>
+            <div id="bookingsList"></div>
+            <div id="bookingsEmpty" class="empty-state hidden">
+              <div class="empty-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <div class="empty-title">No bookings yet</div>
+              <div class="empty-desc">Customers can book through the bot once booking settings are configured.</div>
+            </div>
+          </div>
+
+          <!-- Personal Panel (personal bot type only) -->
+          <div class="kb-panel" id="panelPersonal" role="tabpanel">
+            <h3 class="section-subtitle">Your Profile</h3>
+            <div class="profile-grid">
+              <div class="form-group">
+                <label class="form-label" for="profileName">Name</label>
+                <input type="text" id="profileName" class="form-input" placeholder="Your name">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="profileDob">Date of Birth</label>
+                <input type="date" id="profileDob" class="form-input">
+              </div>
+              <div class="form-group full-width">
+                <label class="form-label" for="profileHobbies">Hobbies</label>
+                <input type="text" id="profileHobbies" class="form-input" placeholder="Reading, gaming, cooking...">
+              </div>
+              <div class="form-group full-width">
+                <label class="form-label" for="profileStyle">Personality / Communication Style</label>
+                <textarea id="profileStyle" class="form-textarea" rows="3" placeholder="Describe how you communicate. E.g. casual, uses humor, prefers short responses..."></textarea>
+              </div>
+              <div class="form-group full-width">
+                <label class="form-label" for="profileNotes">Additional Notes</label>
+                <textarea id="profileNotes" class="form-textarea" rows="3" placeholder="Anything else the bot should know about you..."></textarea>
+              </div>
+            </div>
+            <div class="mt-2">
+              <button class="btn btn-secondary btn-sm" onclick="handleSaveProfile()">Save Profile</button>
+            </div>
+
+            <hr class="divider">
+
+            <div class="flex justify-between items-center">
+              <h3 class="section-subtitle" style="margin:0">Conversation Samples</h3>
+              <button class="btn btn-secondary btn-sm" onclick="openConversationModal()" id="addConvoBtn">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Sample
+              </button>
+            </div>
+            <p class="form-hint mb-2">Upload up to 5 conversation samples so the AI can learn your communication style.</p>
+            <div id="convoCards" class="convo-cards"></div>
+            <div id="convoEmpty" class="empty-state hidden" style="padding:2rem">
+              <div class="empty-title">No conversation samples</div>
+              <div class="empty-desc">Paste chat conversations so the bot can mimic your communication style.</div>
+            </div>
           </div>
         </div>
 
@@ -604,7 +1025,7 @@
             <label class="form-label" for="descriptionInput">Description</label>
             <textarea id="descriptionInput" class="form-textarea" rows="3" placeholder="Brief description of this agent..."></textarea>
           </div>
-          <div style="margin-top: 1.25rem;">
+          <div class="mt-2">
             <button class="btn btn-secondary btn-sm" onclick="handleSaveSettings()">Save Settings</button>
           </div>
         </div>
@@ -622,63 +1043,94 @@
     </div>
   </div>
 
-  <!-- KB Entry Modal -->
-  <div id="kbModal" class="modal-overlay" role="dialog" aria-labelledby="kbModalTitle" aria-modal="true">
-    <div class="modal-card">
+  <!-- Product Modal -->
+  <div id="productModal" class="modal-overlay" role="dialog" aria-labelledby="productModalTitle" aria-modal="true">
+    <div class="modal-card modal-wide">
       <div class="modal-header">
-        <h3 class="modal-title" id="kbModalTitle">Add Entry</h3>
-        <button class="modal-close" onclick="closeModal('kbModal')" aria-label="Close modal">&times;</button>
+        <h3 class="modal-title" id="productModalTitle">Add Product</h3>
+        <button class="modal-close" onclick="closeModal('productModal')" aria-label="Close modal">&times;</button>
       </div>
 
-      <div class="entry-type-selector">
-        <button class="entry-type-btn active" data-entry-type="product" onclick="handleEntryTypeSelect('product', this)">Product</button>
-        <button class="entry-type-btn" data-entry-type="faq" onclick="handleEntryTypeSelect('faq', this)">FAQ</button>
-        <button class="entry-type-btn" data-entry-type="info" onclick="handleEntryTypeSelect('info', this)">Custom Info</button>
+      <div class="form-group">
+        <label class="form-label" for="prodName">Product Name *</label>
+        <input type="text" id="prodName" class="form-input" placeholder="e.g. Premium Plan">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="prodDesc">Description</label>
+        <textarea id="prodDesc" class="form-textarea" rows="3" placeholder="Describe this product..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="prodImages">Image URLs (one per line)</label>
+        <textarea id="prodImages" class="form-textarea" rows="3" placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="prodVideo">Video URL</label>
+        <input type="url" id="prodVideo" class="form-input" placeholder="https://youtube.com/watch?v=...">
       </div>
 
-      <!-- Product fields -->
-      <div id="fieldsProduct">
-        <div class="form-group">
-          <label class="form-label" for="entryTitle">Product Name</label>
-          <input type="text" id="entryTitle" class="form-input" placeholder="e.g. Premium Plan">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="entryContent">Description</label>
-          <textarea id="entryContent" class="form-textarea" rows="4" placeholder="Describe this product..."></textarea>
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="entryPrice">Price</label>
-          <input type="text" id="entryPrice" class="form-input" placeholder="e.g. $29/mo">
-        </div>
-      </div>
-
-      <!-- FAQ fields -->
-      <div id="fieldsFaq" class="hidden">
-        <div class="form-group">
-          <label class="form-label" for="faqQuestion">Question</label>
-          <input type="text" id="faqQuestion" class="form-input" placeholder="e.g. What are your business hours?">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="faqAnswer">Answer</label>
-          <textarea id="faqAnswer" class="form-textarea" rows="4" placeholder="The answer to this question..."></textarea>
-        </div>
-      </div>
-
-      <!-- Custom info fields -->
-      <div id="fieldsInfo" class="hidden">
-        <div class="form-group">
-          <label class="form-label" for="infoTitle">Title</label>
-          <input type="text" id="infoTitle" class="form-input" placeholder="e.g. Return Policy">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="infoContent">Content</label>
-          <textarea id="infoContent" class="form-textarea" rows="4" placeholder="Information the bot should know..."></textarea>
-        </div>
+      <div class="form-group">
+        <label class="form-label">Packages / Pricing</label>
+        <div id="packageRows"></div>
+        <button class="btn btn-outline btn-sm mt-1" onclick="addPackageRow()" type="button">+ Add Package</button>
       </div>
 
       <div class="modal-actions">
-        <button class="btn btn-outline btn-sm" onclick="closeModal('kbModal')">Cancel</button>
-        <button class="btn btn-primary btn-sm" id="kbSaveBtn" onclick="handleSaveKBEntry()">Save Entry</button>
+        <button class="btn btn-outline btn-sm" onclick="closeModal('productModal')">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="prodSaveBtn" onclick="handleSaveProduct()">Save Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ Modal -->
+  <div id="faqModal" class="modal-overlay" role="dialog" aria-labelledby="faqModalTitle" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="faqModalTitle">Add FAQ</h3>
+        <button class="modal-close" onclick="closeModal('faqModal')" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="faqQuestion">Question *</label>
+        <input type="text" id="faqQuestion" class="form-input" placeholder="e.g. What are your business hours?">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="faqAnswer">Answer</label>
+        <textarea id="faqAnswer" class="form-textarea" rows="4" placeholder="The answer to this question..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="faqKeywords">Keywords (comma-separated)</label>
+        <input type="text" id="faqKeywords" class="form-input" placeholder="hours, schedule, open, close">
+        <p class="form-hint">Helps the bot match this FAQ to user queries</p>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-outline btn-sm" onclick="closeModal('faqModal')">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="faqSaveBtn" onclick="handleSaveFAQ()">Save FAQ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Conversation Sample Modal -->
+  <div id="convoModal" class="modal-overlay" role="dialog" aria-labelledby="convoModalTitle" aria-modal="true">
+    <div class="modal-card modal-wide">
+      <div class="modal-header">
+        <h3 class="modal-title" id="convoModalTitle">Add Conversation Sample</h3>
+        <button class="modal-close" onclick="closeModal('convoModal')" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="convoPersonName">Person's Name *</label>
+        <input type="text" id="convoPersonName" class="form-input" placeholder="e.g. John">
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="convoMessages">Chat Messages</label>
+        <textarea id="convoMessages" class="form-textarea" rows="10" placeholder="Paste your chat messages here (up to 100 messages). The AI will learn your communication style from these."></textarea>
+        <p class="form-hint">Paste a real chat conversation so the AI can learn how you communicate.</p>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-outline btn-sm" onclick="closeModal('convoModal')">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="handleSaveConversation()">Save Sample</button>
       </div>
     </div>
   </div>
@@ -691,10 +1143,10 @@
     requireAuth();
 
     let agent = {};
-    let knowledgeBase = [];
-    let activeKBFilter = 'all';
-    let editingKBIndex = -1;
-    let modalEntryType = 'product';
+    let kb = [];
+    let editingProductIndex = -1;
+    let editingFAQIndex = -1;
+    let activeTab = 'products';
 
     const DEFAULT_PROMPTS = {
       personal: 'You are a helpful personal assistant. Be friendly, concise, and adapt to the user\'s communication style. Help with tasks, answer questions, and provide thoughtful suggestions.',
@@ -702,10 +1154,47 @@
       sales: 'You are a sales assistant for {{business_name}}. Help customers find the right products, answer questions about features and pricing, and guide them toward making a purchase. Be enthusiastic but not pushy.'
     };
 
+    // ─── Helpers ────────────────────────────────────────────
+    function escapeHTML(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function getKBByType(type) {
+      return kb.filter(e => e.type === type);
+    }
+
+    function getKBIndex(type, localIndex) {
+      let count = 0;
+      for (let i = 0; i < kb.length; i++) {
+        if (kb[i].type === type) {
+          if (count === localIndex) return i;
+          count++;
+        }
+      }
+      return -1;
+    }
+
+    function findKBEntry(type) {
+      return kb.find(e => e.type === type);
+    }
+
+    async function saveKB() {
+      await api(`/api/agents/${agentId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ knowledge_base: kb })
+      });
+      agent.knowledge_base = kb;
+      showToast('Saved', 'success');
+    }
+
+    // ─── Load Agent ────────────────────────────────────────
     async function loadAgent() {
       try {
         agent = await api(`/api/agents/${agentId}`);
-        knowledgeBase = agent.knowledge_base || [];
+        kb = agent.knowledge_base || [];
 
         document.getElementById('pageLoading').classList.add('hidden');
         document.getElementById('pageContent').classList.remove('hidden');
@@ -713,20 +1202,29 @@
         document.title = `${agent.name} - HostClaw.ai`;
         document.getElementById('agentNameInput').value = agent.name || '';
         document.getElementById('systemPromptInput').value = agent.system_prompt || '';
-        document.getElementById('businessNameInput').value = agent.business_name || '';
         document.getElementById('modelSelect').value = agent.model || 'gpt-4o';
         document.getElementById('descriptionInput').value = agent.description || '';
 
         updateStatusDisplay(agent.status);
         updateBotTypeSelection(agent.bot_type || 'personal');
         updateBusinessInfoVisibility(agent.bot_type);
-        renderKBEntries();
+        updatePersonalTabVisibility(agent.bot_type);
+
+        populateBusinessInfo();
+        populateBookingConfig();
+        populateProfile();
+
+        renderProducts();
+        renderFAQs();
+        renderConversations();
+        loadBookings();
       } catch (err) {
         showToast('Failed to load agent: ' + err.message, 'error');
         setTimeout(() => { window.location.href = '/agents.html'; }, 2000);
       }
     }
 
+    // ─── Status Display ────────────────────────────────────
     function updateStatusDisplay(status) {
       const badge = document.getElementById('statusBadge');
       const text = document.getElementById('statusText');
@@ -745,6 +1243,7 @@
       }
     }
 
+    // ─── Bot Type ──────────────────────────────────────────
     function updateBotTypeSelection(type) {
       document.querySelectorAll('.bot-type-card').forEach(card => {
         card.classList.toggle('selected', card.dataset.type === type);
@@ -760,10 +1259,23 @@
       }
     }
 
+    function updatePersonalTabVisibility(type) {
+      const tab = document.getElementById('personalTab');
+      if (type === 'personal') {
+        tab.classList.remove('hidden');
+      } else {
+        tab.classList.add('hidden');
+        if (activeTab === 'personal') {
+          switchKBTab('products', document.querySelector('[data-tab="products"]'));
+        }
+      }
+    }
+
     async function handleBotTypeSelect(type) {
       const previousType = agent.bot_type;
       updateBotTypeSelection(type);
       updateBusinessInfoVisibility(type);
+      updatePersonalTabVisibility(type);
 
       try {
         await api(`/api/agents/${agentId}`, {
@@ -775,30 +1287,74 @@
 
         const promptInput = document.getElementById('systemPromptInput');
         if (!promptInput.value.trim()) {
-          const businessName = document.getElementById('businessNameInput').value || 'your business';
+          const bizInfo = findKBEntry('business_info');
+          const businessName = (bizInfo && bizInfo.title) || 'your business';
           promptInput.value = DEFAULT_PROMPTS[type].replace('{{business_name}}', businessName);
         }
       } catch (err) {
         updateBotTypeSelection(previousType);
         updateBusinessInfoVisibility(previousType);
+        updatePersonalTabVisibility(previousType);
         showToast('Failed to update bot type: ' + err.message, 'error');
       }
     }
 
+    // ─── KB Tabs ───────────────────────────────────────────
+    function switchKBTab(tab, btn) {
+      activeTab = tab;
+      document.querySelectorAll('.kb-tab').forEach(t => {
+        t.classList.remove('active');
+        t.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+
+      document.querySelectorAll('.kb-panel').forEach(p => p.classList.remove('active'));
+
+      const panelMap = {
+        products: 'panelProducts',
+        faqs: 'panelFaqs',
+        bookings: 'panelBookings',
+        personal: 'panelPersonal'
+      };
+      document.getElementById(panelMap[tab]).classList.add('active');
+    }
+
+    // ─── Business Info ─────────────────────────────────────
+    function populateBusinessInfo() {
+      const info = findKBEntry('business_info');
+      if (!info) return;
+
+      document.getElementById('bizName').value = info.title || '';
+      document.getElementById('bizAddress').value = info.address || '';
+      document.getElementById('bizHours').value = info.hours || '';
+      document.getElementById('bizEmail').value = info.email || '';
+      document.getElementById('bizPhone').value = info.phone || '';
+      document.getElementById('bizWebsite').value = info.website || '';
+    }
+
     async function handleSaveBusinessInfo() {
-      const businessName = document.getElementById('businessNameInput').value.trim();
+      const entry = {
+        type: 'business_info',
+        title: document.getElementById('bizName').value.trim(),
+        address: document.getElementById('bizAddress').value.trim(),
+        hours: document.getElementById('bizHours').value.trim(),
+        email: document.getElementById('bizEmail').value.trim(),
+        phone: document.getElementById('bizPhone').value.trim(),
+        website: document.getElementById('bizWebsite').value.trim()
+      };
+
+      const idx = kb.findIndex(e => e.type === 'business_info');
+      if (idx >= 0) { kb[idx] = entry; } else { kb.push(entry); }
+
       try {
-        await api(`/api/agents/${agentId}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ business_name: businessName })
-        });
-        agent.business_name = businessName;
-        showToast('Business info saved', 'success');
+        await saveKB();
       } catch (err) {
         showToast('Failed to save: ' + err.message, 'error');
       }
     }
 
+    // ─── System Prompt ─────────────────────────────────────
     async function handleSaveSystemPrompt() {
       const prompt = document.getElementById('systemPromptInput').value;
       try {
@@ -813,6 +1369,480 @@
       }
     }
 
+    // ─── Products ──────────────────────────────────────────
+    function renderProducts() {
+      const items = getKBByType('product');
+      const container = document.getElementById('productList');
+      const empty = document.getElementById('productEmpty');
+      document.getElementById('productCount').textContent = items.length + ' product' + (items.length !== 1 ? 's' : '');
+
+      if (items.length === 0) {
+        container.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      container.innerHTML = items.map((entry, localIdx) => {
+        const packages = (entry.packages || []).map(p =>
+          `<span>${escapeHTML(p.name)}: ${escapeHTML(p.price)}</span>`
+        ).join(' | ');
+
+        const imageUrls = (entry.image_urls || []).map(u =>
+          `<span class="kb-url-pill" title="${escapeHTML(u)}">${escapeHTML(u)}</span>`
+        ).join('');
+
+        const videoUrl = entry.video_url
+          ? `<span class="kb-url-pill" title="${escapeHTML(entry.video_url)}">Video: ${escapeHTML(entry.video_url)}</span>`
+          : '';
+
+        return `
+          <div class="kb-entry">
+            <div class="kb-entry-body">
+              <div class="kb-entry-header">
+                <span class="kb-entry-title">${escapeHTML(entry.title)}</span>
+              </div>
+              <div class="kb-entry-content">${escapeHTML(entry.content || '')}</div>
+              ${packages ? `<div class="kb-packages mt-1">${packages}</div>` : ''}
+              ${(imageUrls || videoUrl) ? `<div class="kb-url-list">${imageUrls}${videoUrl}</div>` : ''}
+            </div>
+            <div class="kb-entry-actions">
+              <button onclick="handleEditProduct(${localIdx})" title="Edit" aria-label="Edit product">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="delete-btn" onclick="handleDeleteProduct(${localIdx})" title="Delete" aria-label="Delete product">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openProductModal(isEdit) {
+      editingProductIndex = isEdit !== undefined ? isEdit : -1;
+      document.getElementById('productModalTitle').textContent = editingProductIndex >= 0 ? 'Edit Product' : 'Add Product';
+      document.getElementById('prodSaveBtn').textContent = editingProductIndex >= 0 ? 'Update Product' : 'Save Product';
+
+      document.getElementById('prodName').value = '';
+      document.getElementById('prodDesc').value = '';
+      document.getElementById('prodImages').value = '';
+      document.getElementById('prodVideo').value = '';
+      document.getElementById('packageRows').innerHTML = '';
+
+      if (editingProductIndex >= 0) {
+        const items = getKBByType('product');
+        const entry = items[editingProductIndex];
+        if (entry) {
+          document.getElementById('prodName').value = entry.title || '';
+          document.getElementById('prodDesc').value = entry.content || '';
+          document.getElementById('prodImages').value = (entry.image_urls || []).join('\n');
+          document.getElementById('prodVideo').value = entry.video_url || '';
+          (entry.packages || []).forEach(p => addPackageRow(p.name, p.price, p.details));
+        }
+      }
+
+      if (document.getElementById('packageRows').children.length === 0) {
+        addPackageRow();
+      }
+
+      openModal('productModal');
+    }
+
+    function addPackageRow(name, price, details) {
+      const container = document.getElementById('packageRows');
+      const row = document.createElement('div');
+      row.className = 'package-row';
+      row.innerHTML = `
+        <input type="text" class="form-input pkg-name" placeholder="Package name" value="${escapeHTML(name || '')}">
+        <input type="text" class="form-input price-input pkg-price" placeholder="Price" value="${escapeHTML(price || '')}">
+        <input type="text" class="form-input pkg-details" placeholder="Details" value="${escapeHTML(details || '')}">
+        <button class="package-remove" onclick="this.parentElement.remove()" type="button" aria-label="Remove package">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      `;
+      container.appendChild(row);
+    }
+
+    function handleEditProduct(localIdx) {
+      openProductModal(localIdx);
+    }
+
+    async function handleSaveProduct() {
+      const name = document.getElementById('prodName').value.trim();
+      if (!name) {
+        showToast('Product name is required', 'warning');
+        return;
+      }
+
+      const imageLines = document.getElementById('prodImages').value.trim();
+      const imageUrls = imageLines ? imageLines.split('\n').map(u => u.trim()).filter(Boolean) : [];
+
+      const packages = [];
+      document.querySelectorAll('#packageRows .package-row').forEach(row => {
+        const pkgName = row.querySelector('.pkg-name').value.trim();
+        const pkgPrice = row.querySelector('.pkg-price').value.trim();
+        const pkgDetails = row.querySelector('.pkg-details').value.trim();
+        if (pkgName || pkgPrice) {
+          packages.push({ name: pkgName, price: pkgPrice, details: pkgDetails });
+        }
+      });
+
+      const entry = {
+        type: 'product',
+        title: name,
+        content: document.getElementById('prodDesc').value.trim(),
+        image_urls: imageUrls,
+        video_url: document.getElementById('prodVideo').value.trim(),
+        packages: packages
+      };
+
+      if (editingProductIndex >= 0) {
+        const realIdx = getKBIndex('product', editingProductIndex);
+        if (realIdx >= 0) kb[realIdx] = entry;
+      } else {
+        kb.push(entry);
+      }
+
+      try {
+        await saveKB();
+        renderProducts();
+        closeModal('productModal');
+      } catch (err) {
+        showToast('Failed to save: ' + err.message, 'error');
+      }
+    }
+
+    async function handleDeleteProduct(localIdx) {
+      if (!confirm('Delete this product?')) return;
+      const realIdx = getKBIndex('product', localIdx);
+      if (realIdx < 0) return;
+
+      kb.splice(realIdx, 1);
+      try {
+        await saveKB();
+        renderProducts();
+      } catch (err) {
+        showToast('Failed to delete: ' + err.message, 'error');
+      }
+    }
+
+    // ─── FAQs ──────────────────────────────────────────────
+    function renderFAQs() {
+      const items = getKBByType('faq');
+      const container = document.getElementById('faqList');
+      const empty = document.getElementById('faqEmpty');
+      document.getElementById('faqCount').textContent = items.length + ' FAQ' + (items.length !== 1 ? 's' : '');
+
+      if (items.length === 0) {
+        container.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      container.innerHTML = items.map((entry, localIdx) => {
+        const keywords = (entry.keywords || []).map(k =>
+          `<span class="keyword-badge">${escapeHTML(k)}</span>`
+        ).join('');
+
+        return `
+          <div class="kb-entry">
+            <div class="kb-entry-body">
+              <div class="kb-entry-header">
+                <span class="kb-entry-title">${escapeHTML(entry.title)}</span>
+              </div>
+              <div class="kb-entry-content">${escapeHTML(entry.content || '')}</div>
+              ${keywords ? `<div class="keyword-badges">${keywords}</div>` : ''}
+            </div>
+            <div class="kb-entry-actions">
+              <button onclick="handleEditFAQ(${localIdx})" title="Edit" aria-label="Edit FAQ">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="delete-btn" onclick="handleDeleteFAQ(${localIdx})" title="Delete" aria-label="Delete FAQ">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openFAQModal(isEdit) {
+      editingFAQIndex = isEdit !== undefined ? isEdit : -1;
+      document.getElementById('faqModalTitle').textContent = editingFAQIndex >= 0 ? 'Edit FAQ' : 'Add FAQ';
+      document.getElementById('faqSaveBtn').textContent = editingFAQIndex >= 0 ? 'Update FAQ' : 'Save FAQ';
+
+      document.getElementById('faqQuestion').value = '';
+      document.getElementById('faqAnswer').value = '';
+      document.getElementById('faqKeywords').value = '';
+
+      if (editingFAQIndex >= 0) {
+        const items = getKBByType('faq');
+        const entry = items[editingFAQIndex];
+        if (entry) {
+          document.getElementById('faqQuestion').value = entry.title || '';
+          document.getElementById('faqAnswer').value = entry.content || '';
+          document.getElementById('faqKeywords').value = (entry.keywords || []).join(', ');
+        }
+      }
+
+      openModal('faqModal');
+    }
+
+    function handleEditFAQ(localIdx) {
+      openFAQModal(localIdx);
+    }
+
+    async function handleSaveFAQ() {
+      const question = document.getElementById('faqQuestion').value.trim();
+      if (!question) {
+        showToast('Question is required', 'warning');
+        return;
+      }
+
+      const keywordsStr = document.getElementById('faqKeywords').value.trim();
+      const keywords = keywordsStr ? keywordsStr.split(',').map(k => k.trim()).filter(Boolean) : [];
+
+      const entry = {
+        type: 'faq',
+        title: question,
+        content: document.getElementById('faqAnswer').value.trim(),
+        keywords: keywords
+      };
+
+      if (editingFAQIndex >= 0) {
+        const realIdx = getKBIndex('faq', editingFAQIndex);
+        if (realIdx >= 0) kb[realIdx] = entry;
+      } else {
+        kb.push(entry);
+      }
+
+      try {
+        await saveKB();
+        renderFAQs();
+        closeModal('faqModal');
+      } catch (err) {
+        showToast('Failed to save: ' + err.message, 'error');
+      }
+    }
+
+    async function handleDeleteFAQ(localIdx) {
+      if (!confirm('Delete this FAQ?')) return;
+      const realIdx = getKBIndex('faq', localIdx);
+      if (realIdx < 0) return;
+
+      kb.splice(realIdx, 1);
+      try {
+        await saveKB();
+        renderFAQs();
+      } catch (err) {
+        showToast('Failed to delete: ' + err.message, 'error');
+      }
+    }
+
+    // ─── Booking Config ────────────────────────────────────
+    function populateBookingConfig() {
+      const config = findKBEntry('booking_config');
+      if (!config) return;
+
+      document.getElementById('slotDuration').value = config.slot_duration || '60';
+      document.getElementById('hoursStart').value = config.hours_start || '09:00';
+      document.getElementById('hoursEnd').value = config.hours_end || '17:00';
+
+      const days = config.available_days || [];
+      document.querySelectorAll('.day-checkbox input').forEach(cb => {
+        cb.checked = days.includes(cb.value);
+      });
+    }
+
+    async function handleSaveBookingConfig() {
+      const availableDays = [];
+      document.querySelectorAll('.day-checkbox input:checked').forEach(cb => {
+        availableDays.push(cb.value);
+      });
+
+      const entry = {
+        type: 'booking_config',
+        title: 'Booking Configuration',
+        slot_duration: document.getElementById('slotDuration').value,
+        available_days: availableDays,
+        hours_start: document.getElementById('hoursStart').value,
+        hours_end: document.getElementById('hoursEnd').value
+      };
+
+      const idx = kb.findIndex(e => e.type === 'booking_config');
+      if (idx >= 0) { kb[idx] = entry; } else { kb.push(entry); }
+
+      try {
+        await saveKB();
+      } catch (err) {
+        showToast('Failed to save: ' + err.message, 'error');
+      }
+    }
+
+    async function loadBookings() {
+      const container = document.getElementById('bookingsList');
+      const empty = document.getElementById('bookingsEmpty');
+
+      try {
+        const bookings = await api(`/api/agents/${agentId}/bookings`);
+
+        if (!bookings || bookings.length === 0) {
+          container.innerHTML = '';
+          empty.classList.remove('hidden');
+          return;
+        }
+
+        empty.classList.add('hidden');
+        container.innerHTML = bookings.map(b => `
+          <div class="booking-item">
+            <div class="booking-info">
+              <div class="booking-date">${escapeHTML(b.date || '')} at ${escapeHTML(b.time || '')}</div>
+              <div class="booking-customer">${escapeHTML(b.customer_name || 'Unknown')}${b.phone ? ' - ' + escapeHTML(b.phone) : ''}</div>
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="handleCancelBooking('${b.id}')">Cancel</button>
+          </div>
+        `).join('');
+      } catch {
+        container.innerHTML = '';
+        empty.classList.remove('hidden');
+      }
+    }
+
+    async function handleCancelBooking(bookingId) {
+      if (!confirm('Cancel this booking?')) return;
+      try {
+        await api(`/api/agents/${agentId}/bookings/${bookingId}`, { method: 'DELETE' });
+        showToast('Booking cancelled', 'success');
+        loadBookings();
+      } catch (err) {
+        showToast('Failed to cancel: ' + err.message, 'error');
+      }
+    }
+
+    // ─── Personal Profile ──────────────────────────────────
+    function populateProfile() {
+      const profile = findKBEntry('user_profile');
+      if (!profile) return;
+
+      document.getElementById('profileName').value = profile.title || '';
+      document.getElementById('profileDob').value = profile.date_of_birth || '';
+      document.getElementById('profileHobbies').value = profile.hobbies || '';
+      document.getElementById('profileStyle').value = profile.communication_style || '';
+      document.getElementById('profileNotes').value = profile.notes || '';
+    }
+
+    async function handleSaveProfile() {
+      const entry = {
+        type: 'user_profile',
+        title: document.getElementById('profileName').value.trim(),
+        date_of_birth: document.getElementById('profileDob').value,
+        hobbies: document.getElementById('profileHobbies').value.trim(),
+        communication_style: document.getElementById('profileStyle').value.trim(),
+        notes: document.getElementById('profileNotes').value.trim()
+      };
+
+      const idx = kb.findIndex(e => e.type === 'user_profile');
+      if (idx >= 0) { kb[idx] = entry; } else { kb.push(entry); }
+
+      try {
+        await saveKB();
+      } catch (err) {
+        showToast('Failed to save: ' + err.message, 'error');
+      }
+    }
+
+    // ─── Conversation Samples ──────────────────────────────
+    function renderConversations() {
+      const items = getKBByType('conversation_sample');
+      const container = document.getElementById('convoCards');
+      const empty = document.getElementById('convoEmpty');
+      const addBtn = document.getElementById('addConvoBtn');
+
+      if (items.length >= 5) {
+        addBtn.disabled = true;
+        addBtn.title = 'Maximum 5 samples reached';
+      } else {
+        addBtn.disabled = false;
+        addBtn.title = '';
+      }
+
+      if (items.length === 0) {
+        container.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      container.innerHTML = items.map((entry, localIdx) => {
+        const preview = (entry.content || '').substring(0, 80);
+        return `
+          <div class="convo-card">
+            <button class="convo-card-delete" onclick="handleDeleteConversation(${localIdx})" aria-label="Delete conversation sample">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div class="convo-card-name">Chat with ${escapeHTML(entry.title)}</div>
+            <div class="convo-card-preview">${escapeHTML(preview)}${entry.content && entry.content.length > 80 ? '...' : ''}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openConversationModal() {
+      const items = getKBByType('conversation_sample');
+      if (items.length >= 5) {
+        showToast('Maximum 5 conversation samples allowed', 'warning');
+        return;
+      }
+
+      document.getElementById('convoPersonName').value = '';
+      document.getElementById('convoMessages').value = '';
+      openModal('convoModal');
+    }
+
+    async function handleSaveConversation() {
+      const personName = document.getElementById('convoPersonName').value.trim();
+      if (!personName) {
+        showToast('Person\'s name is required', 'warning');
+        return;
+      }
+
+      const messages = document.getElementById('convoMessages').value.trim();
+
+      const entry = {
+        type: 'conversation_sample',
+        title: personName,
+        content: messages
+      };
+
+      kb.push(entry);
+
+      try {
+        await saveKB();
+        renderConversations();
+        closeModal('convoModal');
+      } catch (err) {
+        kb.pop();
+        showToast('Failed to save: ' + err.message, 'error');
+      }
+    }
+
+    async function handleDeleteConversation(localIdx) {
+      if (!confirm('Delete this conversation sample?')) return;
+      const realIdx = getKBIndex('conversation_sample', localIdx);
+      if (realIdx < 0) return;
+
+      kb.splice(realIdx, 1);
+      try {
+        await saveKB();
+        renderConversations();
+      } catch (err) {
+        showToast('Failed to delete: ' + err.message, 'error');
+      }
+    }
+
+    // ─── Agent Settings ────────────────────────────────────
     async function handleSaveSettings() {
       const model = document.getElementById('modelSelect').value;
       const description = document.getElementById('descriptionInput').value;
@@ -838,193 +1868,7 @@
       }
     }
 
-    // Knowledge Base rendering
-    function renderKBEntries() {
-      const container = document.getElementById('kbEntries');
-      const emptyState = document.getElementById('kbEmpty');
-
-      const filtered = activeKBFilter === 'all'
-        ? knowledgeBase
-        : knowledgeBase.filter(e => e.type === activeKBFilter);
-
-      if (filtered.length === 0) {
-        container.innerHTML = '';
-        emptyState.classList.remove('hidden');
-        return;
-      }
-
-      emptyState.classList.add('hidden');
-      container.innerHTML = filtered.map((entry, i) => {
-        const realIndex = knowledgeBase.indexOf(entry);
-        const typeLabel = entry.type === 'faq' ? 'FAQ' : entry.type === 'product' ? 'Product' : 'Info';
-        const title = entry.title || entry.question || 'Untitled';
-        const content = entry.content || entry.answer || '';
-        const priceHTML = entry.price ? `<div class="kb-entry-price">${escapeHTML(entry.price)}</div>` : '';
-
-        return `
-          <div class="kb-entry">
-            <div class="kb-entry-body">
-              <div class="kb-entry-header">
-                <span class="kb-type-badge ${entry.type}">${typeLabel}</span>
-                <span class="kb-entry-title">${escapeHTML(title)}</span>
-              </div>
-              <div class="kb-entry-content">${escapeHTML(content)}</div>
-              ${priceHTML}
-            </div>
-            <div class="kb-entry-actions">
-              <button onclick="handleEditKBEntry(${realIndex})" title="Edit" aria-label="Edit entry">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              </button>
-              <button class="delete-btn" onclick="handleDeleteKBEntry(${realIndex})" title="Delete" aria-label="Delete entry">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    function handleKBFilter(filter, btn) {
-      activeKBFilter = filter;
-      document.querySelectorAll('.kb-tab').forEach(t => t.classList.remove('active'));
-      btn.classList.add('active');
-      renderKBEntries();
-    }
-
-    // Modal logic
-    function handleOpenAddEntry() {
-      editingKBIndex = -1;
-      document.getElementById('kbModalTitle').textContent = 'Add Entry';
-      document.getElementById('kbSaveBtn').textContent = 'Save Entry';
-      resetModalFields();
-      handleEntryTypeSelect('product', document.querySelector('[data-entry-type="product"]'));
-      openModal('kbModal');
-    }
-
-    function handleEditKBEntry(index) {
-      const entry = knowledgeBase[index];
-      if (!entry) return;
-
-      editingKBIndex = index;
-      document.getElementById('kbModalTitle').textContent = 'Edit Entry';
-      document.getElementById('kbSaveBtn').textContent = 'Update Entry';
-      resetModalFields();
-
-      const type = entry.type || 'info';
-      const typeBtn = document.querySelector(`[data-entry-type="${type}"]`);
-      handleEntryTypeSelect(type, typeBtn);
-
-      if (type === 'product') {
-        document.getElementById('entryTitle').value = entry.title || '';
-        document.getElementById('entryContent').value = entry.content || '';
-        document.getElementById('entryPrice').value = entry.price || '';
-      } else if (type === 'faq') {
-        document.getElementById('faqQuestion').value = entry.title || entry.question || '';
-        document.getElementById('faqAnswer').value = entry.content || entry.answer || '';
-      } else {
-        document.getElementById('infoTitle').value = entry.title || '';
-        document.getElementById('infoContent').value = entry.content || '';
-      }
-
-      openModal('kbModal');
-    }
-
-    function handleEntryTypeSelect(type, btn) {
-      modalEntryType = type;
-      document.querySelectorAll('.entry-type-btn').forEach(b => b.classList.remove('active'));
-      if (btn) btn.classList.add('active');
-
-      document.getElementById('fieldsProduct').classList.toggle('hidden', type !== 'product');
-      document.getElementById('fieldsFaq').classList.toggle('hidden', type !== 'faq');
-      document.getElementById('fieldsInfo').classList.toggle('hidden', type !== 'info');
-    }
-
-    function resetModalFields() {
-      document.getElementById('entryTitle').value = '';
-      document.getElementById('entryContent').value = '';
-      document.getElementById('entryPrice').value = '';
-      document.getElementById('faqQuestion').value = '';
-      document.getElementById('faqAnswer').value = '';
-      document.getElementById('infoTitle').value = '';
-      document.getElementById('infoContent').value = '';
-    }
-
-    function getModalEntryData() {
-      if (modalEntryType === 'product') {
-        return {
-          type: 'product',
-          title: document.getElementById('entryTitle').value.trim(),
-          content: document.getElementById('entryContent').value.trim(),
-          price: document.getElementById('entryPrice').value.trim()
-        };
-      } else if (modalEntryType === 'faq') {
-        return {
-          type: 'faq',
-          title: document.getElementById('faqQuestion').value.trim(),
-          content: document.getElementById('faqAnswer').value.trim()
-        };
-      } else {
-        return {
-          type: 'info',
-          title: document.getElementById('infoTitle').value.trim(),
-          content: document.getElementById('infoContent').value.trim()
-        };
-      }
-    }
-
-    async function handleSaveKBEntry() {
-      const entry = getModalEntryData();
-
-      if (!entry.title) {
-        showToast('Title / question is required', 'warning');
-        return;
-      }
-
-      if (editingKBIndex >= 0) {
-        knowledgeBase[editingKBIndex] = entry;
-      } else {
-        knowledgeBase.push(entry);
-      }
-
-      try {
-        await api(`/api/agents/${agentId}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ knowledge_base: knowledgeBase })
-        });
-        agent.knowledge_base = knowledgeBase;
-        renderKBEntries();
-        closeModal('kbModal');
-        showToast(editingKBIndex >= 0 ? 'Entry updated' : 'Entry added', 'success');
-      } catch (err) {
-        if (editingKBIndex >= 0) {
-          knowledgeBase[editingKBIndex] = agent.knowledge_base[editingKBIndex];
-        } else {
-          knowledgeBase.pop();
-        }
-        showToast('Failed to save: ' + err.message, 'error');
-      }
-    }
-
-    async function handleDeleteKBEntry(index) {
-      if (!confirm('Delete this knowledge base entry?')) return;
-
-      const removed = knowledgeBase.splice(index, 1)[0];
-
-      try {
-        await api(`/api/agents/${agentId}`, {
-          method: 'PATCH',
-          body: JSON.stringify({ knowledge_base: knowledgeBase })
-        });
-        agent.knowledge_base = knowledgeBase;
-        renderKBEntries();
-        showToast('Entry deleted', 'success');
-      } catch (err) {
-        knowledgeBase.splice(index, 0, removed);
-        showToast('Failed to delete: ' + err.message, 'error');
-      }
-    }
-
-    // Deploy / Stop
+    // ─── Deploy / Stop ─────────────────────────────────────
     async function handleDeploy() {
       const btn = document.getElementById('deployBtn');
       btn.disabled = true;
@@ -1059,7 +1903,7 @@
       }
     }
 
-    // Delete
+    // ─── Delete Agent ──────────────────────────────────────
     async function handleDeleteAgent() {
       if (!confirm('Permanently delete this agent? This cannot be undone.')) return;
 
@@ -1072,14 +1916,7 @@
       }
     }
 
-    // Utility
-    function escapeHTML(str) {
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
-    }
-
-    // Keyboard support for bot type cards
+    // ─── Event Listeners ───────────────────────────────────
     document.querySelectorAll('.bot-type-card').forEach(card => {
       card.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -1089,17 +1926,20 @@
       });
     });
 
-    // Close modal on overlay click
-    document.getElementById('kbModal').addEventListener('click', (e) => {
-      if (e.target === e.currentTarget) closeModal('kbModal');
+    ['productModal', 'faqModal', 'convoModal'].forEach(modalId => {
+      document.getElementById(modalId).addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) closeModal(modalId);
+      });
     });
 
-    // Close modal on Escape
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') closeModal('kbModal');
+      if (e.key === 'Escape') {
+        closeModal('productModal');
+        closeModal('faqModal');
+        closeModal('convoModal');
+      }
     });
 
-    // Save name on blur
     document.getElementById('agentNameInput').addEventListener('blur', async function () {
       const newName = this.value.trim();
       if (!newName || newName === agent.name) return;

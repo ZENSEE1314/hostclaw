@@ -361,22 +361,112 @@ function buildSystemPrompt({ skills = [], agent = null } = {}) {
     }
   }
 
-  // Inject knowledge base content
+  // Inject knowledge base content by type
   if (kb.length > 0) {
-    prompt += '--- KNOWLEDGE BASE ---\n';
-    for (const item of kb) {
-      if (item.type === 'product') {
-        prompt += `PRODUCT: ${item.title}\n`;
-        if (item.price) prompt += `Price: ${item.price}\n`;
-        prompt += `${item.content}\n\n`;
-      } else if (item.type === 'faq') {
-        prompt += `Q: ${item.title}\nA: ${item.content}\n\n`;
-      } else {
-        prompt += `${item.title}: ${item.content}\n\n`;
+    // Business info
+    const bizInfo = kb.filter(i => i.type === 'business_info');
+    if (bizInfo.length > 0) {
+      prompt += '--- BUSINESS INFORMATION ---\n';
+      for (const b of bizInfo) {
+        if (b.address) prompt += `Address: ${b.address}\n`;
+        if (b.hours) prompt += `Opening Hours: ${b.hours}\n`;
+        if (b.email) prompt += `Email: ${b.email}\n`;
+        if (b.phone) prompt += `Phone: ${b.phone}\n`;
+        if (b.website) prompt += `Website: ${b.website}\n`;
+      }
+      prompt += '\n';
+    }
+
+    // Products
+    const products = kb.filter(i => i.type === 'product');
+    if (products.length > 0) {
+      prompt += '--- PRODUCTS & SERVICES ---\n';
+      for (let i = 0; i < products.length; i++) {
+        const p = products[i];
+        prompt += `${i + 1}. ${p.title}\n`;
+        if (p.content) prompt += `   ${p.content}\n`;
+        if (p.packages && p.packages.length > 0) {
+          prompt += '   Pricing:\n';
+          for (const pkg of p.packages) {
+            prompt += `   - ${pkg.name}: ${pkg.price}${pkg.details ? ' (' + pkg.details + ')' : ''}\n`;
+          }
+        } else if (p.price) {
+          prompt += `   Price: ${p.price}\n`;
+        }
+        if (p.images && p.images.length > 0) prompt += `   (${p.images.length} images available)\n`;
+        if (p.video) prompt += `   (Video available)\n`;
+        prompt += '\n';
       }
     }
-    prompt += '--- END KNOWLEDGE BASE ---\n\n';
-    prompt += 'Use the knowledge base above to answer questions accurately. ';
+
+    // FAQs
+    const faqs = kb.filter(i => i.type === 'faq');
+    if (faqs.length > 0) {
+      prompt += '--- FREQUENTLY ASKED QUESTIONS ---\n';
+      for (const f of faqs) {
+        prompt += `Q: ${f.title}\nA: ${f.content}\n`;
+        if (f.keywords && f.keywords.length > 0) prompt += `(Keywords: ${f.keywords.join(', ')})\n`;
+        prompt += '\n';
+      }
+    }
+
+    // Booking config
+    const bookingConfig = kb.find(i => i.type === 'booking_config');
+    if (bookingConfig) {
+      prompt += '--- BOOKING SYSTEM ---\n';
+      prompt += `Available: ${(bookingConfig.available_days || []).join(', ')} from ${bookingConfig.available_hours || '9:00-18:00'}\n`;
+      prompt += `Slot duration: ${bookingConfig.slot_duration || 60} minutes\n`;
+      if (bookingConfig.content) prompt += `Instructions: ${bookingConfig.content}\n`;
+
+      // Inject current bookings so AI knows which slots are taken
+      const bookings = agent?.bookings || [];
+      if (Array.isArray(bookings) && bookings.length > 0) {
+        const upcoming = bookings.filter(b => b.status === 'confirmed' && new Date(b.date + 'T' + b.time) >= new Date());
+        if (upcoming.length > 0) {
+          prompt += 'BOOKED SLOTS (unavailable):\n';
+          for (const bk of upcoming) {
+            prompt += `- ${bk.date} at ${bk.time} (${bk.customer_name})\n`;
+          }
+        }
+      }
+      prompt += 'When customer wants to book: ask for preferred date, time, name, and phone number. ';
+      prompt += 'If the slot is already booked, suggest the next available time.\n';
+      prompt += 'To confirm a booking, reply with: BOOKING_CONFIRM:{date}|{time}|{name}|{phone}\n\n';
+    }
+
+    // Personal profile
+    const profile = kb.find(i => i.type === 'user_profile');
+    if (profile) {
+      prompt += '--- ABOUT THE USER YOU REPRESENT ---\n';
+      if (profile.name) prompt += `Name: ${profile.name}\n`;
+      if (profile.dob) prompt += `Date of Birth: ${profile.dob}\n`;
+      if (profile.hobbies) prompt += `Hobbies: ${profile.hobbies}\n`;
+      if (profile.personality) prompt += `Communication Style: ${profile.personality}\n`;
+      if (profile.content) prompt += `Notes: ${profile.content}\n`;
+      prompt += 'Reply as this person would. Match their tone, language, slang, and personality.\n\n';
+    }
+
+    // Conversation samples
+    const samples = kb.filter(i => i.type === 'conversation_sample');
+    if (samples.length > 0) {
+      prompt += '--- CONVERSATION SAMPLES (learn this style) ---\n';
+      for (const s of samples) {
+        prompt += `[Chat with ${s.person || s.title}]:\n`;
+        prompt += s.content.substring(0, 3000) + '\n\n';
+      }
+      prompt += 'Study these conversations. Reply in the SAME style, tone, and language pattern.\n\n';
+    }
+
+    // Generic/custom entries
+    const custom = kb.filter(i => !['product', 'faq', 'business_info', 'booking_config', 'user_profile', 'conversation_sample'].includes(i.type));
+    if (custom.length > 0) {
+      prompt += '--- ADDITIONAL INFORMATION ---\n';
+      for (const c of custom) {
+        prompt += `${c.title}: ${c.content}\n\n`;
+      }
+    }
+
+    prompt += 'Use all the information above to answer questions accurately. ';
   }
 
   // Add skills info

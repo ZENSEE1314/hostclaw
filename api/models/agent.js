@@ -30,7 +30,7 @@ class Agent {
   }
 
   static async update(id, userId, updates) {
-    const allowedFields = ['name', 'description', 'model', 'channels', 'config', 'system_prompt', 'bot_type', 'business_name', 'knowledge_base'];
+    const allowedFields = ['name', 'description', 'model', 'channels', 'config', 'system_prompt', 'bot_type', 'business_name', 'knowledge_base', 'bookings'];
     const setClause = [];
     const values = [];
     let paramCount = 1;
@@ -97,7 +97,8 @@ class Agent {
       ...agent,
       channels: parseJson(agent.channels, []),
       config: parseJson(agent.config, {}),
-      knowledge_base: parseJson(agent.knowledge_base, [])
+      knowledge_base: parseJson(agent.knowledge_base, []),
+      bookings: parseJson(agent.bookings, [])
     };
   }
 
@@ -105,6 +106,44 @@ class Agent {
   static async findByIdOnly(id) {
     const result = await query('SELECT * FROM agents WHERE id = $1', [id]);
     return result.rows[0] ? this.formatAgent(result.rows[0]) : null;
+  }
+
+  // Booking management
+  static async addBooking(agentId, booking) {
+    const agent = await this.findByIdOnly(agentId);
+    if (!agent) return null;
+    const bookings = agent.bookings || [];
+    const isSlotTaken = bookings.some(b =>
+      b.date === booking.date && b.time === booking.time && b.status === 'confirmed'
+    );
+    if (isSlotTaken) return { error: 'slot_taken' };
+    booking.id = require('crypto').randomUUID();
+    booking.status = 'confirmed';
+    booking.created_at = new Date().toISOString();
+    bookings.push(booking);
+    await query(
+      'UPDATE agents SET bookings = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [JSON.stringify(bookings), agentId]
+    );
+    return booking;
+  }
+
+  static async getBookings(agentId) {
+    const agent = await this.findByIdOnly(agentId);
+    return (agent?.bookings || []).filter(b => b.status === 'confirmed');
+  }
+
+  static async cancelBooking(agentId, bookingId) {
+    const agent = await this.findByIdOnly(agentId);
+    if (!agent) return false;
+    const bookings = (agent.bookings || []).map(b =>
+      b.id === bookingId ? { ...b, status: 'cancelled' } : b
+    );
+    await query(
+      'UPDATE agents SET bookings = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [JSON.stringify(bookings), agentId]
+    );
+    return true;
   }
 
   // Find first agent for a user (default agent for platform messages)

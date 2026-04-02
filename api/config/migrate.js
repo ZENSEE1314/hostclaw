@@ -183,6 +183,11 @@ async function migrate() {
       console.log('✅ Column agents.business_name ready');
     } catch (e) { console.log('ℹ️ agents.business_name:', e.message); }
 
+    try {
+      await query(`ALTER TABLE agents ADD COLUMN IF NOT EXISTS bookings TEXT DEFAULT '[]'`);
+      console.log('✅ Column agents.bookings ready');
+    } catch (e) { console.log('ℹ️ agents.bookings:', e.message); }
+
     console.log('✅ All migrations complete!');
     return true;
   } catch (err) {

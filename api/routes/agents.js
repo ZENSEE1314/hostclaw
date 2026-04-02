@@ -158,4 +158,41 @@ router.get('/:id/logs', async (req, res, next) => {
   }
 });
 
+// ===== BOOKING ENDPOINTS =====
+
+// Get bookings for an agent
+router.get('/:id/bookings', async (req, res, next) => {
+  try {
+    const bookings = await Agent.getBookings(req.params.id);
+    res.json({ bookings });
+  } catch (error) { next(error); }
+});
+
+// Create a booking
+router.post('/:id/bookings', async (req, res, next) => {
+  try {
+    const { date, time, customer_name, customer_phone } = req.body;
+    if (!date || !time) {
+      return res.status(400).json({ error: 'Date and time are required' });
+    }
+    const result = await Agent.addBooking(req.params.id, {
+      date, time,
+      customer_name: customer_name || 'Guest',
+      customer_phone: customer_phone || ''
+    });
+    if (result?.error === 'slot_taken') {
+      return res.status(409).json({ error: 'This time slot is already booked. Please choose another time.' });
+    }
+    res.status(201).json({ booking: result });
+  } catch (error) { next(error); }
+});
+
+// Cancel a booking
+router.delete('/:id/bookings/:bookingId', async (req, res, next) => {
+  try {
+    await Agent.cancelBooking(req.params.id, req.params.bookingId);
+    res.json({ message: 'Booking cancelled' });
+  } catch (error) { next(error); }
+});
+
 module.exports = router;
