@@ -27,18 +27,18 @@ const MESSAGE_PACKAGES = {
     featured: true
   },
   msg_unlimited_mo: {
-    name: 'Unlimited Monthly',
-    price: 29900,
-    messages: null,
+    name: '500K Monthly',
+    price: 49900,
+    messages: 500000,
     type: 'unlimited',
     mode: 'subscription',
     duration: 30,
     label: 'Pro'
   },
   msg_unlimited_yr: {
-    name: 'Unlimited Yearly',
-    price: 299900,
-    messages: null,
+    name: '1M Yearly',
+    price: 499900,
+    messages: 1000000,
     type: 'unlimited',
     mode: 'subscription',
     duration: 365,

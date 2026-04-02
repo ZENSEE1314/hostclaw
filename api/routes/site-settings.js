@@ -30,8 +30,8 @@ const DEFAULTS = {
   pricing: [
     { name: '1,000 Messages', price: '$49', period: 'one-time', features: ['1,000 bot replies', 'All AI providers', 'WhatsApp + Telegram'] },
     { name: '5,000 Messages', price: '$99', period: 'one-time', featured: true, features: ['5,000 bot replies', 'All AI providers', 'Priority support'] },
-    { name: 'Unlimited Monthly', price: '$299', period: '/month', features: ['Unlimited replies', 'All platforms', 'Analytics'] },
-    { name: 'Unlimited Yearly', price: '$2,999', period: '/year', badge: 'Best Value', features: ['Unlimited replies', 'All platforms', 'Dedicated support', 'Save $589'] }
+    { name: '500K Monthly', price: '$499', period: '/month', features: ['500,000 bot replies', 'All platforms', 'Analytics'] },
+    { name: '1M Yearly', price: '$4,999', period: '/year', badge: 'Best Value', features: ['1,000,000 bot replies', 'All platforms', 'Dedicated support'] }
   ],
   how_it_works: [
     { step: '1', title: 'Sign Up Free', description: 'Create your account in seconds. No credit card needed.' },
