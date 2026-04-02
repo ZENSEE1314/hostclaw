@@ -32,6 +32,17 @@ async function api(path, options = {}) {
   const res = await fetch(`${API_URL}${path}`, config);
 
   if (res.status === 401) {
+    // Don't redirect if there's an OAuth token in the URL (Google login callback)
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('token')) {
+      // OAuth token in URL — save it and retry
+      localStorage.setItem('token', urlParams.get('token'));
+      window.history.replaceState({}, document.title, window.location.pathname);
+      // Retry the request with the new token
+      const retryConfig = { ...config, headers: { ...config.headers, 'Authorization': `Bearer ${urlParams.get('token')}` } };
+      const retryRes = await fetch(`${API_URL}${path}`, retryConfig);
+      if (retryRes.ok) return retryRes.json();
+    }
     localStorage.removeItem('token');
     window.location.href = '/login.html';
     throw new Error('Unauthorized');
