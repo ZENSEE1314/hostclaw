@@ -321,7 +321,7 @@ async function callOpenClaw(message, skills) {
       error: true
     };
   }
-  return openclawService.chat(message, buildSystemPrompt(skills));
+  return openclawService.chat(message, buildSystemPrompt({ skills }));
 }
 
 function buildSystemPrompt({ skills = [], agent = null } = {}) {

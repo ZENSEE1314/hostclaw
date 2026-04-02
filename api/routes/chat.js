@@ -95,6 +95,11 @@ router.post('/message', async (req, res, next) => {
       console.error('Failed to save message:', e.message);
     }
     
+    // Fetch conversation history + agent for context
+    const chatHistory = await Chat.getSessionHistory(req.user.userId, sessionId || 'default', 10);
+    const Agent = require('../models/agent');
+    const agent = await Agent.findDefaultForUser(req.user.userId);
+
     // Determine which AI service to use
     let aiResponse;
     try {
@@ -102,7 +107,9 @@ router.post('/message', async (req, res, next) => {
         message,
         provider: resolvedProvider,
         providerConfig,
-        skills: activeSkills
+        skills: activeSkills,
+        chatHistory,
+        agent
       });
     } catch (aiError) {
       console.error('AI generation error:', aiError);

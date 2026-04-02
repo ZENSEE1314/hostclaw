@@ -213,6 +213,51 @@ router.get('/profile', authenticate, async (req, res, next) => {
   }
 });
 
+// Update profile
+router.put('/profile', authenticate, async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: 'Name is required' });
+    const { query } = require('../config/database');
+    await query('UPDATE users SET name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [name, req.user.userId]);
+    res.json({ message: 'Profile updated' });
+  } catch (error) { next(error); }
+});
+
+// Change password
+router.post('/change-password', authenticate, async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Current and new password required' });
+    if (newPassword.length < 6) return res.status(400).json({ error: 'Password must be at least 6 characters' });
+
+    const { query } = require('../config/database');
+    const result = await query('SELECT password FROM users WHERE id = $1', [req.user.userId]);
+    if (!result.rows[0]) return res.status(404).json({ error: 'User not found' });
+
+    const isValid = await bcrypt.compare(currentPassword, result.rows[0].password);
+    if (!isValid) return res.status(401).json({ error: 'Current password is incorrect' });
+
+    const hashed = await bcrypt.hash(newPassword, 12);
+    await query('UPDATE users SET password = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [hashed, req.user.userId]);
+    res.json({ message: 'Password changed' });
+  } catch (error) { next(error); }
+});
+
+// Delete account
+router.delete('/account', authenticate, async (req, res, next) => {
+  try {
+    const { query } = require('../config/database');
+    await query('DELETE FROM chat_messages WHERE user_id = $1', [req.user.userId]);
+    await query('DELETE FROM agents WHERE user_id = $1', [req.user.userId]);
+    await query('DELETE FROM sales_leads WHERE user_id = $1', [req.user.userId]);
+    await query('DELETE FROM sales_followups WHERE user_id = $1', [req.user.userId]);
+    await query('DELETE FROM scheduled_tasks WHERE user_id = $1', [req.user.userId]);
+    await query('DELETE FROM users WHERE id = $1', [req.user.userId]);
+    res.json({ message: 'Account deleted' });
+  } catch (error) { next(error); }
+});
+
 // ===== FORGOT PASSWORD =====
 
 // Request password reset

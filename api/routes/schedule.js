@@ -82,4 +82,34 @@ router.delete('/:id', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+// Send reminder for a specific event
+router.post('/:id/remind', async (req, res, next) => {
+  try {
+    const axios = require('axios');
+    const User = require('../models/user');
+    const user = await User.findById(req.user.userId);
+    const platforms = typeof user.platforms === 'string' ? JSON.parse(user.platforms || '{}') : (user.platforms || {});
+    const tg = platforms.telegram;
+
+    const task = await query('SELECT * FROM scheduled_tasks WHERE id=$1 AND user_id=$2', [req.params.id, req.user.userId]);
+    if (!task.rows[0]) return res.status(404).json({ error: 'Task not found' });
+
+    const t = task.rows[0];
+    if (tg?.bot_token && t.message) {
+      const token = Buffer.from(tg.bot_token, 'base64').toString();
+      const contacts = typeof t.target_contacts === 'string' ? JSON.parse(t.target_contacts || '[]') : [];
+      let sent = 0;
+      for (const cid of contacts) {
+        try {
+          await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, { chat_id: cid, text: t.message });
+          sent++;
+        } catch (e) { /* skip */ }
+      }
+      res.json({ sent, message: 'Reminder sent' });
+    } else {
+      res.json({ sent: 0, message: 'No platform configured or empty message' });
+    }
+  } catch (error) { next(error); }
+});
+
 module.exports = router;

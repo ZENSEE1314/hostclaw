@@ -129,6 +129,9 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// Raw body for Stripe webhook (must be before express.json)
+app.use('/webhooks/stripe', express.raw({ type: 'application/json' }));
+
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -158,6 +161,9 @@ app.get('/health', async (req, res) => {
     });
   }
 });
+
+// Debug endpoints — disabled in production
+if (process.env.NODE_ENV !== 'production') {
 
 // Debug: test full Telegram message flow
 app.get('/debug/telegram-test', async (req, res) => {
@@ -283,6 +289,8 @@ app.get('/debug/ai', async (req, res) => {
   res.json({ envKeys: allKeys, providerTests: results });
 });
 
+} // end debug endpoints (NODE_ENV !== 'production')
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/agents', agentRoutes);
@@ -313,6 +321,7 @@ app.use((req, res) => {
 async function processFollowUps() {
   try {
     const { query: dbQuery } = require('./config/database');
+    const User = require('./models/user');
     const axios = require('axios');
 
     const result = await dbQuery(
@@ -366,6 +375,7 @@ async function processFollowUps() {
 async function processScheduledTasks() {
   try {
     const { query: dbQuery } = require('./config/database');
+    const User = require('./models/user');
     const axios = require('axios');
     const result = await dbQuery(
       `SELECT t.*, u.platforms, u.contacts FROM scheduled_tasks t

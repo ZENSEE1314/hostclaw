@@ -1063,7 +1063,7 @@
 
       try {
         if (id) {
-          await api('/api/contacts/' + id, { method: 'PUT', body: JSON.stringify(payload) });
+          await api('/api/contacts/' + id, { method: 'PATCH', body: JSON.stringify(payload) });
           showToast('Contact updated', 'success');
         } else {
           await api('/api/contacts', { method: 'POST', body: JSON.stringify(payload) });

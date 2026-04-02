@@ -45,117 +45,26 @@ router.post('/setup', async (req, res) => {
   }
 });
 
-// Debug endpoint - list all users (no auth required for debugging)
-router.get('/debug/users', async (req, res) => {
-  try {
-    const users = await query('SELECT id, email, name, plan, credits, has_paid, created_at FROM users ORDER BY created_at DESC');
-    res.json({ 
-      count: users.rows.length,
-      users: users.rows
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Reset user password (no auth for now, just needs email)
-router.post('/reset-password', async (req, res) => {
-  try {
-    const { email, newPassword } = req.body;
-    
-    if (!email || !newPassword) {
-      return res.status(400).json({ error: 'Email and newPassword required' });
-    }
-    
-    // Find user
-    const userResult = await query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
-    
-    if (userResult.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    // Update password
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
-    await query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, userResult.rows[0].id]);
-    
-    res.json({ 
-      message: 'Password reset successfully',
-      email: email
-    });
-  } catch (err) {
-    console.error('Reset password error:', err);
-    res.status(500).json({ error: 'Reset failed' });
-  }
-});
-
-// Reset ALL passwords to same value
-router.post('/reset-all-passwords', async (req, res) => {
-  try {
-    const { newPassword } = req.body;
-    
-    if (!newPassword) {
-      return res.status(400).json({ error: 'newPassword required' });
-    }
-    
-    // Get all users
-    const usersResult = await query('SELECT id, email FROM users');
-    
-    // Update each user's password
-    const hashedPassword = await bcrypt.hash(newPassword, 12);
-    let updatedCount = 0;
-    
-    for (const user of usersResult.rows) {
-      await query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, user.id]);
-      console.log('Updated password for:', user.email);
-      updatedCount++;
-    }
-    
-    res.json({ 
-      message: 'All passwords reset successfully',
-      count: updatedCount,
-      newPassword: newPassword
-    });
-  } catch (err) {
-    console.error('Reset all passwords error:', err);
-    res.status(500).json({ error: 'Reset failed' });
-  }
-});
-
-// Debug: Check password for a user
-router.get('/debug/password/:email', async (req, res) => {
-  try {
-    const email = req.params.email.toLowerCase();
-    const userResult = await query('SELECT id, email, password FROM users WHERE email = $1', [email]);
-    
-    if (userResult.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    const user = userResult.rows[0];
-    const testPassword = 'abc123';
-    const bcrypt = require('bcryptjs');
-    const isValid = await bcrypt.compare(testPassword, user.password);
-    
-    res.json({
-      email: user.email,
-      passwordHash: user.password.substring(0, 20) + '...',
-      hashLength: user.password.length,
-      testWithAbc123: isValid
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Admin middleware
+// Admin middleware — requires authentication + admin check
 const requireAdmin = async (req, res, next) => {
-  // In production, check if user has admin role
-  // For now, allow all authenticated users (implement proper RBAC)
-  if (!req.user) {
-    return res.status(401).json({ error: 'Unauthorized' });
-  }
+  if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+  const isAdmin = await User.isAdmin(req.user.userId);
+  if (!isAdmin) return res.status(403).json({ error: 'Admin access required' });
   next();
 };
+
+// Admin-only: Reset a user's password
+router.post('/reset-password', authenticate, requireAdmin, async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    if (!email || !newPassword) return res.status(400).json({ error: 'Email and newPassword required' });
+    const userResult = await query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+    if (userResult.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
+    await query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, userResult.rows[0].id]);
+    res.json({ message: 'Password reset successfully', email });
+  } catch (err) { res.status(500).json({ error: 'Reset failed' }); }
+});
 
 router.use(authenticate, requireAdmin);
 

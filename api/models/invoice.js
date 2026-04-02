@@ -2,11 +2,12 @@ const { query } = require('../config/database');
 
 class Invoice {
   static async create({ userId, stripeInvoiceId, amount, currency = 'usd', status = 'pending', description }) {
+    const id = require('crypto').randomUUID();
     const result = await query(
-      `INSERT INTO invoices (user_id, stripe_invoice_id, amount, currency, status, description) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
+      `INSERT INTO invoices (id, user_id, stripe_invoice_id, amount, currency, status, description)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING *`,
-      [userId, stripeInvoiceId, amount, currency, status, description]
+      [id, userId, stripeInvoiceId, amount, currency, status, description]
     );
     return result.rows[0];
   }
