@@ -193,6 +193,16 @@ async function migrate() {
       console.log('✅ Column agents.linked_platforms ready');
     } catch (e) { console.log('ℹ️ agents.linked_platforms:', e.message); }
 
+    // Site settings table for admin-editable homepage content
+    await query(`
+      CREATE TABLE IF NOT EXISTS site_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL DEFAULT '{}',
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Site settings table ready');
+
     // Contacts column for broadcast messaging
     try {
       await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS contacts TEXT DEFAULT '[]'`);
