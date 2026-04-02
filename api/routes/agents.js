@@ -43,8 +43,12 @@ router.post('/', [
       name: req.body.name,
       description: req.body.description,
       model: req.body.model,
-      channels: req.body.channels,
-      config: req.body.config || {}
+      channels: req.body.channels || ['web'],
+      config: req.body.config || {},
+      system_prompt: req.body.system_prompt,
+      bot_type: req.body.bot_type,
+      business_name: req.body.business_name,
+      knowledge_base: req.body.knowledge_base
     });
 
     res.status(201).json({

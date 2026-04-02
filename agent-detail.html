@@ -1,309 +1,1124 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agent Detail - HostClaw.ai</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #6366f1;
-            --primary-light: #818cf8;
-            --secondary: #06b6d4;
-            --dark: #0f0f23;
-            --darker: #0a0a1a;
-            --card-bg: rgba(255, 255, 255, 0.03);
-            --border: rgba(255, 255, 255, 0.1);
-            --text: #f8fafc;
-            --text-muted: #94a3b8;
-            --success: #10b981;
-            --danger: #ef4444;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', sans-serif; background: var(--darker); color: var(--text); min-height: 100vh; }
-        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
-        
-        .header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
-        .header h1 { font-size: 1.5rem; font-weight: 700; }
-        
-        .back-btn { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 0.5rem 1rem; color: var(--text); text-decoration: none; display: flex; align-items: center; gap: 0.5rem; cursor: pointer; }
-        
-        .card {
-            background: var(--card-bg);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        
-        .card-title {
-            font-weight: 600;
-            font-size: 1.125rem;
-            margin-bottom: 1rem;
-        }
-        
-        .form-group { margin-bottom: 1rem; }
-        .form-label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text-muted); }
-        .form-input {
-            width: 100%;
-            padding: 0.75rem;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-size: 0.875rem;
-        }
-        
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; }
-        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
-        .btn-danger { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--danger); color: var(--danger); }
-        
-        .status-badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 100px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        .status-running { background: rgba(16, 185, 129, 0.1); color: var(--success); }
-        .status-pending { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
-        .status-stopped { background: rgba(148, 163, 184, 0.1); color: var(--text-muted); }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent Config - HostClaw.ai</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="/css/shared.css" rel="stylesheet">
+  <style>
+    /* Page Header */
+    .page-header-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.5rem 0.875rem;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+      border: 1px solid var(--border);
+      background: transparent;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .back-link:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+      border-color: var(--border-hover);
+    }
+
+    .back-link svg { width: 16px; height: 16px; }
+
+    .agent-name-editable {
+      font-size: 1.625rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: none;
+      border: none;
+      color: var(--text);
+      font-family: inherit;
+      outline: none;
+      padding: 0.25rem 0.5rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      transition: var(--transition);
+      min-width: 120px;
+      flex: 1;
+    }
+
+    .agent-name-editable:hover {
+      border-color: var(--border);
+    }
+
+    .agent-name-editable:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-left: auto;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .status-pill.running {
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .status-pill.stopped,
+    .status-pill.created {
+      background: rgba(148, 163, 184, 0.08);
+      color: var(--text-muted);
+    }
+
+    .status-pill.pending,
+    .status-pill.deploying {
+      background: var(--warning-bg);
+      color: var(--warning);
+    }
+
+    .status-pill .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .status-pill.running .dot {
+      box-shadow: 0 0 6px currentColor;
+    }
+
+    /* Bot Type Selector */
+    .bot-type-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .bot-type-card {
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+      position: relative;
+    }
+
+    .bot-type-card:hover {
+      border-color: var(--border-hover);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .bot-type-card.selected {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .bot-type-card.selected[data-type="personal"] {
+      border-color: var(--cyan);
+      background: linear-gradient(to bottom, rgba(6, 182, 212, 0.06), var(--bg-card));
+    }
+
+    .bot-type-card.selected[data-type="customer_service"] {
+      border-color: var(--accent);
+      background: linear-gradient(to bottom, rgba(99, 102, 241, 0.06), var(--bg-card));
+    }
+
+    .bot-type-card.selected[data-type="sales"] {
+      border-color: var(--success);
+      background: linear-gradient(to bottom, rgba(34, 197, 94, 0.06), var(--bg-card));
+    }
+
+    .bot-type-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1rem;
+    }
+
+    .bot-type-card[data-type="personal"] .bot-type-icon {
+      background: rgba(6, 182, 212, 0.1);
+      color: var(--cyan);
+    }
+
+    .bot-type-card[data-type="customer_service"] .bot-type-icon {
+      background: var(--accent-bg);
+      color: var(--accent-light);
+    }
+
+    .bot-type-card[data-type="sales"] .bot-type-icon {
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .bot-type-icon svg { width: 24px; height: 24px; }
+
+    .bot-type-name {
+      font-size: 0.9375rem;
+      font-weight: 700;
+      margin-bottom: 0.375rem;
+    }
+
+    .bot-type-desc {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .bot-type-check {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bot-type-card.selected .bot-type-check { display: flex; }
+
+    .bot-type-card.selected[data-type="personal"] .bot-type-check { background: var(--cyan); }
+    .bot-type-card.selected[data-type="customer_service"] .bot-type-check { background: var(--accent); }
+    .bot-type-card.selected[data-type="sales"] .bot-type-check { background: var(--success); }
+
+    .bot-type-check svg { width: 14px; height: 14px; color: white; }
+
+    /* Section cards spacing */
+    .section-card {
+      margin-bottom: 1.5rem;
+    }
+
+    .section-card .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .section-card .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Knowledge Base */
+    .kb-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.25rem;
+    }
+
+    .kb-tab {
+      padding: 0.625rem 1rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border: none;
+      background: none;
+      border-bottom: 2px solid transparent;
+      transition: var(--transition);
+      font-family: inherit;
+    }
+
+    .kb-tab:hover { color: var(--text); }
+    .kb-tab.active { color: var(--accent-light); border-bottom-color: var(--accent); }
+
+    .kb-entries {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .kb-entry {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+      transition: var(--transition);
+    }
+
+    .kb-entry:hover {
+      border-color: var(--border-hover);
+    }
+
+    .kb-entry-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .kb-entry-header {
+      display: flex;
+      align-items: center;
+      gap: 0.625rem;
+      margin-bottom: 0.375rem;
+    }
+
+    .kb-type-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.15rem 0.5rem;
+      border-radius: 100px;
+      font-size: 0.625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .kb-type-badge.product { background: var(--success-bg); color: var(--success); }
+    .kb-type-badge.faq { background: var(--accent-bg); color: var(--accent-light); }
+    .kb-type-badge.info { background: var(--warning-bg); color: var(--warning); }
+
+    .kb-entry-title {
+      font-size: 0.9375rem;
+      font-weight: 600;
+    }
+
+    .kb-entry-content {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .kb-entry-price {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--success);
+      margin-top: 0.375rem;
+    }
+
+    .kb-entry-actions {
+      display: flex;
+      gap: 0.375rem;
+      flex-shrink: 0;
+      align-self: center;
+    }
+
+    .kb-entry-actions button {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .kb-entry-actions button:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+      border-color: var(--border-hover);
+    }
+
+    .kb-entry-actions button.delete-btn:hover {
+      color: var(--danger);
+      border-color: rgba(239, 68, 68, 0.3);
+      background: var(--danger-bg);
+    }
+
+    .kb-entry-actions svg { width: 14px; height: 14px; }
+
+    /* Modal entry type selector */
+    .entry-type-selector {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .entry-type-btn {
+      flex: 1;
+      padding: 0.625rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+    }
+
+    .entry-type-btn:hover {
+      border-color: var(--border-hover);
+      color: var(--text);
+    }
+
+    .entry-type-btn.active {
+      background: var(--accent-bg);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: var(--accent-light);
+    }
+
+    /* Danger Zone */
+    .danger-card {
+      border-color: rgba(239, 68, 68, 0.15);
+    }
+
+    .danger-card .card-title {
+      color: var(--danger);
+    }
+
+    .danger-desc {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    /* Loading skeleton */
+    .page-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      gap: 0.75rem;
+      color: var(--text-secondary);
+      font-size: 0.9375rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .bot-type-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .page-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .agent-name-editable {
+        font-size: 1.25rem;
+        width: 100%;
+      }
+
+      .header-actions {
+        margin-left: 0;
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .kb-entry {
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      .kb-entry-actions {
+        align-self: flex-end;
+      }
+
+      .entry-type-selector {
+        flex-direction: column;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <button class="back-btn" onclick="goBack()">← Back</button>
-            <h1 id="agentName">Agent Details</h1>
+  <div class="app-layout">
+    <div class="main-content">
+
+      <!-- Loading State -->
+      <div id="pageLoading" class="page-loading">
+        <div class="spinner"></div>
+        <span>Loading agent...</span>
+      </div>
+
+      <!-- Main Content (hidden until loaded) -->
+      <div id="pageContent" class="hidden">
+
+        <!-- Page Header -->
+        <div class="page-header-row">
+          <a href="/agents.html" class="back-link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+            Agents
+          </a>
+          <input type="text" id="agentNameInput" class="agent-name-editable" value="" aria-label="Agent name" spellcheck="false">
+          <div class="header-actions">
+            <span id="statusBadge" class="status-pill stopped">
+              <span class="dot"></span>
+              <span id="statusText">stopped</span>
+            </span>
+            <button id="deployBtn" class="btn btn-primary btn-sm" onclick="handleDeploy()">Deploy</button>
+            <button id="stopBtn" class="btn btn-outline btn-sm hidden" onclick="handleStop()">Stop</button>
+          </div>
         </div>
 
-        <div id="loading">Loading agent details...</div>
-        
-        <div id="agentContent" style="display: none;">
-            <div class="card">
-                <div class="card-title">Agent Information</div>
-                <div class="form-group">
-                    <label class="form-label">Name</label>
-                    <input type="text" id="nameInput" class="form-input">
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Description</label>
-                    <textarea id="descInput" class="form-input" rows="3"></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">AI Model</label>
-                    <select id="modelInput" class="form-input">
-                        <option value="gpt-4o">GPT-4o</option>
-                        <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                        <option value="claude-3.5-sonnet">Claude 3.5 Sonnet</option>
-                        <option value="claude-3-opus">Claude 3 Opus</option>
-                        <option value="gemini-pro">Gemini Pro</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label class="form-label">Status</label>
-                    <div id="statusDisplay"></div>
-                </div>
-                
-                <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                    <button class="btn btn-primary" onclick="saveAgent()">Save Changes</button>
-                    <button class="btn btn-outline" id="deployBtn" onclick="deployAgent()">Deploy</button>
-                    <button class="btn btn-outline" id="stopBtn" onclick="stopAgent()" style="display: none;">Stop</button>
-                </div>
+        <!-- Bot Type Selector -->
+        <div class="bot-type-grid">
+          <div class="bot-type-card" data-type="personal" onclick="handleBotTypeSelect('personal')" role="button" tabindex="0" aria-label="Personal Assistant bot type">
+            <div class="bot-type-check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
             </div>
-            
-            <div class="card">
-                <div class="card-title">Danger Zone</div>
-                <button class="btn btn-danger" onclick="deleteAgent()">🗑️ Delete Agent</button>
+            <div class="bot-type-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </div>
+            <div class="bot-type-name">Personal Assistant</div>
+            <div class="bot-type-desc">Adapts to your style. Great for personal use.</div>
+          </div>
+
+          <div class="bot-type-card" data-type="customer_service" onclick="handleBotTypeSelect('customer_service')" role="button" tabindex="0" aria-label="Customer Service bot type">
+            <div class="bot-type-check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            <div class="bot-type-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M2 8c0-3.314 2.686-6 6-6"/><path d="M22 8c0-3.314-2.686-6-6-6"/></svg>
+            </div>
+            <div class="bot-type-name">Customer Service</div>
+            <div class="bot-type-desc">Answers questions using your FAQ and product info.</div>
+          </div>
+
+          <div class="bot-type-card" data-type="sales" onclick="handleBotTypeSelect('sales')" role="button" tabindex="0" aria-label="Sales Bot type">
+            <div class="bot-type-check">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
+            </div>
+            <div class="bot-type-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </div>
+            <div class="bot-type-name">Sales Bot</div>
+            <div class="bot-type-desc">Recommends products and helps close sales.</div>
+          </div>
         </div>
+
+        <!-- Business Info (conditional) -->
+        <div id="businessInfoCard" class="card section-card hidden">
+          <div class="card-header">
+            <h2 class="card-title">Business Info</h2>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="businessNameInput">Business Name</label>
+            <input type="text" id="businessNameInput" class="form-input" placeholder="Your business name">
+          </div>
+          <div style="margin-top: 1.25rem;">
+            <button class="btn btn-secondary btn-sm" onclick="handleSaveBusinessInfo()">Save Business Info</button>
+          </div>
+        </div>
+
+        <!-- System Prompt -->
+        <div class="card section-card">
+          <div class="card-header">
+            <h2 class="card-title">Bot Instructions</h2>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <textarea id="systemPromptInput" class="form-textarea" rows="6" placeholder="Tell the AI how to behave..."></textarea>
+            <p class="form-hint">This tells the AI how to behave. Leave empty to use the default for your bot type.</p>
+          </div>
+          <div style="margin-top: 1.25rem;">
+            <button class="btn btn-secondary btn-sm" onclick="handleSaveSystemPrompt()">Save Instructions</button>
+          </div>
+        </div>
+
+        <!-- Knowledge Base -->
+        <div class="card section-card">
+          <div class="card-header">
+            <h2 class="card-title">Knowledge Base</h2>
+            <button class="btn btn-primary btn-sm" onclick="handleOpenAddEntry()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Entry
+            </button>
+          </div>
+
+          <div class="kb-tabs">
+            <button class="kb-tab active" data-filter="all" onclick="handleKBFilter('all', this)">All</button>
+            <button class="kb-tab" data-filter="product" onclick="handleKBFilter('product', this)">Products</button>
+            <button class="kb-tab" data-filter="faq" onclick="handleKBFilter('faq', this)">FAQs</button>
+            <button class="kb-tab" data-filter="info" onclick="handleKBFilter('info', this)">Custom</button>
+          </div>
+
+          <div id="kbEntries" class="kb-entries"></div>
+          <div id="kbEmpty" class="empty-state hidden">
+            <div class="empty-icon">
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </div>
+            <div class="empty-title">No knowledge base entries yet</div>
+            <div class="empty-desc">Add products, FAQs, or company info to make your bot smarter.</div>
+          </div>
+        </div>
+
+        <!-- Agent Settings -->
+        <div class="card section-card">
+          <div class="card-header">
+            <h2 class="card-title">Agent Settings</h2>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="modelSelect">AI Model</label>
+            <select id="modelSelect" class="form-select">
+              <option value="gpt-4o">GPT-4o</option>
+              <option value="gpt-4-turbo">GPT-4 Turbo</option>
+              <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+              <option value="claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+              <option value="claude-3-opus">Claude 3 Opus</option>
+              <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
+              <option value="deepseek-chat">DeepSeek</option>
+              <option value="groq-llama">Groq Llama</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" for="descriptionInput">Description</label>
+            <textarea id="descriptionInput" class="form-textarea" rows="3" placeholder="Brief description of this agent..."></textarea>
+          </div>
+          <div style="margin-top: 1.25rem;">
+            <button class="btn btn-secondary btn-sm" onclick="handleSaveSettings()">Save Settings</button>
+          </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="card section-card danger-card">
+          <div class="card-header">
+            <h2 class="card-title">Danger Zone</h2>
+          </div>
+          <p class="danger-desc">Permanently delete this agent and all of its data. This action cannot be undone.</p>
+          <button class="btn btn-danger btn-sm" onclick="handleDeleteAgent()">Delete Agent</button>
+        </div>
+
+      </div>
     </div>
+  </div>
 
-    <script>
-        const API_URL = 'https://hostclaw-api.onrender.com';
-        const token = localStorage.getItem('token');
-        
-        if (!token) window.location.href = '/login.html';
-        
-        const urlParams = new URLSearchParams(window.location.search);
-        const agentId = urlParams.get('id');
-        
-        if (!agentId) {
-            window.location.href = '/agents.html';
+  <!-- KB Entry Modal -->
+  <div id="kbModal" class="modal-overlay" role="dialog" aria-labelledby="kbModalTitle" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title" id="kbModalTitle">Add Entry</h3>
+        <button class="modal-close" onclick="closeModal('kbModal')" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="entry-type-selector">
+        <button class="entry-type-btn active" data-entry-type="product" onclick="handleEntryTypeSelect('product', this)">Product</button>
+        <button class="entry-type-btn" data-entry-type="faq" onclick="handleEntryTypeSelect('faq', this)">FAQ</button>
+        <button class="entry-type-btn" data-entry-type="info" onclick="handleEntryTypeSelect('info', this)">Custom Info</button>
+      </div>
+
+      <!-- Product fields -->
+      <div id="fieldsProduct">
+        <div class="form-group">
+          <label class="form-label" for="entryTitle">Product Name</label>
+          <input type="text" id="entryTitle" class="form-input" placeholder="e.g. Premium Plan">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="entryContent">Description</label>
+          <textarea id="entryContent" class="form-textarea" rows="4" placeholder="Describe this product..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="entryPrice">Price</label>
+          <input type="text" id="entryPrice" class="form-input" placeholder="e.g. $29/mo">
+        </div>
+      </div>
+
+      <!-- FAQ fields -->
+      <div id="fieldsFaq" class="hidden">
+        <div class="form-group">
+          <label class="form-label" for="faqQuestion">Question</label>
+          <input type="text" id="faqQuestion" class="form-input" placeholder="e.g. What are your business hours?">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="faqAnswer">Answer</label>
+          <textarea id="faqAnswer" class="form-textarea" rows="4" placeholder="The answer to this question..."></textarea>
+        </div>
+      </div>
+
+      <!-- Custom info fields -->
+      <div id="fieldsInfo" class="hidden">
+        <div class="form-group">
+          <label class="form-label" for="infoTitle">Title</label>
+          <input type="text" id="infoTitle" class="form-input" placeholder="e.g. Return Policy">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="infoContent">Content</label>
+          <textarea id="infoContent" class="form-textarea" rows="4" placeholder="Information the bot should know..."></textarea>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-outline btn-sm" onclick="closeModal('kbModal')">Cancel</button>
+        <button class="btn btn-primary btn-sm" id="kbSaveBtn" onclick="handleSaveKBEntry()">Save Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/shared.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script>
+    const agentId = new URLSearchParams(window.location.search).get('id');
+    if (!agentId) window.location.href = '/agents.html';
+    requireAuth();
+
+    let agent = {};
+    let knowledgeBase = [];
+    let activeKBFilter = 'all';
+    let editingKBIndex = -1;
+    let modalEntryType = 'product';
+
+    const DEFAULT_PROMPTS = {
+      personal: 'You are a helpful personal assistant. Be friendly, concise, and adapt to the user\'s communication style. Help with tasks, answer questions, and provide thoughtful suggestions.',
+      customer_service: 'You are a customer service representative for {{business_name}}. Be polite, professional, and helpful. Answer questions using the provided knowledge base. If you don\'t know the answer, offer to connect the customer with a human agent.',
+      sales: 'You are a sales assistant for {{business_name}}. Help customers find the right products, answer questions about features and pricing, and guide them toward making a purchase. Be enthusiastic but not pushy.'
+    };
+
+    async function loadAgent() {
+      try {
+        agent = await api(`/api/agents/${agentId}`);
+        knowledgeBase = agent.knowledge_base || [];
+
+        document.getElementById('pageLoading').classList.add('hidden');
+        document.getElementById('pageContent').classList.remove('hidden');
+
+        document.title = `${agent.name} - HostClaw.ai`;
+        document.getElementById('agentNameInput').value = agent.name || '';
+        document.getElementById('systemPromptInput').value = agent.system_prompt || '';
+        document.getElementById('businessNameInput').value = agent.business_name || '';
+        document.getElementById('modelSelect').value = agent.model || 'gpt-4o';
+        document.getElementById('descriptionInput').value = agent.description || '';
+
+        updateStatusDisplay(agent.status);
+        updateBotTypeSelection(agent.bot_type || 'personal');
+        updateBusinessInfoVisibility(agent.bot_type);
+        renderKBEntries();
+      } catch (err) {
+        showToast('Failed to load agent: ' + err.message, 'error');
+        setTimeout(() => { window.location.href = '/agents.html'; }, 2000);
+      }
+    }
+
+    function updateStatusDisplay(status) {
+      const badge = document.getElementById('statusBadge');
+      const text = document.getElementById('statusText');
+      const deployBtn = document.getElementById('deployBtn');
+      const stopBtn = document.getElementById('stopBtn');
+
+      badge.className = 'status-pill ' + (status || 'stopped');
+      text.textContent = status || 'stopped';
+
+      if (status === 'running') {
+        deployBtn.classList.add('hidden');
+        stopBtn.classList.remove('hidden');
+      } else {
+        deployBtn.classList.remove('hidden');
+        stopBtn.classList.add('hidden');
+      }
+    }
+
+    function updateBotTypeSelection(type) {
+      document.querySelectorAll('.bot-type-card').forEach(card => {
+        card.classList.toggle('selected', card.dataset.type === type);
+      });
+    }
+
+    function updateBusinessInfoVisibility(type) {
+      const card = document.getElementById('businessInfoCard');
+      if (type === 'customer_service' || type === 'sales') {
+        card.classList.remove('hidden');
+      } else {
+        card.classList.add('hidden');
+      }
+    }
+
+    async function handleBotTypeSelect(type) {
+      const previousType = agent.bot_type;
+      updateBotTypeSelection(type);
+      updateBusinessInfoVisibility(type);
+
+      try {
+        await api(`/api/agents/${agentId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ bot_type: type })
+        });
+        agent.bot_type = type;
+        showToast('Bot type updated', 'success');
+
+        const promptInput = document.getElementById('systemPromptInput');
+        if (!promptInput.value.trim()) {
+          const businessName = document.getElementById('businessNameInput').value || 'your business';
+          promptInput.value = DEFAULT_PROMPTS[type].replace('{{business_name}}', businessName);
         }
-        
-        let agent = {};
-        
-        async function loadAgent() {
-            try {
-                const res = await fetch(`${API_URL}/api/agents/${agentId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                if (res.ok) {
-                    agent = await res.json();
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('agentContent').style.display = 'block';
-                    
-                    document.getElementById('agentName').textContent = agent.name;
-                    document.getElementById('nameInput').value = agent.name;
-                    document.getElementById('descInput').value = agent.description || '';
-                    document.getElementById('modelInput').value = agent.model;
-                    
-                    const statusClass = agent.status === 'running' ? 'status-running' : 
-                                       agent.status === 'pending' ? 'status-pending' : 'status-stopped';
-                    document.getElementById('statusDisplay').innerHTML = `
-                        <span class="status-badge ${statusClass}">${agent.status}</span>
-                    `;
-                    
-                    // Show/hide deploy/stop buttons
-                    if (agent.status === 'running') {
-                        document.getElementById('deployBtn').style.display = 'none';
-                        document.getElementById('stopBtn').style.display = 'inline-flex';
-                    } else {
-                        document.getElementById('deployBtn').style.display = 'inline-flex';
-                        document.getElementById('stopBtn').style.display = 'none';
-                    }
-                } else {
-                    alert('Agent not found');
-                    window.location.href = '/agents.html';
-                }
-            } catch (e) {
-                console.error(e);
-                alert('Failed to load agent');
-            }
+      } catch (err) {
+        updateBotTypeSelection(previousType);
+        updateBusinessInfoVisibility(previousType);
+        showToast('Failed to update bot type: ' + err.message, 'error');
+      }
+    }
+
+    async function handleSaveBusinessInfo() {
+      const businessName = document.getElementById('businessNameInput').value.trim();
+      try {
+        await api(`/api/agents/${agentId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ business_name: businessName })
+        });
+        agent.business_name = businessName;
+        showToast('Business info saved', 'success');
+      } catch (err) {
+        showToast('Failed to save: ' + err.message, 'error');
+      }
+    }
+
+    async function handleSaveSystemPrompt() {
+      const prompt = document.getElementById('systemPromptInput').value;
+      try {
+        await api(`/api/agents/${agentId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ system_prompt: prompt })
+        });
+        agent.system_prompt = prompt;
+        showToast('Instructions saved', 'success');
+      } catch (err) {
+        showToast('Failed to save: ' + err.message, 'error');
+      }
+    }
+
+    async function handleSaveSettings() {
+      const model = document.getElementById('modelSelect').value;
+      const description = document.getElementById('descriptionInput').value;
+      const name = document.getElementById('agentNameInput').value.trim();
+
+      if (!name) {
+        showToast('Agent name is required', 'warning');
+        return;
+      }
+
+      try {
+        await api(`/api/agents/${agentId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ name, model, description })
+        });
+        agent.name = name;
+        agent.model = model;
+        agent.description = description;
+        document.title = `${name} - HostClaw.ai`;
+        showToast('Settings saved', 'success');
+      } catch (err) {
+        showToast('Failed to save: ' + err.message, 'error');
+      }
+    }
+
+    // Knowledge Base rendering
+    function renderKBEntries() {
+      const container = document.getElementById('kbEntries');
+      const emptyState = document.getElementById('kbEmpty');
+
+      const filtered = activeKBFilter === 'all'
+        ? knowledgeBase
+        : knowledgeBase.filter(e => e.type === activeKBFilter);
+
+      if (filtered.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      container.innerHTML = filtered.map((entry, i) => {
+        const realIndex = knowledgeBase.indexOf(entry);
+        const typeLabel = entry.type === 'faq' ? 'FAQ' : entry.type === 'product' ? 'Product' : 'Info';
+        const title = entry.title || entry.question || 'Untitled';
+        const content = entry.content || entry.answer || '';
+        const priceHTML = entry.price ? `<div class="kb-entry-price">${escapeHTML(entry.price)}</div>` : '';
+
+        return `
+          <div class="kb-entry">
+            <div class="kb-entry-body">
+              <div class="kb-entry-header">
+                <span class="kb-type-badge ${entry.type}">${typeLabel}</span>
+                <span class="kb-entry-title">${escapeHTML(title)}</span>
+              </div>
+              <div class="kb-entry-content">${escapeHTML(content)}</div>
+              ${priceHTML}
+            </div>
+            <div class="kb-entry-actions">
+              <button onclick="handleEditKBEntry(${realIndex})" title="Edit" aria-label="Edit entry">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="delete-btn" onclick="handleDeleteKBEntry(${realIndex})" title="Delete" aria-label="Delete entry">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function handleKBFilter(filter, btn) {
+      activeKBFilter = filter;
+      document.querySelectorAll('.kb-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      renderKBEntries();
+    }
+
+    // Modal logic
+    function handleOpenAddEntry() {
+      editingKBIndex = -1;
+      document.getElementById('kbModalTitle').textContent = 'Add Entry';
+      document.getElementById('kbSaveBtn').textContent = 'Save Entry';
+      resetModalFields();
+      handleEntryTypeSelect('product', document.querySelector('[data-entry-type="product"]'));
+      openModal('kbModal');
+    }
+
+    function handleEditKBEntry(index) {
+      const entry = knowledgeBase[index];
+      if (!entry) return;
+
+      editingKBIndex = index;
+      document.getElementById('kbModalTitle').textContent = 'Edit Entry';
+      document.getElementById('kbSaveBtn').textContent = 'Update Entry';
+      resetModalFields();
+
+      const type = entry.type || 'info';
+      const typeBtn = document.querySelector(`[data-entry-type="${type}"]`);
+      handleEntryTypeSelect(type, typeBtn);
+
+      if (type === 'product') {
+        document.getElementById('entryTitle').value = entry.title || '';
+        document.getElementById('entryContent').value = entry.content || '';
+        document.getElementById('entryPrice').value = entry.price || '';
+      } else if (type === 'faq') {
+        document.getElementById('faqQuestion').value = entry.title || entry.question || '';
+        document.getElementById('faqAnswer').value = entry.content || entry.answer || '';
+      } else {
+        document.getElementById('infoTitle').value = entry.title || '';
+        document.getElementById('infoContent').value = entry.content || '';
+      }
+
+      openModal('kbModal');
+    }
+
+    function handleEntryTypeSelect(type, btn) {
+      modalEntryType = type;
+      document.querySelectorAll('.entry-type-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      document.getElementById('fieldsProduct').classList.toggle('hidden', type !== 'product');
+      document.getElementById('fieldsFaq').classList.toggle('hidden', type !== 'faq');
+      document.getElementById('fieldsInfo').classList.toggle('hidden', type !== 'info');
+    }
+
+    function resetModalFields() {
+      document.getElementById('entryTitle').value = '';
+      document.getElementById('entryContent').value = '';
+      document.getElementById('entryPrice').value = '';
+      document.getElementById('faqQuestion').value = '';
+      document.getElementById('faqAnswer').value = '';
+      document.getElementById('infoTitle').value = '';
+      document.getElementById('infoContent').value = '';
+    }
+
+    function getModalEntryData() {
+      if (modalEntryType === 'product') {
+        return {
+          type: 'product',
+          title: document.getElementById('entryTitle').value.trim(),
+          content: document.getElementById('entryContent').value.trim(),
+          price: document.getElementById('entryPrice').value.trim()
+        };
+      } else if (modalEntryType === 'faq') {
+        return {
+          type: 'faq',
+          title: document.getElementById('faqQuestion').value.trim(),
+          content: document.getElementById('faqAnswer').value.trim()
+        };
+      } else {
+        return {
+          type: 'info',
+          title: document.getElementById('infoTitle').value.trim(),
+          content: document.getElementById('infoContent').value.trim()
+        };
+      }
+    }
+
+    async function handleSaveKBEntry() {
+      const entry = getModalEntryData();
+
+      if (!entry.title) {
+        showToast('Title / question is required', 'warning');
+        return;
+      }
+
+      if (editingKBIndex >= 0) {
+        knowledgeBase[editingKBIndex] = entry;
+      } else {
+        knowledgeBase.push(entry);
+      }
+
+      try {
+        await api(`/api/agents/${agentId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ knowledge_base: knowledgeBase })
+        });
+        agent.knowledge_base = knowledgeBase;
+        renderKBEntries();
+        closeModal('kbModal');
+        showToast(editingKBIndex >= 0 ? 'Entry updated' : 'Entry added', 'success');
+      } catch (err) {
+        if (editingKBIndex >= 0) {
+          knowledgeBase[editingKBIndex] = agent.knowledge_base[editingKBIndex];
+        } else {
+          knowledgeBase.pop();
         }
-        
-        async function saveAgent() {
-            try {
-                const res = await fetch(`${API_URL}/api/agents/${agentId}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        name: document.getElementById('nameInput').value,
-                        description: document.getElementById('descInput').value,
-                        model: document.getElementById('modelInput').value
-                    })
-                });
-                
-                if (res.ok) {
-                    alert('Agent saved!');
-                    loadAgent();
-                } else {
-                    alert('Failed to save');
-                }
-            } catch (e) {
-                alert('Network error');
-            }
+        showToast('Failed to save: ' + err.message, 'error');
+      }
+    }
+
+    async function handleDeleteKBEntry(index) {
+      if (!confirm('Delete this knowledge base entry?')) return;
+
+      const removed = knowledgeBase.splice(index, 1)[0];
+
+      try {
+        await api(`/api/agents/${agentId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ knowledge_base: knowledgeBase })
+        });
+        agent.knowledge_base = knowledgeBase;
+        renderKBEntries();
+        showToast('Entry deleted', 'success');
+      } catch (err) {
+        knowledgeBase.splice(index, 0, removed);
+        showToast('Failed to delete: ' + err.message, 'error');
+      }
+    }
+
+    // Deploy / Stop
+    async function handleDeploy() {
+      const btn = document.getElementById('deployBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="spinner"></div> Deploying';
+
+      try {
+        const data = await api(`/api/agents/${agentId}/deploy`, { method: 'POST' });
+        showToast('Agent deployed' + (data.deployment?.url ? ': ' + data.deployment.url : ''), 'success');
+        await loadAgent();
+      } catch (err) {
+        showToast('Deploy failed: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Deploy';
+      }
+    }
+
+    async function handleStop() {
+      const btn = document.getElementById('stopBtn');
+      btn.disabled = true;
+      btn.textContent = 'Stopping...';
+
+      try {
+        await api(`/api/agents/${agentId}/stop`, { method: 'POST' });
+        showToast('Agent stopped', 'success');
+        await loadAgent();
+      } catch (err) {
+        showToast('Failed to stop: ' + err.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Stop';
+      }
+    }
+
+    // Delete
+    async function handleDeleteAgent() {
+      if (!confirm('Permanently delete this agent? This cannot be undone.')) return;
+
+      try {
+        await api(`/api/agents/${agentId}`, { method: 'DELETE' });
+        showToast('Agent deleted', 'success');
+        setTimeout(() => { window.location.href = '/agents.html'; }, 1000);
+      } catch (err) {
+        showToast('Failed to delete: ' + err.message, 'error');
+      }
+    }
+
+    // Utility
+    function escapeHTML(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Keyboard support for bot type cards
+    document.querySelectorAll('.bot-type-card').forEach(card => {
+      card.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleBotTypeSelect(card.dataset.type);
         }
-        
-        async function deployAgent() {
-            const btn = document.getElementById('deployBtn');
-            btn.textContent = 'Deploying...';
-            btn.disabled = true;
-            
-            try {
-                console.log('Deploying agent:', agentId);
-                console.log('API URL:', `${API_URL}/api/agents/${agentId}/deploy`);
-                
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 30000);
-                const res = await fetch(`${API_URL}/api/agents/${agentId}/deploy`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-                
-                console.log('Deploy response status:', res.status);
-                
-                if (res.ok) {
-                    const data = await res.json();
-                    console.log('Deploy success:', data);
-                    alert('Agent deployed! URL: ' + (data.deployment?.url || 'N/A'));
-                    loadAgent();
-                } else {
-                    const text = await res.text();
-                    console.error('Deploy failed:', res.status, text);
-                    try {
-                        const data = JSON.parse(text);
-                        alert(data.error || data.message || 'Failed to deploy: ' + res.status);
-                    } catch {
-                        alert('Failed to deploy: ' + res.status + ' - ' + text.substring(0, 200));
-                    }
-                }
-            } catch (e) {
-                console.error('Deploy error:', e);
-                alert('Network error: ' + e.message);
-            } finally {
-                btn.textContent = 'Deploy';
-                btn.disabled = false;
-            }
-        }
-        
-        async function stopAgent() {
-            try {
-                const res = await fetch(`${API_URL}/api/agents/${agentId}/stop`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                if (res.ok) {
-                    alert('Agent stopped');
-                    loadAgent();
-                } else {
-                    alert('Failed to stop');
-                }
-            } catch (e) {
-                alert('Network error');
-            }
-        }
-        
-        async function deleteAgent() {
-            if (!confirm('Are you sure? This cannot be undone.')) return;
-            
-            try {
-                const res = await fetch(`${API_URL}/api/agents/${agentId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                if (res.ok) {
-                    window.location.href = '/agents.html';
-                } else {
-                    alert('Failed to delete');
-                }
-            } catch (e) {
-                alert('Network error');
-            }
-        }
-        
-        function goBack() {
-            history.back();
-        }
-        
-        loadAgent();
-    </script>
+      });
+    });
+
+    // Close modal on overlay click
+    document.getElementById('kbModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeModal('kbModal');
+    });
+
+    // Close modal on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal('kbModal');
+    });
+
+    // Save name on blur
+    document.getElementById('agentNameInput').addEventListener('blur', async function () {
+      const newName = this.value.trim();
+      if (!newName || newName === agent.name) return;
+
+      try {
+        await api(`/api/agents/${agentId}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ name: newName })
+        });
+        agent.name = newName;
+        document.title = `${newName} - HostClaw.ai`;
+        showToast('Name updated', 'success');
+      } catch (err) {
+        this.value = agent.name;
+        showToast('Failed to update name: ' + err.message, 'error');
+      }
+    });
+
+    loadAgent();
+  </script>
 </body>
 </html>

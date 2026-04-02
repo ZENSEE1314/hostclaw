@@ -1,12 +1,14 @@
 const { query } = require('../config/database');
 
 class Agent {
-  static async create({ userId, name, description, model, channels, config = {} }) {
+  static async create({ userId, name, description, model, channels, config = {}, system_prompt, bot_type, business_name, knowledge_base }) {
+    const id = require('crypto').randomUUID();
     const result = await query(
-      `INSERT INTO agents (user_id, name, description, model, channels, config) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
+      `INSERT INTO agents (id, user_id, name, description, model, channels, config, system_prompt, bot_type, business_name, knowledge_base)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING *`,
-      [userId, name, description, model, JSON.stringify(channels), JSON.stringify(config)]
+      [id, userId, name, description, model, JSON.stringify(channels), JSON.stringify(config),
+       system_prompt || null, bot_type || 'personal', business_name || null, JSON.stringify(knowledge_base || [])]
     );
     return this.formatAgent(result.rows[0]);
   }
@@ -28,7 +30,7 @@ class Agent {
   }
 
   static async update(id, userId, updates) {
-    const allowedFields = ['name', 'description', 'model', 'channels', 'config'];
+    const allowedFields = ['name', 'description', 'model', 'channels', 'config', 'system_prompt', 'bot_type', 'business_name', 'knowledge_base'];
     const setClause = [];
     const values = [];
     let paramCount = 1;
@@ -86,11 +88,32 @@ class Agent {
   }
 
   static formatAgent(agent) {
+    const parseJson = (val, fallback) => {
+      if (!val) return fallback;
+      if (typeof val === 'object') return val;
+      try { return JSON.parse(val); } catch { return fallback; }
+    };
     return {
       ...agent,
-      channels: typeof agent.channels === 'string' ? JSON.parse(agent.channels) : agent.channels,
-      config: typeof agent.config === 'string' ? JSON.parse(agent.config) : agent.config
+      channels: parseJson(agent.channels, []),
+      config: parseJson(agent.config, {}),
+      knowledge_base: parseJson(agent.knowledge_base, [])
     };
+  }
+
+  // Find agent by user ID without requiring userId check (for webhook lookups)
+  static async findByIdOnly(id) {
+    const result = await query('SELECT * FROM agents WHERE id = $1', [id]);
+    return result.rows[0] ? this.formatAgent(result.rows[0]) : null;
+  }
+
+  // Find first agent for a user (default agent for platform messages)
+  static async findDefaultForUser(userId) {
+    const result = await query(
+      `SELECT * FROM agents WHERE user_id = $1 ORDER BY created_at ASC LIMIT 1`,
+      [userId]
+    );
+    return result.rows[0] ? this.formatAgent(result.rows[0]) : null;
   }
 }
 

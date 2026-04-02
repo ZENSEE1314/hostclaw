@@ -566,13 +566,22 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
       }
     }
 
+    const sessionId = `${platform}_${platformId}`;
+
     // Save user message
     await Chat.saveMessage({
       user_id: user.id,
-      session_id: `${platform}_${platformId}`,
+      session_id: sessionId,
       role: 'user',
       content: text
     });
+
+    // Fetch conversation history for context (last 10 messages)
+    const chatHistory = await Chat.getSessionHistory(user.id, sessionId, 10);
+
+    // Find user's default agent for bot personality and knowledge base
+    const Agent = require('../models/agent');
+    const agent = await Agent.findDefaultForUser(user.id);
 
     // Get AI response — pick best available provider
     const allProviders = parseProviders(user);
@@ -588,7 +597,9 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
       message: text,
       provider: resolvedProvider || 'openai',
       providerConfig,
-      skills: activeSkills
+      skills: activeSkills,
+      chatHistory,
+      agent
     });
 
     // If AI returned an error, send it directly
@@ -600,7 +611,7 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
     // Save AI response
     await Chat.saveMessage({
       user_id: user.id,
-      session_id: `${platform}_${platformId}`,
+      session_id: sessionId,
       role: 'assistant',
       content: aiResponse.content,
       model: aiResponse.model,

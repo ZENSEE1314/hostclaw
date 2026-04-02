@@ -162,6 +162,27 @@ async function migrate() {
       console.log('✅ Column plan_expires_at ready');
     } catch (e) { console.log('ℹ️ plan_expires_at:', e.message); }
 
+    // Agent configuration columns
+    try {
+      await query(`ALTER TABLE agents ADD COLUMN IF NOT EXISTS system_prompt TEXT`);
+      console.log('✅ Column agents.system_prompt ready');
+    } catch (e) { console.log('ℹ️ agents.system_prompt:', e.message); }
+
+    try {
+      await query(`ALTER TABLE agents ADD COLUMN IF NOT EXISTS bot_type TEXT DEFAULT 'personal'`);
+      console.log('✅ Column agents.bot_type ready');
+    } catch (e) { console.log('ℹ️ agents.bot_type:', e.message); }
+
+    try {
+      await query(`ALTER TABLE agents ADD COLUMN IF NOT EXISTS knowledge_base TEXT DEFAULT '[]'`);
+      console.log('✅ Column agents.knowledge_base ready');
+    } catch (e) { console.log('ℹ️ agents.knowledge_base:', e.message); }
+
+    try {
+      await query(`ALTER TABLE agents ADD COLUMN IF NOT EXISTS business_name TEXT`);
+      console.log('✅ Column agents.business_name ready');
+    } catch (e) { console.log('ℹ️ agents.business_name:', e.message); }
+
     console.log('✅ All migrations complete!');
     return true;
   } catch (err) {

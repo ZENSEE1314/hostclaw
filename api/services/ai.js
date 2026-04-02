@@ -41,7 +41,7 @@ function getHostClawKey(provider) {
 }
 
 // Generate AI response using user's configured provider or HostClaw fallback
-async function generateAIResponse({ message, provider, providerConfig, skills }) {
+async function generateAIResponse({ message, provider, providerConfig, skills, chatHistory = [], agent = null }) {
   // openclaw is server-hosted — no API key needed
   if (provider === 'openclaw') {
     return callOpenClaw(message, skills);
@@ -102,7 +102,7 @@ async function generateAIResponse({ message, provider, providerConfig, skills })
   const model = resolvedModel || getDefaultModel(resolvedProvider);
 
   // Try the resolved provider, then fall back to others on failure
-  const result = await callProvider(resolvedProvider, decryptedKey, model, message, skills);
+  const result = await callProvider(resolvedProvider, decryptedKey, model, message, skills, chatHistory, agent);
   if (!result.error) return result;
 
   // Primary provider failed — try fallback providers
@@ -113,7 +113,7 @@ async function generateAIResponse({ message, provider, providerConfig, skills })
     const key = getHostClawKey(p);
     if (!key) continue;
     console.log(`Trying fallback provider: ${p}`);
-    const fallbackResult = await callProvider(p, key, getDefaultModel(p), message, skills);
+    const fallbackResult = await callProvider(p, key, getDefaultModel(p), message, skills, chatHistory, agent);
     if (!fallbackResult.error) return fallbackResult;
     console.log(`Fallback ${p} also failed: ${fallbackResult.content}`);
   }
@@ -122,7 +122,7 @@ async function generateAIResponse({ message, provider, providerConfig, skills })
   return result;
 }
 
-async function callProvider(provider, apiKey, model, message, skills) {
+async function callProvider(provider, apiKey, model, message, skills, chatHistory = [], agent = null) {
   try {
     const callers = {
       openai: callOpenAI,
@@ -136,7 +136,7 @@ async function callProvider(provider, apiKey, model, message, skills) {
     };
     const fn = callers[provider];
     if (!fn) return { content: 'Unsupported provider: ' + provider, model: 'none', tokens: 0, error: true };
-    return await fn(message, apiKey, model, skills);
+    return await fn(message, apiKey, model, skills, chatHistory, agent);
   } catch (error) {
     console.error(`Error calling ${provider}:`, error.message);
     return {
@@ -148,11 +148,12 @@ async function callProvider(provider, apiKey, model, message, skills) {
   }
 }
 
-async function callOpenAI(message, apiKey, model, skills) {
+async function callOpenAI(message, apiKey, model, skills, chatHistory = [], agent = null) {
   const openai = new OpenAI({ apiKey });
-  
+
   const messages = [
-    { role: 'system', content: buildSystemPrompt(skills) },
+    { role: 'system', content: buildSystemPrompt({ skills, agent }) },
+    ...chatHistory.map(m => ({ role: m.role, content: m.content })),
     { role: 'user', content: message }
   ];
 
@@ -170,12 +171,15 @@ async function callOpenAI(message, apiKey, model, skills) {
   };
 }
 
-async function callAnthropic(message, apiKey, model, skills) {
+async function callAnthropic(message, apiKey, model, skills, chatHistory = [], agent = null) {
   const response = await axios.post('https://api.anthropic.com/v1/messages', {
     model: model,
     max_tokens: 2000,
-    system: buildSystemPrompt(skills),
-    messages: [{ role: 'user', content: message }]
+    system: buildSystemPrompt({ skills, agent }),
+    messages: [
+      ...chatHistory.map(m => ({ role: m.role, content: m.content })),
+      { role: 'user', content: message }
+    ]
   }, {
     headers: {
       'x-api-key': apiKey,
@@ -197,11 +201,12 @@ async function callAnthropic(message, apiKey, model, skills) {
   };
 }
 
-async function callKimi(message, apiKey, model, skills) {
+async function callKimi(message, apiKey, model, skills, chatHistory = [], agent = null) {
   const response = await axios.post('https://api.moonshot.cn/v1/chat/completions', {
     model: model,
     messages: [
-      { role: 'system', content: buildSystemPrompt(skills) },
+      { role: 'system', content: buildSystemPrompt({ skills, agent }) },
+      ...chatHistory.map(m => ({ role: m.role, content: m.content })),
       { role: 'user', content: message }
     ],
     temperature: 0.7
@@ -219,16 +224,12 @@ async function callKimi(message, apiKey, model, skills) {
   };
 }
 
-async function callGemini(message, apiKey, model, skills) {
+async function callGemini(message, apiKey, model, skills, chatHistory = [], agent = null) {
+  const historyText = chatHistory.map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}`).join('\n');
+  const fullPrompt = buildSystemPrompt({ skills, agent }) + '\n\n' + (historyText ? historyText + '\n' : '') + 'User: ' + message;
   const response = await axios.post(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    {
-      contents: [{
-        parts: [{
-          text: buildSystemPrompt(skills) + '\n\nUser: ' + message
-        }]
-      }]
-    }
+    { contents: [{ parts: [{ text: fullPrompt }] }] }
   );
 
   const text = response.data.candidates[0].content.parts[0].text;
@@ -239,11 +240,12 @@ async function callGemini(message, apiKey, model, skills) {
   };
 }
 
-async function callDeepSeek(message, apiKey, model, skills) {
+async function callDeepSeek(message, apiKey, model, skills, chatHistory = [], agent = null) {
   const response = await axios.post('https://api.deepseek.com/v1/chat/completions', {
     model: model,
     messages: [
-      { role: 'system', content: buildSystemPrompt(skills) },
+      { role: 'system', content: buildSystemPrompt({ skills, agent }) },
+      ...chatHistory.map(m => ({ role: m.role, content: m.content })),
       { role: 'user', content: message }
     ],
     temperature: 0.7
@@ -261,11 +263,12 @@ async function callDeepSeek(message, apiKey, model, skills) {
   };
 }
 
-async function callGroq(message, apiKey, model, skills) {
+async function callGroq(message, apiKey, model, skills, chatHistory = [], agent = null) {
   const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
     model: model,
     messages: [
-      { role: 'system', content: buildSystemPrompt(skills) },
+      { role: 'system', content: buildSystemPrompt({ skills, agent }) },
+      ...chatHistory.map(m => ({ role: m.role, content: m.content })),
       { role: 'user', content: message }
     ],
     temperature: 0.7,
@@ -284,11 +287,12 @@ async function callGroq(message, apiKey, model, skills) {
   };
 }
 
-async function callNVIDIA(message, apiKey, model, skills) {
+async function callNVIDIA(message, apiKey, model, skills, chatHistory = [], agent = null) {
   const response = await axios.post('https://integrate.api.nvidia.com/v1/chat/completions', {
     model: model,
     messages: [
-      { role: 'system', content: buildSystemPrompt(skills) },
+      { role: 'system', content: buildSystemPrompt({ skills, agent }) },
+      ...chatHistory.map(m => ({ role: m.role, content: m.content })),
       { role: 'user', content: message }
     ],
     temperature: 0.7,
@@ -320,28 +324,67 @@ async function callOpenClaw(message, skills) {
   return openclawService.chat(message, buildSystemPrompt(skills));
 }
 
-function buildSystemPrompt(skills) {
-  let prompt = `You are a helpful AI assistant running on HostClaw.ai platform. `;
-  
-  if (skills && skills.length > 0) {
-    prompt += `You have access to these skills: ${skills.join(', ')}. `;
-    
-    if (skills.includes('web_search')) {
-      prompt += `For web search queries, indicate you'd search the web. `;
-    }
-    if (skills.includes('image_gen')) {
-      prompt += `For image generation requests, indicate you'd generate an image. `;
-    }
-    if (skills.includes('code_executor')) {
-      prompt += `You can help write and explain code. `;
-    }
-    if (skills.includes('translator')) {
-      prompt += `You can translate between languages. `;
+function buildSystemPrompt({ skills = [], agent = null } = {}) {
+  const botType = agent?.bot_type || 'personal';
+  const businessName = agent?.business_name || 'our company';
+  const customPrompt = agent?.system_prompt;
+  const kb = agent?.knowledge_base || [];
+
+  let prompt = '';
+
+  // Use custom system prompt if provided
+  if (customPrompt) {
+    prompt = customPrompt + '\n\n';
+  } else {
+    // Generate prompt based on bot type
+    switch (botType) {
+      case 'customer_service':
+        prompt = `You are a friendly and professional customer service representative for ${businessName}. ` +
+          `Answer customer questions accurately using the knowledge base provided below. ` +
+          `If you don't know the answer, politely say you'll check and get back to them. ` +
+          `Be empathetic, patient, and solution-oriented.\n\n`;
+        break;
+
+      case 'sales':
+        prompt = `You are a skilled sales assistant for ${businessName}. ` +
+          `Your goal is to understand customer needs, recommend relevant products or services, ` +
+          `handle objections professionally, and guide customers toward a purchase. ` +
+          `Be persuasive but not pushy. Always be helpful and honest. ` +
+          `Use the product information below to make accurate recommendations.\n\n`;
+        break;
+
+      default: // personal
+        prompt = `You are a helpful personal AI assistant. ` +
+          `Adapt to the user's communication style and language. ` +
+          `Be friendly, concise, and conversational.\n\n`;
+        break;
     }
   }
-  
-  prompt += `Be concise but helpful in your responses.`;
-  
+
+  // Inject knowledge base content
+  if (kb.length > 0) {
+    prompt += '--- KNOWLEDGE BASE ---\n';
+    for (const item of kb) {
+      if (item.type === 'product') {
+        prompt += `PRODUCT: ${item.title}\n`;
+        if (item.price) prompt += `Price: ${item.price}\n`;
+        prompt += `${item.content}\n\n`;
+      } else if (item.type === 'faq') {
+        prompt += `Q: ${item.title}\nA: ${item.content}\n\n`;
+      } else {
+        prompt += `${item.title}: ${item.content}\n\n`;
+      }
+    }
+    prompt += '--- END KNOWLEDGE BASE ---\n\n';
+    prompt += 'Use the knowledge base above to answer questions accurately. ';
+  }
+
+  // Add skills info
+  if (skills.length > 0) {
+    prompt += `Available skills: ${skills.join(', ')}. `;
+  }
+
+  prompt += 'Keep responses concise and helpful.';
   return prompt;
 }
 

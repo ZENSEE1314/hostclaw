@@ -32,6 +32,16 @@ class Chat {
     return result.rowCount;
   }
 
+  static async getSessionHistory(userId, sessionId, limit = 10) {
+    const result = await query(
+      `SELECT role, content FROM chat_messages
+       WHERE user_id = $1 AND session_id = $2
+       ORDER BY created_at DESC LIMIT $3`,
+      [userId, sessionId, limit]
+    );
+    return result.rows.reverse();
+  }
+
   static async getSessions(userId) {
     const result = await query(
       `SELECT DISTINCT session_id, MAX(created_at) as last_message 
