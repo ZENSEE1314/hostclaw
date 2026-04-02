@@ -193,6 +193,12 @@ async function migrate() {
       console.log('✅ Column agents.linked_platforms ready');
     } catch (e) { console.log('ℹ️ agents.linked_platforms:', e.message); }
 
+    // Contacts column for broadcast messaging
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS contacts TEXT DEFAULT '[]'`);
+      console.log('✅ Column users.contacts ready');
+    } catch (e) { console.log('ℹ️ users.contacts:', e.message); }
+
     console.log('✅ All migrations complete!');
     return true;
   } catch (err) {

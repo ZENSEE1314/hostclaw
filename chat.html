@@ -159,6 +159,86 @@
 
         .msg.user .msg-time { text-align: right; }
 
+        .msg-badge {
+            display: inline-block;
+            font-size: 0.625rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 0.1rem 0.4rem;
+            border-radius: 4px;
+            margin-bottom: 0.25rem;
+        }
+
+        .msg-badge.bot {
+            background: var(--accent-bg);
+            color: var(--accent-light);
+        }
+
+        .msg-badge.operator {
+            background: var(--success-bg);
+            color: var(--success);
+        }
+
+        /* Bot toggle in chat header */
+        .bot-toggle-wrap {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .bot-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 100px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: var(--transition);
+            white-space: nowrap;
+        }
+
+        .bot-toggle-btn.active {
+            background: var(--success-bg);
+            color: var(--success);
+            border-color: rgba(34, 197, 94, 0.2);
+        }
+
+        .bot-toggle-btn.paused {
+            background: var(--danger-bg);
+            color: var(--danger);
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .bot-toggle-btn:hover {
+            filter: brightness(1.2);
+        }
+
+        .bot-toggle-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .bot-toggle-btn.active .bot-toggle-dot { background: var(--success); box-shadow: 0 0 6px var(--success); }
+        .bot-toggle-btn.paused .bot-toggle-dot { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+
+        /* Conv list bot status dot */
+        .conv-status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .conv-status-dot.bot-active { background: var(--success); box-shadow: 0 0 4px var(--success); }
+        .conv-status-dot.bot-paused { background: var(--danger); box-shadow: 0 0 4px var(--danger); }
+
         .chat-input-area {
             display: flex;
             gap: 0.75rem;
@@ -241,6 +321,12 @@
                         <div class="chat-header-name" id="chatName">Conversation</div>
                         <div class="chat-header-platform" id="chatPlatform">Web Chat</div>
                     </div>
+                    <div class="bot-toggle-wrap">
+                        <button class="bot-toggle-btn active" id="botToggleBtn" onclick="toggleBot()" title="Toggle bot auto-replies">
+                            <span class="bot-toggle-dot"></span>
+                            <span id="botToggleLabel">Bot Active</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="chat-messages" id="chatMessages">
@@ -269,6 +355,8 @@
     let conversations = {};
     let allMessages = [];
     let activeSession = null;
+    let isBotPaused = false;
+    const botStatusCache = {};
 
     loadConversations();
 
@@ -320,6 +408,8 @@
                 ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>'
                 : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>';
 
+            const statusClass = botStatusCache[sid] === true ? 'bot-paused' : 'bot-active';
+
             return `
                 <div class="conv-item ${activeSession === sid ? 'active' : ''}" onclick="selectConversation('${escapeHtml(sid)}')">
                     <div class="conv-icon ${iconClass}">${icon}</div>
@@ -327,13 +417,16 @@
                         <div class="conv-name">${escapeHtml(name)}</div>
                         <div class="conv-preview">${preview}</div>
                     </div>
-                    <div class="conv-time">${conv.lastTime ? timeAgo(conv.lastTime) : ''}</div>
+                    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem">
+                        <div class="conv-time">${conv.lastTime ? timeAgo(conv.lastTime) : ''}</div>
+                        <div class="conv-status-dot ${statusClass}" title="${statusClass === 'bot-paused' ? 'Bot paused' : 'Bot active'}"></div>
+                    </div>
                 </div>
             `;
         }).join('');
     }
 
-    function selectConversation(sid) {
+    async function selectConversation(sid) {
         activeSession = sid;
         const conv = conversations[sid];
         if (!conv) return;
@@ -353,14 +446,38 @@
         const iconEl = document.getElementById('chatIcon');
         iconEl.className = `conv-icon ${conv.platform}`;
 
-        // Render messages
+        // Fetch bot status for this session
+        try {
+            const status = await api('/api/chat/bot-status/' + encodeURIComponent(sid));
+            isBotPaused = !!(status.paused);
+            botStatusCache[sid] = isBotPaused;
+        } catch {
+            isBotPaused = false;
+            botStatusCache[sid] = false;
+        }
+        updateBotToggleUI();
+
+        // Render messages with badges
         const container = document.getElementById('chatMessages');
-        container.innerHTML = conv.messages.map(msg => `
-            <div class="msg ${msg.role}">
-                <div>${escapeHtml(msg.content)}</div>
-                <div class="msg-time">${msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</div>
-            </div>
-        `).join('');
+        container.innerHTML = conv.messages.map(msg => {
+            const isUser = msg.role === 'user';
+            const isHuman = msg.model === 'human';
+            let badgeHtml = '';
+            if (!isUser) {
+                if (isHuman) {
+                    badgeHtml = '<span class="msg-badge operator">You</span>';
+                } else {
+                    badgeHtml = '<span class="msg-badge bot">Bot</span>';
+                }
+            }
+            return `
+                <div class="msg ${msg.role}">
+                    ${badgeHtml}
+                    <div>${escapeHtml(msg.content)}</div>
+                    <div class="msg-time">${msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</div>
+                </div>
+            `;
+        }).join('');
 
         container.scrollTop = container.scrollHeight;
         renderConversationList();
@@ -373,22 +490,39 @@
 
         input.value = '';
         const container = document.getElementById('chatMessages');
+        const sessionId = activeSession || 'default';
 
-        // Add user message
-        container.innerHTML += `<div class="msg user"><div>${escapeHtml(text)}</div><div class="msg-time">now</div></div>`;
-        container.scrollTop = container.scrollHeight;
+        if (isBotPaused) {
+            // Manual mode: operator sends directly
+            container.innerHTML += `<div class="msg assistant"><span class="msg-badge operator">You</span><div>${escapeHtml(text)}</div><div class="msg-time">now</div></div>`;
+            container.scrollTop = container.scrollHeight;
 
-        try {
-            const data = await api('/api/chat/message', {
-                method: 'POST',
-                body: JSON.stringify({ message: text, session_id: activeSession || 'default' })
-            });
-            const reply = data.content || data.message || data.response || 'No response';
-            container.innerHTML += `<div class="msg assistant"><div>${escapeHtml(reply)}</div><div class="msg-time">now</div></div>`;
+            try {
+                await api('/api/chat/reply', {
+                    method: 'POST',
+                    body: JSON.stringify({ session_id: sessionId, message: text })
+                });
+            } catch (e) {
+                container.innerHTML += `<div class="msg assistant"><div style="color:var(--danger)">Send failed: ${escapeHtml(e.message)}</div></div>`;
+                container.scrollTop = container.scrollHeight;
+            }
+        } else {
+            // Bot mode: send as user, get AI reply
+            container.innerHTML += `<div class="msg user"><div>${escapeHtml(text)}</div><div class="msg-time">now</div></div>`;
             container.scrollTop = container.scrollHeight;
-        } catch (e) {
-            container.innerHTML += `<div class="msg assistant"><div style="color:var(--danger)">${escapeHtml(e.message)}</div></div>`;
-            container.scrollTop = container.scrollHeight;
+
+            try {
+                const data = await api('/api/chat/message', {
+                    method: 'POST',
+                    body: JSON.stringify({ message: text, session_id: sessionId })
+                });
+                const reply = data.content || data.message || data.response || 'No response';
+                container.innerHTML += `<div class="msg assistant"><span class="msg-badge bot">Bot</span><div>${escapeHtml(reply)}</div><div class="msg-time">now</div></div>`;
+                container.scrollTop = container.scrollHeight;
+            } catch (e) {
+                container.innerHTML += `<div class="msg assistant"><div style="color:var(--danger)">${escapeHtml(e.message)}</div></div>`;
+                container.scrollTop = container.scrollHeight;
+            }
         }
     }
 
@@ -421,6 +555,45 @@
         const id = sid.replace(/^(telegram_|whatsapp_|web_)/, '');
         if (id.length > 15) return `${prefix} ${id.substring(0, 12)}...`;
         return `${prefix} ${id}`;
+    }
+
+    async function toggleBot() {
+        if (!activeSession) return;
+        const newPaused = !isBotPaused;
+        const btn = document.getElementById('botToggleBtn');
+        btn.disabled = true;
+
+        try {
+            await api('/api/chat/bot-toggle', {
+                method: 'POST',
+                body: JSON.stringify({ session_id: activeSession, paused: newPaused })
+            });
+            isBotPaused = newPaused;
+            botStatusCache[activeSession] = newPaused;
+            updateBotToggleUI();
+            renderConversationList();
+            showToast(newPaused ? 'Bot paused — manual mode' : 'Bot active — auto-replies on', 'success');
+        } catch (e) {
+            showToast('Failed to toggle bot: ' + e.message, 'error');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function updateBotToggleUI() {
+        const btn = document.getElementById('botToggleBtn');
+        const label = document.getElementById('botToggleLabel');
+        const input = document.getElementById('chatInput');
+
+        if (isBotPaused) {
+            btn.className = 'bot-toggle-btn paused';
+            label.textContent = 'Bot Paused';
+            input.placeholder = 'Type a reply (manual mode)...';
+        } else {
+            btn.className = 'bot-toggle-btn active';
+            label.textContent = 'Bot Active';
+            input.placeholder = 'Type a message...';
+        }
     }
 
     function escapeHtml(str) {

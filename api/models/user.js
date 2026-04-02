@@ -64,7 +64,7 @@ class User {
 
   static async findById(id) {
     const result = await query(
-      'SELECT id, email, name, plan, credits, has_paid, api_providers, skills, platforms, default_provider, stripe_customer_id, stripe_subscription_id, gateway_config, my_referral_code, referred_by, message_count, message_limit, plan_type, plan_expires_at, created_at FROM users WHERE id = $1',
+      'SELECT id, email, name, plan, credits, has_paid, api_providers, skills, platforms, default_provider, stripe_customer_id, stripe_subscription_id, gateway_config, my_referral_code, referred_by, message_count, message_limit, plan_type, plan_expires_at, contacts, created_at FROM users WHERE id = $1',
       [id]
     );
     return result.rows[0];

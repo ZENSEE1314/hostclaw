@@ -555,7 +555,17 @@ function canChat(user) {
 
 async function processAndRespond(user, text, platform, platformId, sendFn) {
   try {
-    // Deduct message BEFORE generating AI response to prevent unbilled usage
+    const sessionId = `${platform}_${platformId}`;
+
+    // Check if bot is paused for this chat (user is handling manually)
+    const isBotPaused = await Chat.isBotPaused(user.id, sessionId);
+    if (isBotPaused) {
+      // Save message but don't auto-reply — user is chatting manually
+      await Chat.saveMessage({ user_id: user.id, session_id: sessionId, role: 'user', content: text });
+      return;
+    }
+
+    // Deduct message BEFORE generating AI response
     const hasOwnKey = Object.keys(parseProviders(user)).length > 0;
     if (!hasOwnKey) {
       const deducted = await User.deductMessage(user.id);
@@ -565,8 +575,6 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
         return;
       }
     }
-
-    const sessionId = `${platform}_${platformId}`;
 
     // Save user message
     await Chat.saveMessage({

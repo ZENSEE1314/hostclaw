@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contacts & Broadcast - HostClaw.ai</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="/css/shared.css" rel="stylesheet">
+  <style>
+    /* Page-specific: Contacts & Broadcast */
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    /* Filter Pills */
+    .filter-pills {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .filter-pill {
+      padding: 0.4rem 1rem;
+      border-radius: 100px;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      font-family: inherit;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+
+    .filter-pill:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+      color: var(--text);
+    }
+
+    .filter-pill.active {
+      background: var(--accent-bg);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: var(--accent-light);
+    }
+
+    .filter-pill .pill-count {
+      background: rgba(255, 255, 255, 0.06);
+      padding: 0.1rem 0.4rem;
+      border-radius: 100px;
+      font-size: 0.6875rem;
+      margin-left: 0.25rem;
+    }
+
+    .filter-pill.active .pill-count {
+      background: rgba(99, 102, 241, 0.2);
+    }
+
+    /* Contact Table */
+    .contacts-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .search-box {
+      position: relative;
+      flex: 1;
+      max-width: 360px;
+    }
+
+    .search-box svg {
+      position: absolute;
+      left: 0.875rem;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 0.625rem 1rem 0.625rem 2.5rem;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-size: 0.875rem;
+      font-family: inherit;
+      transition: var(--transition);
+    }
+
+    .search-box input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .search-box input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .selection-info {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    .selection-info strong {
+      color: var(--accent-light);
+    }
+
+    /* Table Customizations */
+    .contacts-table th:first-child,
+    .contacts-table td:first-child {
+      width: 44px;
+      text-align: center;
+    }
+
+    .contacts-table input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--accent);
+    }
+
+    .contact-name {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .contact-phone,
+    .contact-email {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    .contact-email {
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .platform-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+    }
+
+    .platform-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .platform-icon.telegram { color: #0088cc; }
+    .platform-icon.whatsapp { color: #25d366; }
+    .platform-icon.discord { color: #5865f2; }
+    .platform-icon.messenger { color: #0084ff; }
+    .platform-icon.line { color: #00c300; }
+    .platform-icon.other { color: var(--text-secondary); }
+
+    .tag-list {
+      display: flex;
+      gap: 0.25rem;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 100px;
+      font-size: 0.625rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .row-actions {
+      display: flex;
+      gap: 0.375rem;
+    }
+
+    .row-actions button {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border-radius: var(--radius-sm);
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .row-actions button:hover {
+      background: rgba(255, 255, 255, 0.04);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .row-actions button.delete-btn:hover {
+      background: var(--danger-bg);
+      border-color: rgba(239, 68, 68, 0.2);
+      color: var(--danger);
+    }
+
+    .row-actions button svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Broadcast Modal Specific */
+    .broadcast-modal .modal-card {
+      max-width: 580px;
+    }
+
+    .broadcast-recipients {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .recipient-count {
+      font-size: 1.5rem;
+      font-weight: 800;
+      background: var(--gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1;
+    }
+
+    .recipient-label {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    .broadcast-preview {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin-top: 1rem;
+    }
+
+    .broadcast-preview-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    .broadcast-preview-body {
+      font-size: 0.875rem;
+      color: var(--text);
+      white-space: pre-wrap;
+      line-height: 1.6;
+      min-height: 1.5rem;
+    }
+
+    .broadcast-preview-image {
+      margin-top: 0.75rem;
+      border-radius: var(--radius-sm);
+      max-width: 100%;
+      max-height: 200px;
+      object-fit: cover;
+      display: none;
+    }
+
+    .broadcast-or {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin: 1rem 0;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .broadcast-or::before,
+    .broadcast-or::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Image Generator Card */
+    .promo-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .promo-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .promo-card-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius);
+      background: var(--accent-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-light);
+    }
+
+    .promo-card-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .promo-card-title {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .promo-card-desc {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    .promo-form {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .promo-form .form-group {
+      flex: 1;
+      min-width: 200px;
+      margin-bottom: 0;
+    }
+
+    .style-pills {
+      display: flex;
+      gap: 0.375rem;
+      flex-wrap: wrap;
+      margin-top: 0.75rem;
+    }
+
+    .style-pill {
+      padding: 0.375rem 0.75rem;
+      border-radius: 100px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      font-family: inherit;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .style-pill:hover {
+      border-color: var(--border-hover);
+      color: var(--text);
+    }
+
+    .style-pill.active {
+      background: var(--accent-bg);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: var(--accent-light);
+    }
+
+    .promo-placeholder {
+      background: var(--bg-secondary);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      text-align: center;
+      margin-top: 1rem;
+      display: none;
+    }
+
+    .promo-placeholder p {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      max-width: 400px;
+      margin: 0 auto;
+    }
+
+    .promo-placeholder a {
+      color: var(--accent-light);
+      text-decoration: none;
+    }
+
+    .promo-placeholder a:hover {
+      text-decoration: underline;
+    }
+
+    /* Confirm dialog overlay */
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+    }
+
+    .confirm-overlay.active { display: flex; }
+
+    .confirm-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      max-width: 360px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .confirm-card p {
+      font-size: 0.9375rem;
+      margin-bottom: 1.25rem;
+      color: var(--text-secondary);
+    }
+
+    .confirm-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .header-actions {
+        width: 100%;
+      }
+
+      .header-actions .btn {
+        flex: 1;
+      }
+
+      .contacts-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .search-box {
+        max-width: none;
+      }
+
+      .table-wrap {
+        font-size: 0.8125rem;
+      }
+
+      .contacts-table .col-email,
+      .contacts-table .col-tags {
+        display: none;
+      }
+
+      .promo-form {
+        flex-direction: column;
+      }
+
+      .promo-form .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <div class="main-content">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1>Contacts & Broadcast</h1>
+          <p class="page-header-sub">Manage your contacts and send messages across platforms</p>
+        </div>
+        <div class="header-actions">
+          <button class="btn btn-secondary" onclick="openModal('addContactModal')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            Add Contact
+          </button>
+          <button class="btn btn-primary" onclick="handleOpenBroadcast()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            Send Broadcast
+          </button>
+        </div>
+      </div>
+
+      <!-- Contact Groups -->
+      <div class="filter-pills" id="filterPills">
+        <button class="filter-pill active" data-group="all" onclick="handleFilterGroup('all')">All <span class="pill-count" id="countAll">0</span></button>
+        <button class="filter-pill" data-group="general" onclick="handleFilterGroup('general')">General <span class="pill-count" id="countGeneral">0</span></button>
+        <button class="filter-pill" data-group="vip" onclick="handleFilterGroup('vip')">VIP <span class="pill-count" id="countVip">0</span></button>
+        <button class="filter-pill" data-group="customers" onclick="handleFilterGroup('customers')">Customers <span class="pill-count" id="countCustomers">0</span></button>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="contacts-toolbar">
+        <div class="search-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="searchInput" placeholder="Search by name, phone, or email..." oninput="handleSearch(this.value)">
+        </div>
+        <div class="selection-info" id="selectionInfo"></div>
+      </div>
+
+      <!-- Contact List Table -->
+      <div class="table-wrap" id="contactsTableWrap">
+        <table class="contacts-table">
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="selectAllCheckbox" onchange="handleSelectAll(this.checked)" aria-label="Select all contacts"></th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th class="col-email">Email</th>
+              <th>Platform</th>
+              <th>Group</th>
+              <th class="col-tags">Tags</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="contactsBody">
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state hidden" id="emptyState">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56" style="opacity:0.4">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/>
+          </svg>
+        </div>
+        <h3 class="empty-title">No contacts yet</h3>
+        <p class="empty-desc">Add your first contact to start managing your audience and sending broadcasts.</p>
+        <button class="btn btn-primary" onclick="openModal('addContactModal')">Add Your First Contact</button>
+      </div>
+
+      <!-- Image Generator Section -->
+      <div class="promo-card">
+        <div class="promo-card-header">
+          <div class="promo-card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <div>
+            <div class="promo-card-title">Create Promotional Content</div>
+            <div class="promo-card-desc">Generate images for your broadcast campaigns</div>
+          </div>
+        </div>
+
+        <div class="promo-form">
+          <div class="form-group">
+            <label class="form-label" for="promoPrompt">Describe what you want</label>
+            <input type="text" class="form-input" id="promoPrompt" placeholder="e.g. Chinese New Year greeting for customers">
+          </div>
+          <button class="btn btn-secondary" onclick="handleGenerateImage()">Generate Image</button>
+        </div>
+
+        <div class="style-pills">
+          <button class="style-pill active" data-style="greeting" onclick="handleSelectStyle(this)">Greeting Card</button>
+          <button class="style-pill" data-style="promo" onclick="handleSelectStyle(this)">Product Promo</button>
+          <button class="style-pill" data-style="festival" onclick="handleSelectStyle(this)">Festival</button>
+          <button class="style-pill" data-style="sale" onclick="handleSelectStyle(this)">Sale Banner</button>
+        </div>
+
+        <div class="promo-placeholder" id="promoPlaceholder">
+          <p>Image generation coming soon. You can use <a href="https://www.canva.com" target="_blank" rel="noopener noreferrer">Canva</a> or any design tool and paste the image URL in the broadcast message.</p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Add Contact Modal -->
+  <div class="modal-overlay" id="addContactModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title" id="contactModalTitle">Add Contact</h2>
+        <button class="modal-close" onclick="handleCloseContactModal()" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="contactForm" onsubmit="handleSaveContact(event)">
+        <input type="hidden" id="editContactId" value="">
+
+        <div class="form-group">
+          <label class="form-label" for="contactName">Name *</label>
+          <input type="text" class="form-input" id="contactName" required placeholder="Full name">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="contactPhone">Phone</label>
+          <input type="tel" class="form-input" id="contactPhone" placeholder="+60123456789">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="contactEmail">Email</label>
+          <input type="email" class="form-input" id="contactEmail" placeholder="name@example.com">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="contactPlatform">Platform</label>
+          <select class="form-select" id="contactPlatform">
+            <option value="">Select platform</option>
+            <option value="telegram">Telegram</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="discord">Discord</option>
+            <option value="messenger">Messenger</option>
+            <option value="line">LINE</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="contactPlatformId">Platform ID</label>
+          <input type="text" class="form-input" id="contactPlatformId" placeholder="e.g. Telegram chat ID">
+          <div class="form-hint">The unique identifier used to reach this contact on the selected platform.</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="contactGroup">Group</label>
+          <select class="form-select" id="contactGroup">
+            <option value="general">General</option>
+            <option value="vip">VIP</option>
+            <option value="customers">Customers</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="contactTags">Tags</label>
+          <input type="text" class="form-input" id="contactTags" placeholder="Comma-separated, e.g. leads, malaysia, premium">
+          <div class="form-hint">Separate multiple tags with commas.</div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" onclick="handleCloseContactModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="contactSaveBtn">Save Contact</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Broadcast Modal -->
+  <div class="modal-overlay broadcast-modal" id="broadcastModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2 class="modal-title">Send Broadcast</h2>
+        <button class="modal-close" onclick="closeModal('broadcastModal')" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="broadcast-recipients">
+        <div class="recipient-count" id="recipientCount">0</div>
+        <div>
+          <div class="recipient-label">selected contacts</div>
+        </div>
+      </div>
+
+      <div class="broadcast-or">or send to a group</div>
+
+      <div class="form-group">
+        <label class="form-label" for="broadcastGroup">Send to group</label>
+        <select class="form-select" id="broadcastGroup">
+          <option value="">Use selected contacts instead</option>
+          <option value="all">All Contacts</option>
+          <option value="general">General</option>
+          <option value="vip">VIP</option>
+          <option value="customers">Customers</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="broadcastMessage">Message *</label>
+        <textarea class="form-textarea" id="broadcastMessage" rows="5" required placeholder="Type your broadcast message..." oninput="handlePreviewUpdate()"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="broadcastImageUrl">Image URL (optional)</label>
+        <input type="text" class="form-input" id="broadcastImageUrl" placeholder="https://example.com/image.jpg" oninput="handlePreviewUpdate()">
+        <div class="form-hint">Attach an image to send as a caption with your message.</div>
+      </div>
+
+      <div class="broadcast-preview">
+        <div class="broadcast-preview-label">Preview</div>
+        <div class="broadcast-preview-body" id="broadcastPreviewBody">Your message will appear here...</div>
+        <img class="broadcast-preview-image" id="broadcastPreviewImage" alt="Broadcast image preview">
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="closeModal('broadcastModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="handleSendBroadcast()" id="broadcastSendBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          Send Broadcast
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirm -->
+  <div class="confirm-overlay" id="deleteConfirm">
+    <div class="confirm-card">
+      <h3 style="margin-bottom:0.5rem">Delete Contact</h3>
+      <p>Are you sure you want to remove this contact? This cannot be undone.</p>
+      <div class="confirm-actions">
+        <button class="btn btn-outline btn-sm" onclick="handleCancelDelete()">Cancel</button>
+        <button class="btn btn-danger btn-sm" onclick="handleConfirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Broadcast Confirm -->
+  <div class="confirm-overlay" id="broadcastConfirm">
+    <div class="confirm-card">
+      <h3 style="margin-bottom:0.5rem">Confirm Broadcast</h3>
+      <p id="broadcastConfirmText">Send this message to 0 contacts?</p>
+      <div class="confirm-actions">
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('broadcastConfirm').classList.remove('active')">Cancel</button>
+        <button class="btn btn-primary btn-sm" onclick="executeBroadcast()">Confirm Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/shared.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script>
+    /* State */
+    let contacts = [];
+    let selectedIds = new Set();
+    let activeFilter = 'all';
+    let searchQuery = '';
+    let pendingDeleteId = null;
+
+    /* SVG icons for platforms */
+    const PLATFORM_ICONS = {
+      telegram: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.479.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>',
+      whatsapp: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>',
+      discord: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>',
+      messenger: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M.001 11.639C.001 4.949 5.241 0 12.001 0S24 4.95 24 11.639c0 6.689-5.24 11.638-12 11.638-1.21 0-2.38-.16-3.47-.46a.96.96 0 0 0-.64.05l-2.39 1.05a.96.96 0 0 1-1.35-.85l-.07-2.14a.97.97 0 0 0-.32-.68A11.39 11.389 0 0 1 .002 11.64zm8.32-2.19-3.52 5.6c-.35.53.32 1.139.82.75l3.79-2.87c.26-.2.6-.2.87-.01l2.78 2.09c.8.6 1.93.36 2.45-.52l3.5-5.6c.35-.53-.31-1.13-.82-.75l-3.78 2.87c-.26.2-.6.2-.87.01l-2.78-2.09c-.8-.6-1.93-.36-2.45.52z"/></svg>',
+      line: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/></svg>',
+      other: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>'
+    };
+
+    const GROUP_BADGE_CLASSES = {
+      general: 'badge-accent',
+      vip: 'badge-warning',
+      customers: 'badge-success'
+    };
+
+    /* Initialization */
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!requireAuth()) return;
+      loadContacts();
+    });
+
+    /* Data Loading */
+    async function loadContacts() {
+      try {
+        const data = await api('/api/contacts');
+        contacts = data.contacts || [];
+        updateGroupCounts();
+        renderContacts();
+      } catch (err) {
+        showToast('Failed to load contacts: ' + err.message, 'error');
+        contacts = [];
+        renderContacts();
+      }
+    }
+
+    /* Rendering */
+    function getFilteredContacts() {
+      let filtered = contacts;
+
+      if (activeFilter !== 'all') {
+        filtered = filtered.filter(c => (c.group || 'general').toLowerCase() === activeFilter);
+      }
+
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        filtered = filtered.filter(c =>
+          (c.name || '').toLowerCase().includes(q) ||
+          (c.phone || '').toLowerCase().includes(q) ||
+          (c.email || '').toLowerCase().includes(q)
+        );
+      }
+
+      return filtered;
+    }
+
+    function renderContacts() {
+      const filtered = getFilteredContacts();
+      const tbody = document.getElementById('contactsBody');
+      const emptyState = document.getElementById('emptyState');
+      const tableWrap = document.getElementById('contactsTableWrap');
+
+      if (filtered.length === 0) {
+        tableWrap.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        updateSelectionInfo();
+        return;
+      }
+
+      tableWrap.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+
+      tbody.innerHTML = filtered.map(c => {
+        const isSelected = selectedIds.has(c.id || c._id);
+        const contactId = c.id || c._id;
+        const platform = (c.platform || '').toLowerCase();
+        const group = (c.group || 'general').toLowerCase();
+        const badgeClass = GROUP_BADGE_CLASSES[group] || 'badge-accent';
+        const tags = (c.tags || []).filter(Boolean);
+
+        return `<tr class="${isSelected ? 'selected' : ''}">
+          <td><input type="checkbox" ${isSelected ? 'checked' : ''} onchange="handleToggleSelect('${contactId}')" aria-label="Select ${c.name || 'contact'}"></td>
+          <td><span class="contact-name">${escapeHtml(c.name || 'Unnamed')}</span></td>
+          <td><span class="contact-phone">${escapeHtml(c.phone || '--')}</span></td>
+          <td class="col-email"><span class="contact-email" title="${escapeHtml(c.email || '')}">${escapeHtml(c.email || '--')}</span></td>
+          <td>${platform ? `<span class="platform-icon ${platform}">${PLATFORM_ICONS[platform] || PLATFORM_ICONS.other} ${capitalize(platform)}</span>` : '<span class="text-muted">--</span>'}</td>
+          <td><span class="badge ${badgeClass}">${capitalize(group)}</span></td>
+          <td class="col-tags"><div class="tag-list">${tags.length > 0 ? tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('') : '<span class="text-muted">--</span>'}</div></td>
+          <td>
+            <div class="row-actions">
+              <button onclick="handleEditContact('${contactId}')" title="Edit" aria-label="Edit ${c.name || 'contact'}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="delete-btn" onclick="handleDeleteContact('${contactId}')" title="Delete" aria-label="Delete ${c.name || 'contact'}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+
+      updateSelectionInfo();
+      updateSelectAllState();
+    }
+
+    function updateGroupCounts() {
+      const countMap = { all: contacts.length, general: 0, vip: 0, customers: 0 };
+      const customGroups = new Set();
+
+      contacts.forEach(c => {
+        const g = (c.group || 'general').toLowerCase();
+        if (countMap[g] !== undefined) {
+          countMap[g]++;
+        } else {
+          customGroups.add(g);
+          countMap[g] = (countMap[g] || 0) + 1;
+        }
+      });
+
+      document.getElementById('countAll').textContent = countMap.all;
+      document.getElementById('countGeneral').textContent = countMap.general;
+      document.getElementById('countVip').textContent = countMap.vip;
+      document.getElementById('countCustomers').textContent = countMap.customers;
+
+      // Add custom group pills if any
+      const pillContainer = document.getElementById('filterPills');
+      pillContainer.querySelectorAll('.filter-pill[data-custom]').forEach(el => el.remove());
+      customGroups.forEach(g => {
+        const pill = document.createElement('button');
+        pill.className = `filter-pill${activeFilter === g ? ' active' : ''}`;
+        pill.dataset.group = g;
+        pill.dataset.custom = 'true';
+        pill.onclick = () => handleFilterGroup(g);
+        pill.innerHTML = `${capitalize(g)} <span class="pill-count">${countMap[g]}</span>`;
+        pillContainer.appendChild(pill);
+      });
+    }
+
+    function updateSelectionInfo() {
+      const info = document.getElementById('selectionInfo');
+      if (selectedIds.size > 0) {
+        info.innerHTML = `<strong>${selectedIds.size}</strong> contact${selectedIds.size !== 1 ? 's' : ''} selected`;
+      } else {
+        info.textContent = '';
+      }
+    }
+
+    function updateSelectAllState() {
+      const filtered = getFilteredContacts();
+      const checkbox = document.getElementById('selectAllCheckbox');
+      if (filtered.length === 0) {
+        checkbox.checked = false;
+        checkbox.indeterminate = false;
+        return;
+      }
+      const allSelected = filtered.every(c => selectedIds.has(c.id || c._id));
+      const someSelected = filtered.some(c => selectedIds.has(c.id || c._id));
+      checkbox.checked = allSelected;
+      checkbox.indeterminate = someSelected && !allSelected;
+    }
+
+    /* Selection Handlers */
+    function handleToggleSelect(id) {
+      if (selectedIds.has(id)) {
+        selectedIds.delete(id);
+      } else {
+        selectedIds.add(id);
+      }
+      renderContacts();
+    }
+
+    function handleSelectAll(isChecked) {
+      const filtered = getFilteredContacts();
+      if (isChecked) {
+        filtered.forEach(c => selectedIds.add(c.id || c._id));
+      } else {
+        filtered.forEach(c => selectedIds.delete(c.id || c._id));
+      }
+      renderContacts();
+    }
+
+    /* Filter and Search */
+    function handleFilterGroup(group) {
+      activeFilter = group;
+      document.querySelectorAll('.filter-pill').forEach(p => {
+        p.classList.toggle('active', p.dataset.group === group);
+      });
+      renderContacts();
+    }
+
+    function handleSearch(query) {
+      searchQuery = query.trim();
+      renderContacts();
+    }
+
+    /* Add / Edit Contact */
+    function handleCloseContactModal() {
+      closeModal('addContactModal');
+      document.getElementById('contactForm').reset();
+      document.getElementById('editContactId').value = '';
+      document.getElementById('contactModalTitle').textContent = 'Add Contact';
+      document.getElementById('contactSaveBtn').textContent = 'Save Contact';
+    }
+
+    function handleEditContact(id) {
+      const contact = contacts.find(c => (c.id || c._id) === id);
+      if (!contact) return;
+
+      document.getElementById('editContactId').value = id;
+      document.getElementById('contactModalTitle').textContent = 'Edit Contact';
+      document.getElementById('contactSaveBtn').textContent = 'Update Contact';
+      document.getElementById('contactName').value = contact.name || '';
+      document.getElementById('contactPhone').value = contact.phone || '';
+      document.getElementById('contactEmail').value = contact.email || '';
+      document.getElementById('contactPlatform').value = (contact.platform || '').toLowerCase();
+      document.getElementById('contactPlatformId').value = contact.platform_id || '';
+      document.getElementById('contactGroup').value = (contact.group || 'general').toLowerCase();
+      document.getElementById('contactTags').value = (contact.tags || []).join(', ');
+
+      openModal('addContactModal');
+    }
+
+    async function handleSaveContact(event) {
+      event.preventDefault();
+
+      const id = document.getElementById('editContactId').value;
+      const payload = {
+        name: document.getElementById('contactName').value.trim(),
+        phone: document.getElementById('contactPhone').value.trim(),
+        email: document.getElementById('contactEmail').value.trim(),
+        platform: document.getElementById('contactPlatform').value,
+        platform_id: document.getElementById('contactPlatformId').value.trim(),
+        group: document.getElementById('contactGroup').value,
+        tags: document.getElementById('contactTags').value.split(',').map(t => t.trim()).filter(Boolean)
+      };
+
+      if (!payload.name) {
+        showToast('Name is required', 'error');
+        return;
+      }
+
+      try {
+        if (id) {
+          await api('/api/contacts/' + id, { method: 'PUT', body: JSON.stringify(payload) });
+          showToast('Contact updated', 'success');
+        } else {
+          await api('/api/contacts', { method: 'POST', body: JSON.stringify(payload) });
+          showToast('Contact added', 'success');
+        }
+        handleCloseContactModal();
+        loadContacts();
+      } catch (err) {
+        showToast('Failed to save contact: ' + err.message, 'error');
+      }
+    }
+
+    /* Delete Contact */
+    function handleDeleteContact(id) {
+      pendingDeleteId = id;
+      document.getElementById('deleteConfirm').classList.add('active');
+    }
+
+    function handleCancelDelete() {
+      pendingDeleteId = null;
+      document.getElementById('deleteConfirm').classList.remove('active');
+    }
+
+    async function handleConfirmDelete() {
+      if (!pendingDeleteId) return;
+      const id = pendingDeleteId;
+      handleCancelDelete();
+
+      try {
+        await api('/api/contacts/' + id, { method: 'DELETE' });
+        selectedIds.delete(id);
+        showToast('Contact deleted', 'success');
+        loadContacts();
+      } catch (err) {
+        showToast('Failed to delete contact: ' + err.message, 'error');
+      }
+    }
+
+    /* Broadcast */
+    function handleOpenBroadcast() {
+      document.getElementById('recipientCount').textContent = selectedIds.size;
+      document.getElementById('broadcastMessage').value = '';
+      document.getElementById('broadcastImageUrl').value = '';
+      document.getElementById('broadcastPreviewBody').textContent = 'Your message will appear here...';
+      document.getElementById('broadcastPreviewImage').style.display = 'none';
+      document.getElementById('broadcastGroup').value = '';
+      openModal('broadcastModal');
+    }
+
+    function handlePreviewUpdate() {
+      const msg = document.getElementById('broadcastMessage').value;
+      const imgUrl = document.getElementById('broadcastImageUrl').value.trim();
+      const previewBody = document.getElementById('broadcastPreviewBody');
+      const previewImg = document.getElementById('broadcastPreviewImage');
+
+      previewBody.textContent = msg || 'Your message will appear here...';
+
+      if (imgUrl) {
+        previewImg.src = imgUrl;
+        previewImg.style.display = 'block';
+        previewImg.onerror = () => { previewImg.style.display = 'none'; };
+      } else {
+        previewImg.style.display = 'none';
+      }
+    }
+
+    function handleSendBroadcast() {
+      const message = document.getElementById('broadcastMessage').value.trim();
+      const groupTarget = document.getElementById('broadcastGroup').value;
+
+      if (!message) {
+        showToast('Message is required', 'error');
+        return;
+      }
+
+      if (!groupTarget && selectedIds.size === 0) {
+        showToast('Select contacts or choose a group to send to', 'warning');
+        return;
+      }
+
+      const targetCount = groupTarget
+        ? (groupTarget === 'all' ? contacts.length : contacts.filter(c => (c.group || 'general').toLowerCase() === groupTarget).length)
+        : selectedIds.size;
+
+      document.getElementById('broadcastConfirmText').textContent = `Send this message to ${targetCount} contact${targetCount !== 1 ? 's' : ''}?`;
+      document.getElementById('broadcastConfirm').classList.add('active');
+    }
+
+    async function executeBroadcast() {
+      document.getElementById('broadcastConfirm').classList.remove('active');
+
+      const message = document.getElementById('broadcastMessage').value.trim();
+      const imageUrl = document.getElementById('broadcastImageUrl').value.trim();
+      const groupTarget = document.getElementById('broadcastGroup').value;
+
+      const payload = { message };
+
+      if (imageUrl) {
+        payload.image_url = imageUrl;
+      }
+
+      if (groupTarget) {
+        payload.group = groupTarget;
+      } else {
+        payload.contact_ids = [...selectedIds];
+      }
+
+      const sendBtn = document.getElementById('broadcastSendBtn');
+      sendBtn.disabled = true;
+      sendBtn.innerHTML = '<span class="spinner"></span> Sending...';
+
+      try {
+        const result = await api('/api/contacts/broadcast', {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+
+        const sent = result.sent || 0;
+        const failed = result.failed || 0;
+
+        showToast(`Sent: ${sent}, Failed: ${failed}`, failed > 0 ? 'warning' : 'success');
+        closeModal('broadcastModal');
+        selectedIds.clear();
+        renderContacts();
+      } catch (err) {
+        showToast('Broadcast failed: ' + err.message, 'error');
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Send Broadcast';
+      }
+    }
+
+    /* Image Generator */
+    function handleSelectStyle(btn) {
+      document.querySelectorAll('.style-pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function handleGenerateImage() {
+      const placeholder = document.getElementById('promoPlaceholder');
+      placeholder.style.display = 'block';
+    }
+
+    /* Utilities */
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function capitalize(str) {
+      if (!str) return '';
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    /* Keyboard: close modals on Escape */
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.active, .confirm-overlay.active').forEach(el => {
+          el.classList.remove('active');
+        });
+        pendingDeleteId = null;
+      }
+    });
+
+    /* Close modals on backdrop click */
+    document.querySelectorAll('.modal-overlay, .confirm-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.classList.remove('active');
+          pendingDeleteId = null;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

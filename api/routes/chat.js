@@ -153,6 +153,64 @@ router.post('/message', async (req, res, next) => {
   }
 });
 
+// Manual reply — user takes over chat (sends as human, not AI)
+router.post('/reply', async (req, res, next) => {
+  try {
+    const { session_id, message } = req.body;
+    if (!session_id || !message) {
+      return res.status(400).json({ error: 'session_id and message are required' });
+    }
+
+    // Save as 'operator' role so it's distinguishable from AI
+    await Chat.saveMessage({
+      user_id: req.user.userId,
+      session_id,
+      role: 'assistant',
+      content: message,
+      model: 'human'
+    });
+
+    // Send to the platform
+    const platform = session_id.split('_')[0]; // e.g. 'telegram' from 'telegram_12345'
+    const platformId = session_id.replace(`${platform}_`, '');
+
+    if (platform === 'telegram') {
+      const user = await User.findById(req.user.userId);
+      const platforms = typeof user.platforms === 'string' ? JSON.parse(user.platforms || '{}') : (user.platforms || {});
+      const tg = platforms.telegram;
+      if (tg?.bot_token) {
+        const axios = require('axios');
+        const token = Buffer.from(tg.bot_token, 'base64').toString();
+        await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
+          chat_id: platformId,
+          text: message
+        }).catch(e => console.error('Telegram send error:', e.message));
+      }
+    }
+    // WhatsApp manual reply would need Baileys socket reference (complex)
+
+    res.json({ sent: true });
+  } catch (error) { next(error); }
+});
+
+// Toggle bot on/off for a specific chat
+router.post('/bot-toggle', async (req, res, next) => {
+  try {
+    const { session_id, paused } = req.body;
+    if (!session_id) return res.status(400).json({ error: 'session_id required' });
+    await Chat.setBotPaused(req.user.userId, session_id, !!paused);
+    res.json({ paused: !!paused, session_id });
+  } catch (error) { next(error); }
+});
+
+// Check bot status for a chat
+router.get('/bot-status/:sessionId', async (req, res, next) => {
+  try {
+    const paused = await Chat.isBotPaused(req.user.userId, req.params.sessionId);
+    res.json({ paused });
+  } catch (error) { next(error); }
+});
+
 // Clear chat history
 router.delete('/history', async (req, res, next) => {
   try {
