@@ -66,6 +66,23 @@ router.get('/status', authenticate, async (req, res, next) => {
   }
 });
 
+// Debug: check WhatsApp service availability
+router.get('/whatsapp/check', authenticate, async (req, res) => {
+  const wa = getWAService();
+  if (!wa) {
+    return res.json({ available: false, error: 'Baileys library not loaded. Check npm install.' });
+  }
+  const session = wa.getSession(req.user.userId);
+  const user = await User.findById(req.user.userId);
+  const plats = parsePlatforms(user);
+  res.json({
+    available: true,
+    hasSession: !!session,
+    sessionStatus: session?.status || null,
+    dbStatus: plats.whatsapp?.status || 'not connected'
+  });
+});
+
 // ===== WHATSAPP — QR Code via Baileys =====
 router.post('/whatsapp/start', authenticate, async (req, res) => {
   const userId = req.user.userId;
@@ -83,29 +100,52 @@ router.post('/whatsapp/start', authenticate, async (req, res) => {
           connected_at: new Date().toISOString()
         });
       },
-      // onMessage: AI reply with message deduction
+      // onMessage: AI reply with chat history and agent knowledge
       async (chatJid, text, sock) => {
         const user = await User.findById(userId);
         if (!user) return;
 
         // Check message balance
         if (!User.canSendMessage(user)) {
-          await sock.sendMessage(chatJid, { text: '⚠️ Message limit reached. Please upgrade your plan at hostclaw.ai to continue.' });
+          await sock.sendMessage(chatJid, { text: 'Message limit reached. Please upgrade your plan at hostclaw.ai to continue.' });
           return;
         }
+
+        // Deduct message before AI call
+        const deducted = await User.deductMessage(userId);
+        if (!deducted) {
+          await sock.sendMessage(chatJid, { text: 'Message limit reached. Upgrade at hostclaw.ai' });
+          return;
+        }
+
+        const sessionId = `whatsapp_${chatJid}`;
+        const Chat = require('../models/chat');
+        const Agent = require('../models/agent');
+
+        // Save user message
+        await Chat.saveMessage({ user_id: userId, session_id: sessionId, role: 'user', content: text });
+
+        // Get chat history + agent config
+        const chatHistory = await Chat.getSessionHistory(userId, sessionId, 10);
+        const agent = await Agent.findDefaultForUser(userId);
 
         const providers = parseProviders(user);
         const defProv = user.default_provider || 'openai';
-        const providerConfig = providers[defProv] || providers[Object.keys(providers)[0]];
-        if (!providerConfig) {
-          await sock.sendMessage(chatJid, { text: '⚠️ No AI provider configured in HostClaw. Please add your API keys in Settings.' });
-          return;
-        }
-        const aiRes = await generateAIResponse({ message: text, provider: defProv, providerConfig, skills: [] });
+        const providerConfig = providers[defProv] || providers[Object.keys(providers)[0]] || null;
+
+        const aiRes = await generateAIResponse({
+          message: text,
+          provider: defProv,
+          providerConfig,
+          skills: [],
+          chatHistory,
+          agent
+        });
+
         await sock.sendMessage(chatJid, { text: aiRes.content });
 
-        // Deduct message after successful response
-        await User.deductMessage(userId);
+        // Save AI response
+        await Chat.saveMessage({ user_id: userId, session_id: sessionId, role: 'assistant', content: aiRes.content, model: aiRes.model, tokens: aiRes.tokens });
       }
     );
     res.json({ message: 'WhatsApp QR session started' });
