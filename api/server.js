@@ -35,6 +35,7 @@ const contactsRoutes = require('./routes/contacts');
 const siteSettingsRoutes = require('./routes/site-settings');
 const creativeRoutes = require('./routes/creative');
 const scraperRoutes = require('./routes/scraper');
+const salesRoutes = require('./routes/sales');
 const { errorHandler } = require('./middleware/error');
 const { initDb } = require('./config/database');
 
@@ -79,6 +80,10 @@ async function startup() {
     app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 HostClaw API server running on port ${PORT}`);
       console.log(`📊 Health check: http://0.0.0.0:${PORT}/health`);
+
+      // Start follow-up processor (checks every 2 minutes for pending follow-ups)
+      setInterval(processFollowUps, 2 * 60 * 1000);
+      console.log('📅 Follow-up processor started (every 2 min)');
     });
   } catch (err) {
     console.error('❌ Startup failed:', err);
@@ -289,6 +294,7 @@ app.use('/api/contacts', contactsRoutes);
 app.use('/api/site-settings', siteSettingsRoutes);
 app.use('/api/creative', creativeRoutes);
 app.use('/api/scraper', scraperRoutes);
+app.use('/api/sales', salesRoutes);
 app.use('/webhooks', webhookRoutes);
 
 // Error handling
@@ -298,6 +304,59 @@ app.use(errorHandler);
 app.use((req, res) => {
   res.status(404).json({ error: 'Not found' });
 });
+
+// Follow-up processor — sends scheduled promo messages
+async function processFollowUps() {
+  try {
+    const { query: dbQuery } = require('./config/database');
+    const axios = require('axios');
+
+    const result = await dbQuery(
+      `SELECT f.*, u.platforms FROM sales_followups f
+       JOIN users u ON u.id = f.user_id
+       WHERE f.status = 'pending' AND f.send_at <= CURRENT_TIMESTAMP
+       LIMIT 20`
+    );
+
+    for (const followup of result.rows) {
+      try {
+        const platforms = typeof followup.platforms === 'string'
+          ? JSON.parse(followup.platforms || '{}') : (followup.platforms || {});
+
+        let sent = false;
+
+        if (followup.platform === 'telegram' && platforms.telegram?.bot_token) {
+          const token = Buffer.from(platforms.telegram.bot_token, 'base64').toString();
+          await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
+            chat_id: followup.platform_id,
+            text: followup.message
+          });
+          sent = true;
+        }
+
+        // Mark as sent
+        await dbQuery(
+          `UPDATE sales_followups SET status = $1, sent_at = CURRENT_TIMESTAMP WHERE id = $2`,
+          [sent ? 'sent' : 'failed', followup.id]
+        );
+
+        // Deduct message if sent
+        if (sent) {
+          await User.deductMessage(followup.user_id);
+        }
+
+        if (sent) console.log(`📤 Follow-up sent to ${followup.platform_id}`);
+      } catch (e) {
+        console.error('Follow-up send error:', e.message);
+        await dbQuery(
+          `UPDATE sales_followups SET status = 'failed' WHERE id = $1`, [followup.id]
+        );
+      }
+    }
+  } catch (e) {
+    console.error('Follow-up processor error:', e.message);
+  }
+}
 
 // Start server with migrations
 startup();

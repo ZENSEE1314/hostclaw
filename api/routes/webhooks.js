@@ -645,6 +645,62 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
     // Send response
     await sendFn(finalContent);
 
+    // ===== SALES TRACKING & FOLLOW-UP SCHEDULING =====
+    if (agent && (agent.bot_type === 'sales' || agent.bot_type === 'customer_service')) {
+      try {
+        const { query: dbQuery } = require('../config/database');
+        const crypto = require('crypto');
+
+        // Check if message looks like a product enquiry (price, cost, package, buy, order)
+        const enquiryKeywords = /price|cost|how much|package|buy|order|purchase|booking|book|quote|rate|promo|discount|deal/i;
+        const isEnquiry = enquiryKeywords.test(text);
+
+        if (isEnquiry) {
+          // Check if lead already exists for this session
+          const existingLead = await dbQuery(
+            'SELECT id, status FROM sales_leads WHERE user_id = $1 AND session_id = $2 LIMIT 1',
+            [user.id, sessionId]
+          );
+
+          if (!existingLead.rows[0]) {
+            // Create new lead
+            const leadId = crypto.randomUUID();
+            await dbQuery(
+              `INSERT INTO sales_leads (id, user_id, customer_name, platform, platform_id, session_id, product_interest, status, notes, tags, created_at, updated_at)
+               VALUES ($1,$2,$3,$4,$5,$6,$7,'enquiry',$8,'[]',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
+              [leadId, user.id, 'Customer', platform, platformId, sessionId,
+               text.substring(0, 200), `First enquiry: ${text.substring(0, 100)}`]
+            );
+
+            // Schedule follow-up sequences if enabled
+            const config = agent.config || {};
+            if (config.followup_enabled && config.followup_sequences?.length > 0) {
+              for (const seq of config.followup_sequences) {
+                const sendAt = new Date(Date.now() + (seq.delay_minutes || 60) * 60000);
+                const msg = (seq.message_template || 'Special offer just for you!')
+                  .replace('{discount}', seq.discount_percent || '20')
+                  .replace('{product}', text.substring(0, 50));
+                const fId = crypto.randomUUID();
+                await dbQuery(
+                  `INSERT INTO sales_followups (id, user_id, lead_id, session_id, platform, platform_id, message, send_at, sequence_index, status, created_at)
+                   VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'pending',CURRENT_TIMESTAMP)`,
+                  [fId, user.id, leadId, sessionId, platform, platformId, msg, sendAt.toISOString(), seq.id || 0]
+                );
+              }
+            }
+          } else {
+            // Update existing lead — customer returned
+            await dbQuery(
+              `UPDATE sales_leads SET product_interest = COALESCE(product_interest, '') || ' | ' || $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2`,
+              [text.substring(0, 200), existingLead.rows[0].id]
+            );
+          }
+        }
+      } catch (salesErr) {
+        console.error('Sales tracking error (non-fatal):', salesErr.message);
+      }
+    }
+
   } catch (error) {
     console.error('Process message error:', error.message, error.stack);
     await sendFn('Sorry, something went wrong. The admin has been notified.');

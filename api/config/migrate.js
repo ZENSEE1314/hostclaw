@@ -203,6 +203,47 @@ async function migrate() {
     `);
     console.log('✅ Site settings table ready');
 
+    // Sales leads (CRM)
+    await query(`
+      CREATE TABLE IF NOT EXISTS sales_leads (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        customer_name TEXT DEFAULT 'Unknown',
+        customer_phone TEXT,
+        customer_email TEXT,
+        platform TEXT,
+        platform_id TEXT,
+        session_id TEXT,
+        product_interest TEXT,
+        amount REAL DEFAULT 0,
+        status TEXT DEFAULT 'enquiry',
+        notes TEXT,
+        tags TEXT DEFAULT '[]',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Sales leads table ready');
+
+    // Sales follow-up queue
+    await query(`
+      CREATE TABLE IF NOT EXISTS sales_followups (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        lead_id TEXT,
+        session_id TEXT,
+        platform TEXT,
+        platform_id TEXT,
+        message TEXT NOT NULL,
+        send_at TIMESTAMP NOT NULL,
+        sequence_index INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'pending',
+        sent_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Sales followups table ready');
+
     // Contacts column for broadcast messaging
     try {
       await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS contacts TEXT DEFAULT '[]'`);

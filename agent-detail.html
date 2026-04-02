@@ -865,6 +865,7 @@
             <button class="kb-tab" data-tab="faqs" onclick="switchKBTab('faqs', this)" role="tab" aria-selected="false">FAQs</button>
             <button class="kb-tab" data-tab="bookings" onclick="switchKBTab('bookings', this)" role="tab" aria-selected="false">Bookings</button>
             <button class="kb-tab" data-tab="personal" id="personalTab" onclick="switchKBTab('personal', this)" role="tab" aria-selected="false">Personal</button>
+            <button class="kb-tab" data-tab="followups" id="followupsTab" onclick="switchKBTab('followups', this)" role="tab" aria-selected="false">Follow-Ups</button>
           </div>
 
           <!-- Products Panel -->
@@ -999,6 +1000,31 @@
             <div id="convoEmpty" class="empty-state hidden" style="padding:2rem">
               <div class="empty-title">No conversation samples</div>
               <div class="empty-desc">Paste chat conversations so the bot can mimic your communication style.</div>
+            </div>
+          </div>
+
+          <!-- Follow-Ups Panel -->
+          <div class="kb-panel" id="panelFollowups" role="tabpanel">
+            <div style="margin-bottom:1rem">
+              <label style="display:flex;align-items:center;gap:0.75rem;cursor:pointer">
+                <input type="checkbox" id="followupEnabled" style="width:18px;height:18px;accent-color:var(--accent)" onchange="saveFollowupConfig()">
+                <div>
+                  <div style="font-size:0.9rem;font-weight:600">Enable Auto Follow-Up</div>
+                  <div class="text-muted" style="font-size:0.8rem">Automatically send promo messages to customers who enquire but don't buy</div>
+                </div>
+              </label>
+            </div>
+
+            <div id="sequenceList" style="display:flex;flex-direction:column;gap:1rem"></div>
+
+            <button class="btn btn-secondary btn-sm mt-2" onclick="addSequence()">+ Add Follow-Up Step</button>
+
+            <div class="card mt-2" style="background:var(--bg-secondary);padding:1rem;font-size:0.8rem;color:var(--text-secondary)">
+              <strong style="color:var(--text)">How it works:</strong><br>
+              When a customer asks about a product/price but doesn't purchase, the bot will automatically send follow-up messages at the times you set.<br><br>
+              <strong>Variables you can use in templates:</strong><br>
+              <code>{discount}</code> = discount percentage<br>
+              <code>{product}</code> = what the customer asked about
             </div>
           </div>
         </div>
@@ -1230,6 +1256,11 @@
         renderConversations();
         loadBookings();
         renderPlatformLinks();
+        loadFollowups();
+
+        // Show follow-ups tab only for sales/customer_service bots
+        const fuTab = document.getElementById('followupsTab');
+        if (fuTab) fuTab.style.display = (agent.bot_type === 'sales' || agent.bot_type === 'customer_service') ? '' : 'none';
       } catch (err) {
         showToast('Failed to load agent: ' + err.message, 'error');
         setTimeout(() => { window.location.href = '/agents.html'; }, 2000);
@@ -1327,7 +1358,8 @@
         products: 'panelProducts',
         faqs: 'panelFaqs',
         bookings: 'panelBookings',
-        personal: 'panelPersonal'
+        personal: 'panelPersonal',
+        followups: 'panelFollowups'
       };
       document.getElementById(panelMap[tab]).classList.add('active');
     }
@@ -1969,6 +2001,81 @@
         showToast('Failed to update name: ' + err.message, 'error');
       }
     });
+
+    // ─── Follow-Up Sequences ──────────────────────────────
+    let followupSequences = [];
+
+    async function loadFollowups() {
+      try {
+        const data = await api(`/api/sales/followups/${agentId}`);
+        document.getElementById('followupEnabled').checked = data.enabled;
+        followupSequences = data.sequences || [];
+        renderSequences();
+      } catch (e) { /* endpoint may not exist yet */ }
+    }
+
+    function renderSequences() {
+      const container = document.getElementById('sequenceList');
+      container.innerHTML = followupSequences.map((s, i) => `
+        <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:1rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+            <span style="font-size:0.85rem;font-weight:600">Step ${i + 1}</span>
+            <button class="btn btn-danger btn-sm" onclick="removeSequence(${i})" style="padding:0.25rem 0.5rem;font-size:0.75rem">Remove</button>
+          </div>
+          <div class="grid-2" style="gap:0.75rem;margin-bottom:0.75rem">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Delay (minutes after enquiry)</label>
+              <input type="number" class="form-input" value="${s.delay_minutes || 60}" min="5" onchange="followupSequences[${i}].delay_minutes=parseInt(this.value);saveFollowupConfig()">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Discount %</label>
+              <input type="number" class="form-input" value="${s.discount_percent || 0}" min="0" max="100" onchange="followupSequences[${i}].discount_percent=parseInt(this.value);saveFollowupConfig()">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <label class="form-label">Message Template</label>
+            <textarea class="form-textarea" rows="2" onchange="followupSequences[${i}].message_template=this.value;saveFollowupConfig()">${s.message_template || ''}</textarea>
+          </div>
+          <div class="form-group" style="margin-bottom:0;margin-top:0.5rem">
+            <label class="form-label">Target</label>
+            <select class="form-select" onchange="followupSequences[${i}].target=this.value;saveFollowupConfig()">
+              <option value="no_purchase" ${s.target === 'no_purchase' ? 'selected' : ''}>No purchase yet</option>
+              <option value="first_buyer" ${s.target === 'first_buyer' ? 'selected' : ''}>First-time buyers (upsell)</option>
+              <option value="all" ${s.target === 'all' ? 'selected' : ''}>All enquiries</option>
+            </select>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function addSequence() {
+      followupSequences.push({
+        delay_minutes: (followupSequences.length + 1) * 60,
+        discount_percent: (followupSequences.length + 1) * 10,
+        message_template: 'Special offer just for you! Get {discount}% off {product} — limited time only!',
+        target: 'no_purchase'
+      });
+      renderSequences();
+      saveFollowupConfig();
+    }
+
+    function removeSequence(idx) {
+      followupSequences.splice(idx, 1);
+      renderSequences();
+      saveFollowupConfig();
+    }
+
+    async function saveFollowupConfig() {
+      try {
+        await api(`/api/sales/followups/${agentId}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            enabled: document.getElementById('followupEnabled').checked,
+            sequences: followupSequences
+          })
+        });
+      } catch (e) { console.error('Save followup error:', e.message); }
+    }
 
     // ─── Platform Linking ─────────────────────────────────
     const ALL_PLATFORMS = [
