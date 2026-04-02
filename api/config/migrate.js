@@ -244,6 +244,26 @@ async function migrate() {
     `);
     console.log('✅ Sales followups table ready');
 
+    // Scheduled tasks (broadcasts + reminders)
+    await query(`
+      CREATE TABLE IF NOT EXISTS scheduled_tasks (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        type TEXT NOT NULL,
+        title TEXT,
+        message TEXT,
+        image_url TEXT,
+        target_contacts TEXT DEFAULT '[]',
+        target_group TEXT,
+        scheduled_at TIMESTAMP NOT NULL,
+        repeat_type TEXT DEFAULT 'once',
+        status TEXT DEFAULT 'pending',
+        result TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    console.log('✅ Scheduled tasks table ready');
+
     // Contacts column for broadcast messaging
     try {
       await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS contacts TEXT DEFAULT '[]'`);

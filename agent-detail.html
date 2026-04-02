@@ -1255,6 +1255,7 @@
         renderFAQs();
         renderConversations();
         loadBookings();
+        await loadConnectedPlatforms();
         renderPlatformLinks();
         loadFollowups();
 
@@ -1303,13 +1304,31 @@
     }
 
     function updatePersonalTabVisibility(type) {
-      const tab = document.getElementById('personalTab');
+      const personalTab = document.getElementById('personalTab');
+      const followupsTab = document.getElementById('followupsTab');
+      const productsTab = document.querySelector('[data-tab="products"]');
+      const faqsTab = document.querySelector('[data-tab="faqs"]');
+      const bookingsTab = document.querySelector('[data-tab="bookings"]');
+
       if (type === 'personal') {
-        tab.classList.remove('hidden');
+        // Personal: show personal tab, hide products/faqs/bookings/followups
+        personalTab.classList.remove('hidden');
+        if (productsTab) productsTab.classList.add('hidden');
+        if (faqsTab) faqsTab.classList.add('hidden');
+        if (bookingsTab) bookingsTab.classList.add('hidden');
+        if (followupsTab) followupsTab.classList.add('hidden');
+        if (['products', 'faqs', 'bookings', 'followups'].includes(activeTab)) {
+          switchKBTab('personal', personalTab);
+        }
       } else {
-        tab.classList.add('hidden');
+        // Business: show products/faqs/bookings/followups, hide personal
+        personalTab.classList.add('hidden');
+        if (productsTab) productsTab.classList.remove('hidden');
+        if (faqsTab) faqsTab.classList.remove('hidden');
+        if (bookingsTab) bookingsTab.classList.remove('hidden');
+        if (followupsTab) followupsTab.classList.remove('hidden');
         if (activeTab === 'personal') {
-          switchKBTab('products', document.querySelector('[data-tab="products"]'));
+          switchKBTab('products', productsTab);
         }
       }
     }
@@ -2078,30 +2097,53 @@
     }
 
     // ─── Platform Linking ─────────────────────────────────
-    const ALL_PLATFORMS = [
-      { id: 'whatsapp', name: 'WhatsApp', color: '#25d366' },
-      { id: 'telegram', name: 'Telegram', color: '#0088cc' },
-      { id: 'discord', name: 'Discord', color: '#5865f2' },
-      { id: 'messenger', name: 'Messenger', color: '#0084ff' },
-      { id: 'line', name: 'LINE', color: '#00b900' },
-      { id: 'slack', name: 'Slack', color: '#e01e5a' },
-      { id: 'instagram', name: 'Instagram', color: '#e4405f' },
-      { id: 'x', name: 'X (Twitter)', color: '#1da1f2' }
-    ];
+    const PLATFORM_META = {
+      whatsapp: { name: 'WhatsApp', color: '#25d366' },
+      telegram: { name: 'Telegram', color: '#0088cc' },
+      discord: { name: 'Discord', color: '#5865f2' },
+      messenger: { name: 'Messenger', color: '#0084ff' },
+      line: { name: 'LINE', color: '#00b900' },
+      slack: { name: 'Slack', color: '#e01e5a' },
+      signal: { name: 'Signal', color: '#3a76f0' },
+      wechat: { name: 'WeChat', color: '#07c160' }
+    };
+
+    let connectedPlatforms = {};
+
+    async function loadConnectedPlatforms() {
+      try {
+        const data = await api('/api/platforms/status');
+        connectedPlatforms = data.platforms || data || {};
+      } catch (e) { connectedPlatforms = {}; }
+    }
 
     function renderPlatformLinks() {
       const container = document.getElementById('platformLinks');
       const linked = agent.linked_platforms || [];
-      container.innerHTML = ALL_PLATFORMS.map(p => {
-        const isLinked = linked.includes(p.id);
+
+      // Only show platforms that are actually connected
+      const connected = Object.entries(connectedPlatforms).filter(([, v]) => v.connected);
+
+      if (connected.length === 0) {
+        container.innerHTML = '<p class="text-muted" style="font-size:0.85rem;grid-column:1/-1">No platforms connected yet. <a href="/platforms.html" style="color:var(--accent-light)">Connect one first</a>.</p>';
+        return;
+      }
+
+      container.innerHTML = connected.map(([pid, info]) => {
+        const meta = PLATFORM_META[pid] || { name: pid, color: '#888' };
+        const isLinked = linked.includes(pid);
+        const label = info.name || info.bot_name || info.bot_username || meta.name;
         return `
-          <div onclick="togglePlatformLink('${p.id}')"
+          <div onclick="togglePlatformLink('${pid}')"
             style="display:flex;align-items:center;gap:0.5rem;padding:0.75rem 1rem;
-            background:${isLinked ? p.color + '15' : 'var(--bg-secondary)'};
-            border:1px solid ${isLinked ? p.color + '40' : 'var(--border)'};
+            background:${isLinked ? meta.color + '15' : 'var(--bg-secondary)'};
+            border:1px solid ${isLinked ? meta.color + '40' : 'var(--border)'};
             border-radius:var(--radius);cursor:pointer;transition:all 0.2s">
-            <div style="width:10px;height:10px;border-radius:50%;background:${isLinked ? p.color : 'var(--text-muted)'};flex-shrink:0"></div>
-            <span style="font-size:0.8125rem;font-weight:${isLinked ? '600' : '400'};color:${isLinked ? 'var(--text)' : 'var(--text-secondary)'}">${p.name}</span>
+            <div style="width:10px;height:10px;border-radius:50%;background:${isLinked ? meta.color : 'var(--text-muted)'};flex-shrink:0"></div>
+            <div>
+              <div style="font-size:0.8125rem;font-weight:${isLinked ? '600' : '400'};color:${isLinked ? 'var(--text)' : 'var(--text-secondary)'}">${meta.name}</div>
+              <div style="font-size:0.7rem;color:var(--text-muted)">${label}</div>
+            </div>
           </div>`;
       }).join('');
     }

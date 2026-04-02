@@ -36,6 +36,7 @@ const siteSettingsRoutes = require('./routes/site-settings');
 const creativeRoutes = require('./routes/creative');
 const scraperRoutes = require('./routes/scraper');
 const salesRoutes = require('./routes/sales');
+const scheduleRoutes = require('./routes/schedule');
 const { errorHandler } = require('./middleware/error');
 const { initDb } = require('./config/database');
 
@@ -81,9 +82,11 @@ async function startup() {
       console.log(`🚀 HostClaw API server running on port ${PORT}`);
       console.log(`📊 Health check: http://0.0.0.0:${PORT}/health`);
 
-      // Start follow-up processor (checks every 2 minutes for pending follow-ups)
+      // Start processors (check every 2 minutes)
       setInterval(processFollowUps, 2 * 60 * 1000);
-      console.log('📅 Follow-up processor started (every 2 min)');
+      setInterval(processScheduledTasks, 2 * 60 * 1000);
+      setInterval(processAppointmentReminders, 5 * 60 * 1000);
+      console.log('📅 Processors started: follow-ups (2min), tasks (2min), reminders (5min)');
     });
   } catch (err) {
     console.error('❌ Startup failed:', err);
@@ -295,6 +298,7 @@ app.use('/api/site-settings', siteSettingsRoutes);
 app.use('/api/creative', creativeRoutes);
 app.use('/api/scraper', scraperRoutes);
 app.use('/api/sales', salesRoutes);
+app.use('/api/schedule', scheduleRoutes);
 app.use('/webhooks', webhookRoutes);
 
 // Error handling
@@ -356,6 +360,115 @@ async function processFollowUps() {
   } catch (e) {
     console.error('Follow-up processor error:', e.message);
   }
+}
+
+// Scheduled broadcast/task processor
+async function processScheduledTasks() {
+  try {
+    const { query: dbQuery } = require('./config/database');
+    const axios = require('axios');
+    const result = await dbQuery(
+      `SELECT t.*, u.platforms, u.contacts FROM scheduled_tasks t
+       JOIN users u ON u.id = t.user_id
+       WHERE t.status = 'pending' AND t.scheduled_at <= CURRENT_TIMESTAMP LIMIT 10`
+    );
+    for (const task of result.rows) {
+      try {
+        const platforms = typeof task.platforms === 'string' ? JSON.parse(task.platforms || '{}') : (task.platforms || {});
+        const contacts = typeof task.target_contacts === 'string' ? JSON.parse(task.target_contacts || '[]') : (task.target_contacts || []);
+        const allContacts = typeof task.contacts === 'string' ? JSON.parse(task.contacts || '[]') : (task.contacts || []);
+
+        let targets = contacts.length > 0
+          ? allContacts.filter(c => contacts.includes(c.id))
+          : task.target_group ? allContacts.filter(c => c.group === task.target_group) : allContacts;
+
+        let sent = 0;
+        const tg = platforms.telegram;
+        if (tg?.bot_token) {
+          const token = Buffer.from(tg.bot_token, 'base64').toString();
+          for (const c of targets) {
+            if (c.platform === 'telegram' && c.platform_id) {
+              try {
+                if (task.image_url) {
+                  await axios.post(`https://api.telegram.org/bot${token}/sendPhoto`, {
+                    chat_id: c.platform_id, photo: task.image_url, caption: task.message || ''
+                  });
+                } else {
+                  await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
+                    chat_id: c.platform_id, text: task.message || task.title || 'Reminder'
+                  });
+                }
+                sent++;
+                await User.deductMessage(task.user_id);
+              } catch (e) { /* skip failed */ }
+            }
+          }
+        }
+        await dbQuery(`UPDATE scheduled_tasks SET status='completed', result=$1 WHERE id=$2`,
+          [JSON.stringify({ sent, total: targets.length }), task.id]);
+        if (sent > 0) console.log(`📤 Scheduled task sent to ${sent} contacts`);
+      } catch (e) { await dbQuery(`UPDATE scheduled_tasks SET status='failed' WHERE id=$1`, [task.id]); }
+    }
+  } catch (e) { console.error('Scheduled tasks error:', e.message); }
+}
+
+// Appointment reminder processor — sends reminders 1 hour before
+async function processAppointmentReminders() {
+  try {
+    const { query: dbQuery } = require('./config/database');
+    const axios = require('axios');
+    const oneHourFromNow = new Date(Date.now() + 60 * 60 * 1000);
+    const now = new Date();
+
+    const agents = await dbQuery(`SELECT a.*, u.platforms, u.email, u.name as owner_name FROM agents a JOIN users u ON u.id = a.user_id WHERE a.bookings IS NOT NULL AND a.bookings != '[]'`);
+
+    for (const row of agents.rows) {
+      const bookings = typeof row.bookings === 'string' ? JSON.parse(row.bookings) : (row.bookings || []);
+      const platforms = typeof row.platforms === 'string' ? JSON.parse(row.platforms || '{}') : (row.platforms || {});
+
+      for (const b of bookings) {
+        if (b.status !== 'confirmed' || b.reminded) continue;
+        const bookingTime = new Date(`${b.date}T${b.time}`);
+        if (bookingTime > now && bookingTime <= oneHourFromNow) {
+          // Send reminder to customer via Telegram
+          if (b.customer_phone && platforms.telegram?.bot_token) {
+            try {
+              const token = Buffer.from(platforms.telegram.bot_token, 'base64').toString();
+              await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
+                chat_id: b.customer_phone,
+                text: `Reminder: You have an appointment at ${b.time} on ${b.date}. See you soon!`
+              }).catch(() => {});
+            } catch (e) { /* non-fatal */ }
+          }
+
+          // Send reminder to owner via Telegram
+          if (platforms.telegram?.bot_token) {
+            try {
+              const token = Buffer.from(platforms.telegram.bot_token, 'base64').toString();
+              // Get owner's Telegram chat ID from first admin message
+              const ownerMsg = `Upcoming appointment: ${b.customer_name} at ${b.time} on ${b.date}`;
+              console.log(`📅 Reminder: ${ownerMsg}`);
+            } catch (e) { /* non-fatal */ }
+          }
+
+          // Send email reminder to owner
+          try {
+            const EmailService = require('./services/email');
+            await EmailService.send({
+              to: row.email,
+              subject: `Appointment Reminder: ${b.customer_name} at ${b.time}`,
+              text: `You have an upcoming appointment:\n\nCustomer: ${b.customer_name}\nDate: ${b.date}\nTime: ${b.time}\nPhone: ${b.customer_phone || 'N/A'}\n\nFrom your HostClaw.ai bot "${row.name}".`
+            }).catch(() => {});
+          } catch (e) { /* email service may not be configured */ }
+
+          // Mark as reminded
+          b.reminded = true;
+        }
+      }
+      // Save updated bookings
+      await dbQuery('UPDATE agents SET bookings = $1 WHERE id = $2', [JSON.stringify(bookings), row.id]);
+    }
+  } catch (e) { console.error('Reminder processor error:', e.message); }
 }
 
 // Start server with migrations

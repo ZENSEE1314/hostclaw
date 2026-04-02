@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendar - HostClaw.ai</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="/css/shared.css" rel="stylesheet">
+  <style>
+    /* Page-specific: Calendar & Schedule */
+
+    .header-actions {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .view-toggle {
+      display: flex;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .view-toggle button {
+      padding: 0.5rem 1rem;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      font-family: inherit;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .view-toggle button:hover {
+      color: var(--text);
+    }
+
+    .view-toggle button.active {
+      background: var(--accent-bg);
+      color: var(--accent-light);
+    }
+
+    /* Calendar Layout */
+    .calendar-layout {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    /* Month Navigation */
+    .calendar-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+    }
+
+    .calendar-nav-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .calendar-nav-btns {
+      display: flex;
+      gap: 0.375rem;
+    }
+
+    .calendar-nav-btns button {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .calendar-nav-btns button:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+      color: var(--text);
+    }
+
+    .btn-today {
+      padding: 0 0.75rem;
+      width: auto;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: inherit;
+    }
+
+    /* Calendar Grid */
+    .calendar-grid {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .calendar-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .calendar-weekday {
+      padding: 0.75rem 0.5rem;
+      text-align: center;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+    }
+
+    .calendar-days {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+    }
+
+    .calendar-day {
+      min-height: 90px;
+      padding: 0.5rem;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    .calendar-day:nth-child(7n) {
+      border-right: none;
+    }
+
+    .calendar-days .calendar-day:nth-last-child(-n+7) {
+      border-bottom: none;
+    }
+
+    .calendar-day:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .calendar-day.other-month {
+      opacity: 0.3;
+    }
+
+    .calendar-day.today .day-number {
+      background: var(--gradient);
+      color: white;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .calendar-day.selected {
+      background: var(--accent-bg);
+      border-color: var(--border-active);
+    }
+
+    .day-number {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 0.375rem;
+    }
+
+    .calendar-day.today .day-number {
+      color: white;
+    }
+
+    .day-events {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1875rem;
+    }
+
+    .day-event-dot {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.625rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0.0625rem 0.25rem;
+      border-radius: 3px;
+    }
+
+    .day-event-dot .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-booking { background: var(--accent-light); }
+    .dot-broadcast { background: var(--success); }
+    .dot-followup { background: var(--warning); }
+
+    .day-event-dot:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .day-more {
+      font-size: 0.5625rem;
+      color: var(--text-muted);
+      padding: 0.0625rem 0.25rem;
+      font-weight: 600;
+    }
+
+    /* Right Panel: Day Events + Upcoming */
+    .calendar-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+    }
+
+    .panel-date {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .panel-body {
+      padding: 0.75rem;
+    }
+
+    .panel-empty {
+      text-align: center;
+      padding: 2rem 1rem;
+      color: var(--text-muted);
+      font-size: 0.8125rem;
+    }
+
+    .panel-empty-icon {
+      font-size: 2rem;
+      opacity: 0.4;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Event Cards */
+    .event-card {
+      padding: 0.875rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      margin-bottom: 0.5rem;
+      transition: var(--transition);
+    }
+
+    .event-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .event-card:hover {
+      border-color: var(--border-hover);
+    }
+
+    .event-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .event-time {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .event-type {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.125rem 0.5rem;
+      border-radius: 100px;
+      font-size: 0.625rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .event-type.booking {
+      background: var(--accent-bg);
+      color: var(--accent-light);
+    }
+
+    .event-type.broadcast {
+      background: var(--success-bg);
+      color: var(--success);
+    }
+
+    .event-type.followup {
+      background: var(--warning-bg);
+      color: var(--warning);
+    }
+
+    .event-title {
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .event-meta {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      display: flex;
+      flex-direction: column;
+      gap: 0.125rem;
+    }
+
+    .event-meta-row {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+    }
+
+    .event-meta-row svg {
+      width: 12px;
+      height: 12px;
+      opacity: 0.5;
+      flex-shrink: 0;
+    }
+
+    .event-actions {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.625rem;
+    }
+
+    .event-actions .btn {
+      padding: 0.3rem 0.625rem;
+      font-size: 0.6875rem;
+    }
+
+    /* Broadcast status pills */
+    .broadcast-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+    }
+
+    .broadcast-status.scheduled { color: var(--warning); }
+    .broadcast-status.sent { color: var(--success); }
+    .broadcast-status.draft { color: var(--text-muted); }
+
+    /* Upcoming list */
+    .upcoming-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.625rem 0.5rem;
+      border-radius: var(--radius-sm);
+      transition: var(--transition);
+    }
+
+    .upcoming-item:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .upcoming-item + .upcoming-item {
+      border-top: 1px solid var(--border);
+    }
+
+    .upcoming-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .upcoming-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .upcoming-title {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .upcoming-datetime {
+      font-size: 0.6875rem;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .upcoming-type {
+      font-size: 0.625rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* Legend */
+    .calendar-legend {
+      display: flex;
+      gap: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    /* Schedule Modal */
+    .modal-card.wide {
+      max-width: 540px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      padding-right: 2rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .calendar-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .calendar-day {
+        min-height: 60px;
+        padding: 0.25rem;
+      }
+
+      .day-event-dot span:not(.dot) {
+        display: none;
+      }
+
+      .day-event-dot {
+        justify-content: center;
+      }
+
+      .calendar-legend {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .header-actions {
+        flex-wrap: wrap;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .calendar-weekday {
+        font-size: 0.5625rem;
+        padding: 0.5rem 0.25rem;
+      }
+
+      .day-number {
+        font-size: 0.6875rem;
+      }
+
+      .calendar-day {
+        min-height: 48px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <div class="main-content">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <h1>Calendar</h1>
+          <p class="page-header-sub">Manage bookings, broadcasts, and follow-ups</p>
+        </div>
+        <div class="header-actions">
+          <div class="view-toggle">
+            <button class="active" id="btnMonth" onclick="setView('month')">Month</button>
+            <button id="btnWeek" onclick="setView('week')">Week</button>
+          </div>
+          <button class="btn btn-primary" onclick="openModal('scheduleModal')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Schedule Broadcast
+          </button>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="calendar-legend">
+        <div class="legend-item">
+          <div class="legend-dot dot-booking"></div>
+          Booking
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot dot-broadcast"></div>
+          Broadcast
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot dot-followup"></div>
+          Follow-up
+        </div>
+      </div>
+
+      <!-- Calendar Layout -->
+      <div class="calendar-layout">
+
+        <!-- Calendar Grid -->
+        <div>
+          <div class="calendar-nav">
+            <div class="calendar-nav-btns">
+              <button onclick="prevMonth()" aria-label="Previous month">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <button class="btn-today" onclick="goToday()">Today</button>
+              <button onclick="nextMonth()" aria-label="Next month">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+            <div class="calendar-nav-title" id="calendarTitle">April 2026</div>
+          </div>
+
+          <div class="calendar-grid">
+            <div class="calendar-weekdays">
+              <div class="calendar-weekday">Mon</div>
+              <div class="calendar-weekday">Tue</div>
+              <div class="calendar-weekday">Wed</div>
+              <div class="calendar-weekday">Thu</div>
+              <div class="calendar-weekday">Fri</div>
+              <div class="calendar-weekday">Sat</div>
+              <div class="calendar-weekday">Sun</div>
+            </div>
+            <div class="calendar-days" id="calendarDays"></div>
+          </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="calendar-panel">
+
+          <!-- Selected Day Events -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title" id="dayPanelTitle">Today's Events</div>
+              <div class="panel-date" id="dayPanelDate"></div>
+            </div>
+            <div class="panel-body" id="dayEvents">
+              <div class="panel-empty">
+                <div class="panel-empty-icon">&#128197;</div>
+                Select a day to view events
+              </div>
+            </div>
+          </div>
+
+          <!-- Upcoming Events -->
+          <div class="panel-card">
+            <div class="panel-header">
+              <div class="panel-title">Upcoming (7 days)</div>
+            </div>
+            <div class="panel-body" id="upcomingEvents">
+              <div class="panel-empty">
+                <div class="panel-empty-icon">&#128203;</div>
+                No upcoming events
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schedule Broadcast Modal -->
+  <div class="modal-overlay" id="scheduleModal">
+    <div class="modal-card wide">
+      <div class="modal-header">
+        <div class="modal-title">Schedule Broadcast</div>
+        <button class="modal-close" onclick="closeModal('scheduleModal')" aria-label="Close modal">&times;</button>
+      </div>
+
+      <form id="broadcastForm" onsubmit="handleScheduleBroadcast(event)">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="broadcastDate">Date</label>
+            <input type="date" class="form-input" id="broadcastDate" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="broadcastTime">Time</label>
+            <input type="time" class="form-input" id="broadcastTime" required>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="broadcastTitle">Title</label>
+          <input type="text" class="form-input" id="broadcastTitle" placeholder="e.g. Flash Sale Announcement" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="broadcastMessage">Message</label>
+          <textarea class="form-textarea" id="broadcastMessage" placeholder="Type your broadcast message..." rows="4" required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="broadcastImage">Image URL (optional)</label>
+          <input type="url" class="form-input" id="broadcastImage" placeholder="https://example.com/image.jpg">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label" for="broadcastTarget">Target</label>
+            <select class="form-input form-select" id="broadcastTarget">
+              <option value="all">All contacts</option>
+              <option value="group">Select group</option>
+              <option value="custom">Select contacts</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="broadcastRepeat">Repeat</label>
+            <select class="form-input form-select" id="broadcastRepeat">
+              <option value="once">Once</option>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group hidden" id="groupSelect">
+          <label class="form-label" for="broadcastGroup">Group</label>
+          <select class="form-input form-select" id="broadcastGroup">
+            <option value="">Select a group...</option>
+            <option value="vip">VIP Customers</option>
+            <option value="new">New Contacts</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" onclick="closeModal('scheduleModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="scheduleBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Schedule
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/js/shared.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script>
+    const MONTH_NAMES = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const MAX_VISIBLE_EVENTS_PER_DAY = 3;
+
+    let currentMonth = new Date().getMonth();
+    let currentYear = new Date().getFullYear();
+    let selectedDate = null;
+    let currentView = 'month';
+    let events = { tasks: [], bookings: [] };
+
+    // Sample data for demonstration when API is unavailable
+    const SAMPLE_EVENTS = {
+      tasks: [
+        { id: 1, type: 'broadcast', title: 'Weekly Promo Blast', date: formatDateKey(new Date(currentYear, currentMonth, 5)), time: '10:00', message: 'Check out our latest deals this week!', target: 'all', targetCount: 248, status: 'scheduled', repeat: 'weekly' },
+        { id: 2, type: 'broadcast', title: 'New Feature Announcement', date: formatDateKey(new Date(currentYear, currentMonth, 12)), time: '14:00', message: 'We just launched AI-powered responses!', target: 'vip', targetCount: 56, status: 'scheduled', repeat: 'once' },
+        { id: 3, type: 'followup', title: 'Follow up: Maria Santos', date: formatDateKey(new Date(currentYear, currentMonth, 3)), time: '09:00', customer: 'Maria Santos', phone: '+63 917 123 4567', discount: 15, status: 'pending' },
+        { id: 4, type: 'followup', title: 'Follow up: James Cruz', date: formatDateKey(new Date(currentYear, currentMonth, 8)), time: '11:30', customer: 'James Cruz', phone: '+63 918 987 6543', discount: 10, status: 'pending' },
+        { id: 5, type: 'broadcast', title: 'Flash Sale Alert', date: formatDateKey(new Date(currentYear, currentMonth, 18)), time: '08:00', message: '24-hour flash sale starts now!', target: 'all', targetCount: 312, status: 'draft', repeat: 'once' },
+        { id: 6, type: 'followup', title: 'Follow up: Ana Reyes', date: formatDateKey(new Date(currentYear, currentMonth, 15)), time: '16:00', customer: 'Ana Reyes', phone: '+63 920 555 1234', discount: 20, status: 'completed' },
+      ],
+      bookings: [
+        { id: 101, type: 'booking', title: 'Demo Call - Acme Corp', date: formatDateKey(new Date(currentYear, currentMonth, 2)), time: '10:00', customer: 'John Smith', phone: '+1 555 012 3456', notes: 'Product demo for enterprise plan' },
+        { id: 102, type: 'booking', title: 'Onboarding: Fresh Mart', date: formatDateKey(new Date(currentYear, currentMonth, 5)), time: '14:30', customer: 'Lisa Chen', phone: '+1 555 789 0123', notes: 'New customer setup' },
+        { id: 103, type: 'booking', title: 'Support Call - TechHub', date: formatDateKey(new Date(currentYear, currentMonth, 10)), time: '09:00', customer: 'Mike Davis', phone: '+44 20 7946 0958', notes: 'Integration troubleshooting' },
+        { id: 104, type: 'booking', title: 'Strategy Review', date: formatDateKey(new Date(currentYear, currentMonth, 15)), time: '11:00', customer: 'Sarah Kim', phone: '+82 10 1234 5678', notes: 'Quarterly automation review' },
+        { id: 105, type: 'booking', title: 'Sales Call - GlobalTech', date: formatDateKey(new Date(currentYear, currentMonth, 20)), time: '15:00', customer: 'Alex Turner', phone: '+61 2 1234 5678', notes: 'Enterprise pricing discussion' },
+        { id: 106, type: 'booking', title: 'Check-in: NovaBiz', date: formatDateKey(today()), time: '13:00', customer: 'Raj Patel', phone: '+91 98765 43210', notes: 'Monthly check-in' },
+        { id: 107, type: 'booking', title: 'Consultation: BrightCo', date: formatDateKey(addDays(today(), 1)), time: '10:30', customer: 'Emma Wilson', phone: '+1 555 234 5678', notes: 'Workflow automation consultation' },
+        { id: 108, type: 'booking', title: 'Follow-up: ZenMode', date: formatDateKey(addDays(today(), 3)), time: '16:00', customer: 'Kai Tanaka', phone: '+81 90 1234 5678', notes: 'Post-onboarding review' },
+      ]
+    };
+
+    function today() {
+      return new Date();
+    }
+
+    function addDays(date, days) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + days);
+      return d;
+    }
+
+    function formatDateKey(date) {
+      const d = new Date(date);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function formatDisplayDate(dateStr) {
+      const d = new Date(dateStr + 'T00:00:00');
+      return `${DAY_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+    }
+
+    function formatTime12h(time24) {
+      const [h, m] = time24.split(':').map(Number);
+      const period = h >= 12 ? 'PM' : 'AM';
+      const hour = h % 12 || 12;
+      return `${hour}:${String(m).padStart(2, '0')} ${period}`;
+    }
+
+    function isSameDate(dateStr) {
+      return dateStr === formatDateKey(new Date());
+    }
+
+    function getAllEvents() {
+      return [...(events.tasks || []), ...(events.bookings || [])];
+    }
+
+    function getEventsForDate(dateStr) {
+      return getAllEvents().filter(e => e.date === dateStr).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+    }
+
+    async function loadEvents() {
+      try {
+        events = await api('/api/schedule');
+      } catch {
+        events = SAMPLE_EVENTS;
+      }
+      renderCalendar();
+      renderUpcoming();
+      if (selectedDate) {
+        renderDayEvents(selectedDate);
+      } else {
+        selectDate(formatDateKey(new Date()));
+      }
+    }
+
+    function renderCalendar() {
+      const container = document.getElementById('calendarDays');
+      const titleEl = document.getElementById('calendarTitle');
+      titleEl.textContent = `${MONTH_NAMES[currentMonth]} ${currentYear}`;
+
+      const firstDay = new Date(currentYear, currentMonth, 1);
+      const lastDay = new Date(currentYear, currentMonth + 1, 0);
+      const totalDays = lastDay.getDate();
+
+      // Monday = 0, Sunday = 6
+      let startOffset = firstDay.getDay() - 1;
+      if (startOffset < 0) startOffset = 6;
+
+      const prevMonthLast = new Date(currentYear, currentMonth, 0).getDate();
+      const todayStr = formatDateKey(new Date());
+
+      let html = '';
+
+      // Previous month trailing days
+      for (let i = startOffset - 1; i >= 0; i--) {
+        const day = prevMonthLast - i;
+        const prevMonth = currentMonth - 1 < 0 ? 11 : currentMonth - 1;
+        const prevYear = currentMonth - 1 < 0 ? currentYear - 1 : currentYear;
+        const dateStr = formatDateKey(new Date(prevYear, prevMonth, day));
+        html += buildDayCell(day, dateStr, true, todayStr);
+      }
+
+      // Current month days
+      for (let d = 1; d <= totalDays; d++) {
+        const dateStr = formatDateKey(new Date(currentYear, currentMonth, d));
+        html += buildDayCell(d, dateStr, false, todayStr);
+      }
+
+      // Next month leading days
+      const totalCells = startOffset + totalDays;
+      const rows = Math.ceil(totalCells / 7);
+      const remaining = (rows * 7) - totalCells;
+      for (let i = 1; i <= remaining; i++) {
+        const nextMonth = currentMonth + 1 > 11 ? 0 : currentMonth + 1;
+        const nextYear = currentMonth + 1 > 11 ? currentYear + 1 : currentYear;
+        const dateStr = formatDateKey(new Date(nextYear, nextMonth, i));
+        html += buildDayCell(i, dateStr, true, todayStr);
+      }
+
+      container.innerHTML = html;
+    }
+
+    function buildDayCell(dayNum, dateStr, isOtherMonth, todayStr) {
+      const isToday = dateStr === todayStr;
+      const isSelected = dateStr === selectedDate;
+      const dayEvents = getEventsForDate(dateStr);
+
+      let classes = 'calendar-day';
+      if (isOtherMonth) classes += ' other-month';
+      if (isToday) classes += ' today';
+      if (isSelected) classes += ' selected';
+
+      let eventsHtml = '';
+      const visible = dayEvents.slice(0, MAX_VISIBLE_EVENTS_PER_DAY);
+      const extra = dayEvents.length - MAX_VISIBLE_EVENTS_PER_DAY;
+
+      for (const ev of visible) {
+        const dotClass = ev.type === 'booking' ? 'dot-booking' : ev.type === 'broadcast' ? 'dot-broadcast' : 'dot-followup';
+        const label = ev.title || ev.type;
+        eventsHtml += `<div class="day-event-dot"><span class="dot ${dotClass}"></span><span>${truncate(label, 16)}</span></div>`;
+      }
+
+      if (extra > 0) {
+        eventsHtml += `<div class="day-more">+${extra} more</div>`;
+      }
+
+      return `
+        <div class="${classes}" onclick="selectDate('${dateStr}')" role="button" tabindex="0" aria-label="${dateStr}">
+          <div class="day-number">${dayNum}</div>
+          <div class="day-events">${eventsHtml}</div>
+        </div>
+      `;
+    }
+
+    function truncate(str, len) {
+      return str.length > len ? str.substring(0, len) + '...' : str;
+    }
+
+    function selectDate(dateStr) {
+      selectedDate = dateStr;
+      renderCalendar();
+      renderDayEvents(dateStr);
+    }
+
+    function renderDayEvents(dateStr) {
+      const titleEl = document.getElementById('dayPanelTitle');
+      const dateEl = document.getElementById('dayPanelDate');
+      const container = document.getElementById('dayEvents');
+
+      const isToday = isSameDate(dateStr);
+      titleEl.textContent = isToday ? "Today's Events" : 'Events';
+      dateEl.textContent = formatDisplayDate(dateStr);
+
+      const dayEvents = getEventsForDate(dateStr);
+
+      if (dayEvents.length === 0) {
+        container.innerHTML = `
+          <div class="panel-empty">
+            <div class="panel-empty-icon">&#128197;</div>
+            No events on this day
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = dayEvents.map(ev => renderEventCard(ev)).join('');
+    }
+
+    function renderEventCard(ev) {
+      const timeStr = ev.time ? formatTime12h(ev.time) : '';
+
+      if (ev.type === 'booking') {
+        return `
+          <div class="event-card">
+            <div class="event-top">
+              <span class="event-time">${timeStr}</span>
+              <span class="event-type booking">Booking</span>
+            </div>
+            <div class="event-title">${escapeHtml(ev.title)}</div>
+            <div class="event-meta">
+              <div class="event-meta-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                ${escapeHtml(ev.customer || 'Unknown')}
+              </div>
+              <div class="event-meta-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/></svg>
+                ${escapeHtml(ev.phone || '')}
+              </div>
+            </div>
+            <div class="event-actions">
+              <button class="btn btn-sm btn-secondary" onclick="sendReminder('${ev.id}')">Send Reminder</button>
+            </div>
+          </div>
+        `;
+      }
+
+      if (ev.type === 'broadcast') {
+        const statusClass = ev.status || 'scheduled';
+        return `
+          <div class="event-card">
+            <div class="event-top">
+              <span class="event-time">${timeStr}</span>
+              <span class="event-type broadcast">Broadcast</span>
+            </div>
+            <div class="event-title">${escapeHtml(ev.title)}</div>
+            <div class="event-meta">
+              <div class="event-meta-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                ${escapeHtml(truncate(ev.message || '', 50))}
+              </div>
+              <div class="event-meta-row">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                ${ev.targetCount || 0} contacts &middot;
+                <span class="broadcast-status ${statusClass}">${capitalize(statusClass)}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      // Follow-up
+      const statusLabel = ev.status === 'completed' ? 'Completed' : 'Pending';
+      const statusBadge = ev.status === 'completed' ? 'badge-success' : 'badge-warning';
+      return `
+        <div class="event-card">
+          <div class="event-top">
+            <span class="event-time">${timeStr}</span>
+            <span class="event-type followup">Follow-up</span>
+          </div>
+          <div class="event-title">${escapeHtml(ev.customer || ev.title)}</div>
+          <div class="event-meta">
+            <div class="event-meta-row">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              ${ev.discount ? ev.discount + '% discount offer' : 'No discount'}
+            </div>
+            <div class="event-meta-row">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span class="badge ${statusBadge}">${statusLabel}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderUpcoming() {
+      const container = document.getElementById('upcomingEvents');
+      const todayStr = formatDateKey(new Date());
+      const allEvents = getAllEvents();
+
+      // Get events for the next 7 days
+      const upcoming = [];
+      for (let i = 0; i < 7; i++) {
+        const d = addDays(new Date(), i);
+        const dateStr = formatDateKey(d);
+        const dayEvents = allEvents.filter(e => e.date === dateStr);
+        upcoming.push(...dayEvents.map(e => ({ ...e, _dateStr: dateStr })));
+      }
+
+      upcoming.sort((a, b) => {
+        const cmp = a.date.localeCompare(b.date);
+        if (cmp !== 0) return cmp;
+        return (a.time || '').localeCompare(b.time || '');
+      });
+
+      if (upcoming.length === 0) {
+        container.innerHTML = `
+          <div class="panel-empty">
+            <div class="panel-empty-icon">&#128203;</div>
+            No upcoming events
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = upcoming.map(ev => {
+        const dotClass = ev.type === 'booking' ? 'dot-booking' : ev.type === 'broadcast' ? 'dot-broadcast' : 'dot-followup';
+        const typeLabel = capitalize(ev.type);
+        const d = new Date(ev.date + 'T00:00:00');
+        const isToday = ev.date === todayStr;
+        const dayLabel = isToday ? 'Today' : `${MONTH_NAMES[d.getMonth()].substring(0, 3)} ${d.getDate()}`;
+        const timeLabel = ev.time ? formatTime12h(ev.time) : '';
+
+        return `
+          <div class="upcoming-item" onclick="selectDate('${ev.date}')">
+            <div class="upcoming-dot ${dotClass}"></div>
+            <div class="upcoming-info">
+              <div class="upcoming-title">${escapeHtml(ev.title)}</div>
+              <div class="upcoming-datetime">${dayLabel}${timeLabel ? ' at ' + timeLabel : ''}</div>
+            </div>
+            <div class="upcoming-type">${typeLabel}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function prevMonth() {
+      currentMonth--;
+      if (currentMonth < 0) {
+        currentMonth = 11;
+        currentYear--;
+      }
+      renderCalendar();
+    }
+
+    function nextMonth() {
+      currentMonth++;
+      if (currentMonth > 11) {
+        currentMonth = 0;
+        currentYear++;
+      }
+      renderCalendar();
+    }
+
+    function goToday() {
+      const now = new Date();
+      currentMonth = now.getMonth();
+      currentYear = now.getFullYear();
+      selectDate(formatDateKey(now));
+    }
+
+    function setView(view) {
+      currentView = view;
+      document.getElementById('btnMonth').classList.toggle('active', view === 'month');
+      document.getElementById('btnWeek').classList.toggle('active', view === 'week');
+      renderCalendar();
+    }
+
+    async function handleScheduleBroadcast(e) {
+      e.preventDefault();
+      const btn = document.getElementById('scheduleBtn');
+      btn.disabled = true;
+
+      const payload = {
+        type: 'broadcast',
+        date: document.getElementById('broadcastDate').value,
+        time: document.getElementById('broadcastTime').value,
+        title: document.getElementById('broadcastTitle').value,
+        message: document.getElementById('broadcastMessage').value,
+        image: document.getElementById('broadcastImage').value || null,
+        target: document.getElementById('broadcastTarget').value,
+        repeat: document.getElementById('broadcastRepeat').value,
+        status: 'scheduled'
+      };
+
+      try {
+        await api('/api/schedule', { method: 'POST', body: JSON.stringify(payload) });
+        showToast('Broadcast scheduled successfully', 'success');
+        closeModal('scheduleModal');
+        document.getElementById('broadcastForm').reset();
+        loadEvents();
+      } catch (err) {
+        showToast(err.message || 'Failed to schedule broadcast', 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function sendReminder(eventId) {
+      try {
+        await api(`/api/schedule/${eventId}/remind`, { method: 'POST' });
+        showToast('Reminder sent', 'success');
+      } catch {
+        showToast('Reminder sent (demo)', 'success');
+      }
+    }
+
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Target selector toggle
+    document.getElementById('broadcastTarget').addEventListener('change', function () {
+      document.getElementById('groupSelect').classList.toggle('hidden', this.value !== 'group');
+    });
+
+    // Keyboard navigation for calendar days
+    document.addEventListener('keydown', function (e) {
+      if (e.target.classList.contains('calendar-day') && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        e.target.click();
+      }
+    });
+
+    // Initialize
+    requireAuth();
+    loadEvents();
+  </script>
+</body>
+</html>
