@@ -1,5 +1,14 @@
 /* HostClaw.ai — Shared JavaScript */
 
+// Inject favicon if not already set
+if (!document.querySelector('link[rel="icon"]')) {
+  const link = document.createElement('link');
+  link.rel = 'icon';
+  link.type = 'image/svg+xml';
+  link.href = '/favicon.svg';
+  document.head.appendChild(link);
+}
+
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:10000'
   : 'https://hostclaw-api.onrender.com';
