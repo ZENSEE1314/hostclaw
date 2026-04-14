@@ -100,6 +100,8 @@ app.use(helmet());
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  'https://aibotchat.app',
+  'https://www.aibotchat.app',
   'https://hostclaw-web.onrender.com',
   'https://hostclaw.onrender.com',
   'http://localhost:3000',
