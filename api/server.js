@@ -95,20 +95,9 @@ async function startup() {
   }
 }
 
-// Security middleware — relax CSP for inline scripts/styles in frontend HTML
+// Security middleware — disable CSP (frontend uses inline scripts/onclick throughout)
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      scriptSrcAttr: ["'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://fonts.googleapis.com", "data:"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https://hostclaw-production-8e47.up.railway.app", "https://api.stripe.com", "https://fonts.googleapis.com"],
-      frameSrc: ["'self'", "https://js.stripe.com"],
-    }
-  }
+  contentSecurityPolicy: false
 }));
 
 const allowedOrigins = [
