@@ -95,8 +95,20 @@ async function startup() {
   }
 }
 
-// Security middleware
-app.use(helmet());
+// Security middleware — relax CSP for inline scripts/styles in frontend HTML
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://fonts.googleapis.com", "data:"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      connectSrc: ["'self'", "https://api.stripe.com", "https://fonts.googleapis.com"],
+      frameSrc: ["'self'", "https://js.stripe.com"],
+    }
+  }
+}));
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
