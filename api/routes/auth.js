@@ -287,7 +287,7 @@ router.post('/forgot-password', async (req, res, next) => {
     try {
       await EmailService.send({
         to: user.email,
-        subject: 'Password Reset - HostClaw',
+        subject: 'Password Reset - ChatsAI',
         html: `
           <div style="font-family: Inter, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background: #0a0a1a; color: #f8fafc; border-radius: 20px;">
             <h1 style="color: #6366f1;">Password Reset</h1>

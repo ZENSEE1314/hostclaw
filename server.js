@@ -8,7 +8,7 @@ app.use(express.static(path.join(__dirname)));
 
 // API proxy
 app.use('/api', (req, res) => {
-  res.redirect(307, `https://hostclaw-production-8e47.up.railway.app${req.url}`);
+  res.redirect(307, `https://chatsai-production-8e47.up.railway.app${req.url}`);
 });
 
 // Routes
@@ -30,5 +30,5 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`HostClaw web server running on port ${PORT}`);
+  console.log(`ChatsAI web server running on port ${PORT}`);
 });

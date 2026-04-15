@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const { query } = require('./config/database');
 
 async function createAdminUser() {
-  const email = process.argv[2] || 'admin@hostclaw.ai';
+  const email = process.argv[2] || 'admin@chatsai.ai';
   const password = process.argv[3] || 'admin123456';
   const name = process.argv[4] || 'Admin User';
   

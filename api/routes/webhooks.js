@@ -495,7 +495,7 @@ async function handleTelegramCommand(chatId, text, user, platforms) {
   const skills = parseSkills(user);
   const providers = parseProviders(user);
   const commands = {
-    '/start': `👋 Welcome ${user.name}!\n\nI'm your AI assistant on HostClaw.\n💳 Credits: $${parseFloat(user.credits).toFixed(2)}\n🤖 Provider: ${user.default_provider}\n\nSend me any message to start!`,
+    '/start': `👋 Welcome ${user.name}!\n\nI'm your AI assistant on ChatsAI.\n💳 Credits: $${parseFloat(user.credits).toFixed(2)}\n🤖 Provider: ${user.default_provider}\n\nSend me any message to start!`,
     '/help': `Available commands:\n/start - Start\n/credits - Check balance\n/provider - Current AI provider\n/skills - Active skills\n/help - This message`,
     '/credits': `💳 Your credits: $${parseFloat(user.credits).toFixed(2)}\n\nAdd more: ${process.env.FRONTEND_URL}/billing.html`,
     '/skills': `🧩 Active skills:\n${skills.filter(s => s.active).map(s => `• ${s.id}`).join('\n') || 'None'}`,
@@ -509,7 +509,7 @@ async function handleTelegramCommand(chatId, text, user, platforms) {
 async function handleDiscordCommand(channelId, text, user, platforms) {
   const skills = parseSkills(user);
   const commands = {
-    '!help': `**HostClaw AI Assistant**\n\n**Commands:**\n!start - Welcome message\n!credits - Check balance\n!provider - AI provider info\n!skills - List skills\n!help - This message\n\nYour credits: $${parseFloat(user.credits).toFixed(2)}`,
+    '!help': `**ChatsAI AI Assistant**\n\n**Commands:**\n!start - Welcome message\n!credits - Check balance\n!provider - AI provider info\n!skills - List skills\n!help - This message\n\nYour credits: $${parseFloat(user.credits).toFixed(2)}`,
     '!start': `👋 Hey ${user.name}! I'm your AI assistant. Just type any message and I'll help you out.`,
     '!credits': `💳 Your credits: $${parseFloat(user.credits).toFixed(2)}\n\nAdd more at: ${process.env.FRONTEND_URL}/billing.html`,
     '!skills': `🧩 Your active skills:\n${skills.filter(s => s.active).map(s => `• ${s.id}`).join('\n') || 'None yet'}`,
@@ -525,8 +525,8 @@ async function handleDiscordCommand(channelId, text, user, platforms) {
 async function handleSlackCommand(channel, text, user, platforms) {
   const skills = parseSkills(user);
   const commands = {
-    '!help': `*HostClaw AI Assistant*\n\nCommands:\n• !start - Welcome\n• !credits - Check balance\n• !skills - List skills\n• !help - This message`,
-    '!start': `👋 Hey <!channel>! I'm an AI assistant powered by HostClaw.`,
+    '!help': `*ChatsAI AI Assistant*\n\nCommands:\n• !start - Welcome\n• !credits - Check balance\n• !skills - List skills\n• !help - This message`,
+    '!start': `👋 Hey <!channel>! I'm an AI assistant powered by ChatsAI.`,
     '!credits': `💳 Credits: $${parseFloat(user.credits).toFixed(2)}`,
     '!skills': `🧩 Active skills: ${skills.filter(s => s.active).map(s => s.id).join(', ') || 'None'}`
   };

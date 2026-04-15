@@ -27,7 +27,7 @@ class EmailService {
     
     try {
       const info = await this.transporter.sendMail({
-        from: `"HostClaw" <${process.env.SMTP_USER}>`,
+        from: `"ChatsAI" <${process.env.SMTP_USER}>`,
         to,
         subject,
         html
@@ -44,7 +44,7 @@ class EmailService {
   async sendWelcomeEmail(user) {
     return this.send({
       to: user.email,
-      subject: '🐾 Welcome to HostClaw.ai!',
+      subject: '🐾 Welcome to ChatsAI!',
       html: this.getWelcomeTemplate(user)
     });
   }
@@ -84,7 +84,7 @@ class EmailService {
   async sendWeeklyReport(user, stats) {
     return this.send({
       to: user.email,
-      subject: '📊 Your HostClaw Weekly Report',
+      subject: '📊 Your ChatsAI Weekly Report',
       html: this.getWeeklyReportTemplate(user, stats)
     });
   }
@@ -95,7 +95,7 @@ class EmailService {
     return `
     <div style="font-family: Inter, sans-serif; max-width: 600px; margin: 0 auto; color: #f8fafc; background: #0a0a1a; padding: 40px; border-radius: 20px;">
       <h1 style="background: linear-gradient(135deg, #6366f1 0%, #06b6d4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-        🐾 Welcome to HostClaw!
+        🐾 Welcome to ChatsAI!
       </h1>
       <p>Hi ${user.name},</p>
       <p>Your OpenClaw cloud hosting platform is ready! Here's what you can do:</p>

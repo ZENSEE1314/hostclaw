@@ -7,7 +7,7 @@ const router = express.Router();
 
 // Default site settings (used when nothing is saved in DB)
 const DEFAULTS = {
-  site_name: 'HostClaw.ai',
+  site_name: 'ChatsAI',
   site_tagline: 'AI Chatbots for WhatsApp & Telegram',
   site_description: 'Deploy intelligent AI chatbots that auto-reply to enquiries, handle customer service, and close sales 24/7 on WhatsApp, Telegram, and more.',
   hero_title: 'AI That Sells, Supports & Never Sleeps',
@@ -40,10 +40,10 @@ const DEFAULTS = {
     { step: '4', title: 'Go Live', description: 'Your bot starts replying to customers instantly. You can take over any chat anytime.' }
   ],
   testimonials: [],
-  footer_text: 'HostClaw.ai — AI-powered chatbots for business.',
-  contact_email: 'support@hostclaw.ai',
+  footer_text: 'ChatsAI — AI-powered chatbots for business.',
+  contact_email: 'support@chatsai.ai',
   social_links: {},
-  meta_title: 'HostClaw.ai — AI Chatbots for WhatsApp & Telegram | Auto-Reply, Sales & Customer Service',
+  meta_title: 'ChatsAI — AI Chatbots for WhatsApp & Telegram | Auto-Reply, Sales & Customer Service',
   meta_description: 'Deploy AI chatbots on WhatsApp and Telegram that auto-reply to enquiries, handle customer service, recommend products, and close sales 24/7. Start free with 50 messages.',
   meta_keywords: 'AI chatbot, WhatsApp bot, Telegram bot, auto reply, customer service bot, sales bot, business automation, chatbot platform',
   og_image: '',

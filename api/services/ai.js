@@ -25,9 +25,9 @@ function decrypt(text) {
   return decrypted;
 }
 
-// HostClaw shared API keys — fallback when user has no keys configured
+// ChatsAI shared API keys — fallback when user has no keys configured
 // Checks both HOSTCLAW_*_KEY and standard env var names (OPENAI_API_KEY, etc.)
-function getHostClawKey(provider) {
+function getChatsAIKey(provider) {
   const map = {
     openai: process.env.HOSTCLAW_OPENAI_KEY || process.env.OPENAI_API_KEY,
     anthropic: process.env.HOSTCLAW_ANTHROPIC_KEY || process.env.HOSTCLAW_CLAUDE_KEY || process.env.ANTHROPIC_API_KEY,
@@ -41,14 +41,14 @@ function getHostClawKey(provider) {
   return map[provider] || null;
 }
 
-// Generate AI response using user's configured provider or HostClaw fallback
+// Generate AI response using user's configured provider or ChatsAI fallback
 async function generateAIResponse({ message, provider, providerConfig, skills, chatHistory = [], agent = null }) {
   // openclaw is server-hosted — no API key needed
   if (provider === 'openclaw') {
     return callOpenClaw(message, skills);
   }
 
-  // Resolve the API key: user's key first, then HostClaw fallback
+  // Resolve the API key: user's key first, then ChatsAI fallback
   let decryptedKey = null;
   let resolvedProvider = provider;
   let resolvedModel = providerConfig?.model;
@@ -59,7 +59,7 @@ async function generateAIResponse({ message, provider, providerConfig, skills, c
       decryptedKey = decrypt(providerConfig.apiKey);
     } catch (e) {
       console.error('Failed to decrypt user API key:', e.message);
-      // Fall through to HostClaw key
+      // Fall through to ChatsAI key
     }
   }
 
@@ -81,7 +81,7 @@ async function generateAIResponse({ message, provider, providerConfig, skills, c
     }
 
     for (const p of searchOrder) {
-      const key = getHostClawKey(p);
+      const key = getChatsAIKey(p);
       if (key) {
         decryptedKey = key;
         resolvedProvider = p;
@@ -111,7 +111,7 @@ async function generateAIResponse({ message, provider, providerConfig, skills, c
   const fallbackOrder = ['ollama', 'groq', 'deepseek', 'openai', 'anthropic', 'gemini', 'kimi', 'nvidia'];
   for (const p of fallbackOrder) {
     if (p === resolvedProvider) continue;
-    const key = getHostClawKey(p);
+    const key = getChatsAIKey(p);
     if (!key) continue;
     console.log(`Trying fallback provider: ${p}`);
     const fallbackResult = await callProvider(p, key, getDefaultModel(p), message, skills, chatHistory, agent);

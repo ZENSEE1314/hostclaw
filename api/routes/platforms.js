@@ -19,7 +19,7 @@ function getWAService() {
 
 const router = express.Router();
 
-const API_BASE = process.env.API_URL || 'https://hostclaw-production-8e47.up.railway.app';
+const API_BASE = process.env.API_URL || 'https://chatsai-production-8e47.up.railway.app';
 const VALID_PLATFORMS = ['whatsapp', 'telegram', 'discord', 'slack', 'line', 'messenger', 'signal', 'wechat'];
 
 function parsePlatforms(user) {
@@ -107,14 +107,14 @@ router.post('/whatsapp/start', authenticate, async (req, res) => {
 
         // Check message balance
         if (!User.canSendMessage(user)) {
-          await sock.sendMessage(chatJid, { text: 'Message limit reached. Please upgrade your plan at hostclaw.ai to continue.' });
+          await sock.sendMessage(chatJid, { text: 'Message limit reached. Please upgrade your plan at chatsai.ai to continue.' });
           return;
         }
 
         // Deduct message before AI call
         const deducted = await User.deductMessage(userId);
         if (!deducted) {
-          await sock.sendMessage(chatJid, { text: 'Message limit reached. Upgrade at hostclaw.ai' });
+          await sock.sendMessage(chatJid, { text: 'Message limit reached. Upgrade at chatsai.ai' });
           return;
         }
 

@@ -1,4 +1,4 @@
-/* HostClaw.ai — Shared JavaScript */
+/* ChatsAI — Shared JavaScript */
 
 // Inject favicon if not already set
 if (!document.querySelector('link[rel="icon"]')) {

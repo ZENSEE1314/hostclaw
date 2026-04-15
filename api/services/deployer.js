@@ -12,9 +12,9 @@ const execAsync = promisify(exec);
 
 // Deployment configuration
 const DEPLOYMENT_CONFIG = {
-  namespace: 'hostclaw-agents',
-  registry: process.env.DOCKER_REGISTRY || 'hostclaw',
-  domain: process.env.AGENT_DOMAIN || 'agents.hostclaw.ai',
+  namespace: 'chatsai-agents',
+  registry: process.env.DOCKER_REGISTRY || 'chatsai',
+  domain: process.env.AGENT_DOMAIN || 'agents.chatsai.ai',
   imageTag: process.env.AGENT_IMAGE_TAG || 'latest'
 };
 
@@ -125,7 +125,7 @@ class Deployer {
 
     // Generate package.json
     const packageJson = {
-      name: `hostclaw-agent-${agent.id.slice(0, 8)}`,
+      name: `chatsai-agent-${agent.id.slice(0, 8)}`,
       version: '1.0.0',
       dependencies: {
         'openclaw': '^1.0.0',

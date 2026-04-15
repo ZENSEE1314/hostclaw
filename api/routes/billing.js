@@ -124,7 +124,7 @@ router.post('/credits/checkout', async (req, res, next) => {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `HostClaw ${pkg.name}`,
+              name: `ChatsAI ${pkg.name}`,
               description: pkg.duration === 365 ? 'Unlimited AI bot messages for 1 year' : 'Unlimited AI bot messages per month'
             },
             unit_amount: pkg.price,
@@ -156,7 +156,7 @@ router.post('/credits/checkout', async (req, res, next) => {
         price_data: {
           currency: 'usd',
           product_data: {
-            name: `HostClaw ${pkg.name}`,
+            name: `ChatsAI ${pkg.name}`,
             description: `${pkg.messages.toLocaleString()} AI bot messages`
           },
           unit_amount: pkg.price

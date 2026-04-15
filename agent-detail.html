@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agent Config - HostClaw.ai</title>
+  <title>Agent Config - ChatsAI</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <link href="/css/shared.css" rel="stylesheet">
   <style>
@@ -1258,7 +1258,7 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
         document.getElementById('pageLoading').classList.add('hidden');
         document.getElementById('pageContent').classList.remove('hidden');
 
-        document.title = `${agent.name} - HostClaw.ai`;
+        document.title = `${agent.name} - ChatsAI`;
         document.getElementById('agentNameInput').value = agent.name || '';
         document.getElementById('systemPromptInput').value = agent.system_prompt || '';
         document.getElementById('modelSelect').value = agent.model || 'gpt-4o';
@@ -1970,7 +1970,7 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
         agent.name = name;
         agent.model = model;
         agent.description = description;
-        document.title = `${name} - HostClaw.ai`;
+        document.title = `${name} - ChatsAI`;
         showToast('Settings saved', 'success');
       } catch (err) {
         showToast('Failed to save: ' + err.message, 'error');
@@ -2059,7 +2059,7 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
           body: JSON.stringify({ name: newName })
         });
         agent.name = newName;
-        document.title = `${newName} - HostClaw.ai`;
+        document.title = `${newName} - ChatsAI`;
         showToast('Name updated', 'success');
       } catch (err) {
         this.value = agent.name;

@@ -8,7 +8,7 @@ class Deployer {
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     const deploymentId = crypto.randomUUID();
-    const url = `https://agent-${agent.id.slice(0, 8)}.hostclaw.ai`;
+    const url = `https://agent-${agent.id.slice(0, 8)}.chatsai.ai`;
     
     // Just update status - no actual deployment
     await Agent.updateStatus(agent.id, 'running', {

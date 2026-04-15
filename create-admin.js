@@ -14,12 +14,12 @@ async function createAdmin() {
             SET has_paid = 1, plan = 'enterprise', credits = 1000
         `;
         
-        const params = [userId, 'admin@hostclaw.ai', hashedPassword, 'Admin', 'enterprise', 1000];
+        const params = [userId, 'admin@chatsai.ai', hashedPassword, 'Admin', 'enterprise', 1000];
         
         await query(sql, params);
         
         console.log('✅ Admin user created successfully!');
-        console.log('Email: admin@hostclaw.ai');
+        console.log('Email: admin@chatsai.ai');
         console.log('Password: admin123');
         process.exit(0);
     } catch (err) {

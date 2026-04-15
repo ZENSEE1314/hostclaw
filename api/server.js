@@ -79,7 +79,7 @@ async function startup() {
 
     // Start server
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 HostClaw API server running on port ${PORT}`);
+      console.log(`🚀 ChatsAI API server running on port ${PORT}`);
       console.log(`📊 Health check: http://0.0.0.0:${PORT}/health`);
 
       // Start processors (check every 2 minutes)
@@ -480,7 +480,7 @@ async function processAppointmentReminders() {
             await EmailService.send({
               to: row.email,
               subject: `Appointment Reminder: ${b.customer_name} at ${b.time}`,
-              text: `You have an upcoming appointment:\n\nCustomer: ${b.customer_name}\nDate: ${b.date}\nTime: ${b.time}\nPhone: ${b.customer_phone || 'N/A'}\n\nFrom your HostClaw.ai bot "${row.name}".`
+              text: `You have an upcoming appointment:\n\nCustomer: ${b.customer_name}\nDate: ${b.date}\nTime: ${b.time}\nPhone: ${b.customer_phone || 'N/A'}\n\nFrom your ChatsAI bot "${row.name}".`
             }).catch(() => {});
           } catch (e) { /* email service may not be configured */ }
 

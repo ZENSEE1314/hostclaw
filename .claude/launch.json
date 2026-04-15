@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "hostclaw-web",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.js"],
+      "port": 3000,
+      "cwd": "C:\\Users\\Zen See\\.easyclaw\\workspace\\hostclaw-website"
+    }
+  ]
+}
