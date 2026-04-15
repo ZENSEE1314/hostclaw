@@ -19,7 +19,7 @@ function getWAService() {
 
 const router = express.Router();
 
-const API_BASE = process.env.API_URL || 'https://hostclaw-api.onrender.com';
+const API_BASE = process.env.API_URL || 'https://hostclaw-production-8e47.up.railway.app';
 const VALID_PLATFORMS = ['whatsapp', 'telegram', 'discord', 'slack', 'line', 'messenger', 'signal', 'wechat'];
 
 function parsePlatforms(user) {

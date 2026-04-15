@@ -8,7 +8,7 @@ app.use(express.static(path.join(__dirname)));
 
 // API proxy
 app.use('/api', (req, res) => {
-  res.redirect(307, `https://hostclaw-api.onrender.com${req.url}`);
+  res.redirect(307, `https://hostclaw-production-8e47.up.railway.app${req.url}`);
 });
 
 // Routes

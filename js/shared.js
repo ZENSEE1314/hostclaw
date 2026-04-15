@@ -11,7 +11,7 @@ if (!document.querySelector('link[rel="icon"]')) {
 
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:10000'
-  : 'https://hostclaw-api.onrender.com';
+  : 'https://hostclaw-production-8e47.up.railway.app';
 
 // Auth token
 function getToken() {
