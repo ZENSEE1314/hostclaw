@@ -35,7 +35,8 @@ function getHostClawKey(provider) {
     gemini: process.env.HOSTCLAW_GEMINI_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_KEY,
     deepseek: process.env.HOSTCLAW_DEEPSEEK_KEY || process.env.DEEPSEEK_API_KEY,
     groq: process.env.HOSTCLAW_GROQ_KEY || process.env.GROQ_API_KEY,
-    nvidia: process.env.HOSTCLAW_NVIDIA_KEY || process.env.NVIDIA_API_KEY
+    nvidia: process.env.HOSTCLAW_NVIDIA_KEY || process.env.NVIDIA_API_KEY,
+    ollama: 'ollama'
   };
   return map[provider] || null;
 }
@@ -75,7 +76,7 @@ async function generateAIResponse({ message, provider, providerConfig, skills, c
     if (defaultProv && !searchOrder.includes(defaultProv)) searchOrder.push(defaultProv);
 
     // 3. Try all providers (groq first — free tier, fast, reliable)
-    for (const p of ['groq', 'deepseek', 'openai', 'anthropic', 'gemini', 'kimi', 'nvidia']) {
+    for (const p of ['ollama', 'groq', 'deepseek', 'openai', 'anthropic', 'gemini', 'kimi', 'nvidia']) {
       if (!searchOrder.includes(p)) searchOrder.push(p);
     }
 
@@ -107,7 +108,7 @@ async function generateAIResponse({ message, provider, providerConfig, skills, c
 
   // Primary provider failed — try fallback providers
   console.log(`Primary provider ${resolvedProvider} failed: ${result.content}. Trying fallbacks...`);
-  const fallbackOrder = ['groq', 'deepseek', 'openai', 'anthropic', 'gemini', 'kimi', 'nvidia'];
+  const fallbackOrder = ['ollama', 'groq', 'deepseek', 'openai', 'anthropic', 'gemini', 'kimi', 'nvidia'];
   for (const p of fallbackOrder) {
     if (p === resolvedProvider) continue;
     const key = getHostClawKey(p);
@@ -132,6 +133,7 @@ async function callProvider(provider, apiKey, model, message, skills, chatHistor
       deepseek: callDeepSeek,
       groq: callGroq,
       nvidia: callNVIDIA,
+      ollama: callOllama,
       openclaw: (msg, key, mdl, sk) => callOpenClaw(msg, sk)
     };
     const fn = callers[provider];
@@ -307,6 +309,30 @@ async function callNVIDIA(message, apiKey, model, skills, chatHistory = [], agen
   return {
     content: response.data.choices[0].message.content,
     model: response.data.model,
+    tokens: response.data.usage?.total_tokens || estimateTokens(message + response.data.choices[0].message.content)
+  };
+}
+
+async function callOllama(message, apiKey, model, skills, chatHistory = [], agent = null) {
+  const ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
+
+  const response = await axios.post(`${ollamaUrl}/v1/chat/completions`, {
+    model: model,
+    messages: [
+      { role: 'system', content: buildSystemPrompt({ skills, agent }) },
+      ...chatHistory.map(m => ({ role: m.role, content: m.content })),
+      { role: 'user', content: message }
+    ],
+    temperature: 0.7,
+    max_tokens: 2000
+  }, {
+    headers: { 'Content-Type': 'application/json' },
+    timeout: 60000
+  });
+
+  return {
+    content: response.data.choices[0].message.content,
+    model: response.data.model || model,
     tokens: response.data.usage?.total_tokens || estimateTokens(message + response.data.choices[0].message.content)
   };
 }
@@ -491,7 +517,8 @@ function getDefaultModel(provider) {
     gemini: 'gemini-1.5-flash',
     deepseek: 'deepseek-chat',
     groq: 'llama-3.3-70b-versatile',
-    nvidia: 'meta/llama-3.1-8b-instruct'
+    nvidia: 'meta/llama-3.1-8b-instruct',
+    ollama: process.env.OLLAMA_MODEL || 'gemma4:31b-cloud'
   };
   return models[provider] || 'gpt-4o';
 }
