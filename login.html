@@ -519,7 +519,13 @@
                                style="padding-right:2.5rem" required>
                         <span class="input-icon" id="togglePw" title="Show password">👁</span>
                     </div>
-                    <a href="/forgot-password.html" class="forgot-link">Forgot password?</a>
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.5rem">
+                        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:var(--text-sub);cursor:pointer">
+                            <input type="checkbox" id="rememberMe" style="accent-color:var(--primary);width:15px;height:15px;cursor:pointer">
+                            Remember me
+                        </label>
+                        <a href="/forgot-password.html" class="forgot-link" style="margin-top:0">Forgot password?</a>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn-submit" id="submitBtn">Sign In</button>
@@ -536,6 +542,13 @@
 
         // Redirect if already logged in
         if (localStorage.getItem('token')) window.location.href = '/dashboard.html';
+
+        // Load remembered email
+        const savedEmail = localStorage.getItem('rememberedEmail');
+        if (savedEmail) {
+            document.getElementById('email').value = savedEmail;
+            document.getElementById('rememberMe').checked = true;
+        }
 
         // OAuth callback
         const params = new URLSearchParams(window.location.search);
@@ -564,33 +577,53 @@
             e.preventDefault();
             clearAlerts();
 
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('rememberMe').checked;
+
+            if (!email) { showAlert('error', 'Please enter your email.'); return; }
+            if (!password) { showAlert('error', 'Please enter your password.'); return; }
+
             const btn = document.getElementById('submitBtn');
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span> Signing in...';
 
             try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 30000);
+
                 const res = await fetch(`${API_URL}/api/auth/login`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        email: document.getElementById('email').value,
-                        password: document.getElementById('password').value
-                    })
+                    signal: controller.signal,
+                    body: JSON.stringify({ email, password })
                 });
+                clearTimeout(timeout);
+
                 const data = await res.json();
 
                 if (res.ok) {
+                    // Handle Remember Me
+                    if (rememberMe) {
+                        localStorage.setItem('rememberedEmail', email);
+                    } else {
+                        localStorage.removeItem('rememberedEmail');
+                    }
+
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
-                    showAlert('success', '✓ Signed in! Redirecting...');
+                    showAlert('success', 'Signed in! Redirecting...');
                     setTimeout(() => window.location.href = '/dashboard.html', 900);
                 } else {
                     showAlert('error', data.error || 'Invalid email or password.');
                     btn.disabled = false;
                     btn.textContent = 'Sign In';
                 }
-            } catch {
-                showAlert('error', 'Network error — please try again.');
+            } catch (err) {
+                const msg = err.name === 'AbortError'
+                    ? 'Request timed out — server may be starting up. Please try again.'
+                    : 'Cannot reach the server. Check your connection and try again.';
+                showAlert('error', msg);
                 btn.disabled = false;
                 btn.textContent = 'Sign In';
             }
