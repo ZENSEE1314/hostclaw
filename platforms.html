@@ -670,6 +670,12 @@
     let selectedPlatform = null;
     let qrPollInterval = null;
     let qrTimeoutId = null;
+
+    // Stub — QR polling removed (Cloud API doesn't need it)
+    function stopQRPoll() {
+      if (qrPollInterval) { clearInterval(qrPollInterval); qrPollInterval = null; }
+      if (qrTimeoutId) { clearTimeout(qrTimeoutId); qrTimeoutId = null; }
+    }
     let connectedBotName = '';
 
     // --- Connected platforms ---
