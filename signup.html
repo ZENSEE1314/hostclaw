@@ -349,10 +349,59 @@
         .auth-footer a { color: var(--primary-light); text-decoration: none; font-weight: 600; }
         .auth-footer a:hover { text-decoration: underline; }
 
+        /* Tablet */
         @media (max-width: 900px) {
             .left-panel { display: none; }
-            .right-panel { width: 100%; border-left: none; padding: 2rem 1.25rem; }
+            .right-panel { width: 100%; border-left: none; padding: 2rem 1.5rem; }
             .form-row { grid-template-columns: 1fr; }
+        }
+
+        /* Mobile */
+        @media (max-width: 480px) {
+            body { overflow: auto; }
+            .right-panel {
+                padding: 1.25rem 1rem;
+                align-items: flex-start;
+                overflow-y: auto;
+            }
+            .auth-box { padding: 0.5rem 0; }
+            .auth-header { margin-bottom: 1.25rem; }
+            .auth-header h1 { font-size: 1.35rem; }
+            .auth-header p { font-size: 0.8rem; }
+            .form-label { font-size: 0.72rem; }
+            .form-input { padding: 0.65rem 0.85rem; font-size: 0.85rem; }
+            .btn-google { padding: 0.7rem 0.85rem; font-size: 0.85rem; }
+            .btn-submit { padding: 0.75rem; font-size: 0.85rem; }
+            .divider { margin: 1rem 0; }
+            .form-group { margin-bottom: 0.75rem; }
+            .pricing-box { padding: 0.75rem 0.85rem; }
+
+            /* Mobile brand header */
+            .mobile-brand {
+                display: flex;
+                align-items: center;
+                gap: 0.6rem;
+                margin-bottom: 1.5rem;
+                justify-content: center;
+            }
+            .mobile-brand .brand-icon {
+                width: 36px; height: 36px;
+                background: linear-gradient(135deg, var(--primary), var(--secondary));
+                border-radius: 10px;
+                display: flex; align-items: center; justify-content: center;
+                font-size: 1.1rem;
+            }
+            .mobile-brand .brand-name {
+                font-size: 1.1rem;
+                font-weight: 800;
+                background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+        }
+
+        @media (min-width: 481px) {
+            .mobile-brand { display: none; }
         }
     </style>
 </head>
@@ -406,6 +455,10 @@
     <!-- RIGHT panel -->
     <div class="right-panel">
         <div class="auth-box">
+            <div class="mobile-brand">
+                <div class="brand-icon">🐾</div>
+                <span class="brand-name">HostClaw.ai</span>
+            </div>
             <div class="auth-header">
                 <h1>Create account</h1>
                 <p>Set up your HostClaw workspace</p>
@@ -505,35 +558,52 @@
             e.preventDefault();
             clearAlerts();
             const btn = document.getElementById('submitBtn');
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!name) { showAlert('error', 'Please enter your full name.'); return; }
+            if (!email) { showAlert('error', 'Please enter your email address.'); return; }
+            if (password.length < 8) { showAlert('error', 'Password must be at least 8 characters.'); return; }
+
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner"></span> Creating account...';
 
             try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), 30000);
+
                 const res = await fetch(`${API_URL}/api/auth/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    signal: controller.signal,
                     body: JSON.stringify({
-                        name: document.getElementById('name').value,
-                        email: document.getElementById('email').value,
-                        password: document.getElementById('password').value,
+                        name,
+                        email,
+                        password,
                         referralCode: document.getElementById('referralCode').value.trim().toUpperCase()
                     })
                 });
+                clearTimeout(timeout);
 
                 const data = await res.json();
 
                 if (res.ok) {
                     localStorage.setItem('token', data.token);
                     localStorage.setItem('user', JSON.stringify(data.user));
-                    showAlert('success', '✓ Account created! $10 free credits added. Redirecting...');
+                    showAlert('success', 'Account created! $10 free credits added. Redirecting...');
                     setTimeout(() => window.location.href = '/dashboard.html', 1200);
                 } else {
-                    showAlert('error', data.error || data.errors?.[0]?.msg || 'Failed to create account.');
+                    const msg = data.error || data.errors?.[0]?.msg || 'Failed to create account.';
+                    showAlert('error', msg);
                     btn.disabled = false;
                     btn.textContent = 'Create Account & Claim $10 Free Credits';
                 }
-            } catch {
-                showAlert('error', 'Network error — please try again.');
+            } catch (err) {
+                const msg = err.name === 'AbortError'
+                    ? 'Request timed out — the server may be waking up. Please try again in a few seconds.'
+                    : 'Cannot reach the server. Please check your connection and try again.';
+                showAlert('error', msg);
                 btn.disabled = false;
                 btn.textContent = 'Create Account & Claim $10 Free Credits';
             }
