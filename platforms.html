@@ -477,7 +477,7 @@
               <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
             </div>
             <div class="platform-choice-name">WhatsApp</div>
-            <div class="platform-choice-desc">Connect via QR code scan. Your WhatsApp number becomes an AI assistant.</div>
+            <div class="platform-choice-desc">Connect via WhatsApp Business Cloud API. Official Meta integration.</div>
           </div>
 
           <div class="platform-choice telegram" onclick="selectPlatform('telegram')" role="button" tabindex="0" aria-label="Select Telegram">
@@ -507,18 +507,35 @@
       <!-- Step 2: Connect -->
       <div class="step-panel" id="step2">
 
-        <!-- WhatsApp connect flow -->
+        <!-- WhatsApp Cloud API connect flow -->
         <div id="connectWhatsapp" class="hidden">
           <div class="qr-instructions">
-            <p><strong>Open WhatsApp</strong> on your phone, go to <strong>Settings</strong>, tap <strong>Linked Devices</strong>, then <strong>Link a Device</strong>, and scan the QR code below.</p>
+            <h3 style="margin-bottom:0.75rem">WhatsApp Business Cloud API</h3>
+            <p>Connect using Meta's official WhatsApp Business API. <a href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started" target="_blank" style="color:var(--accent)">Setup Guide</a></p>
+            <ol style="margin:1rem 0;padding-left:1.5rem;color:var(--text-secondary);font-size:0.875rem;line-height:1.8">
+              <li>Go to <a href="https://developers.facebook.com" target="_blank" style="color:var(--accent)">developers.facebook.com</a> → Create App → Business → WhatsApp</li>
+              <li>In App Dashboard → WhatsApp → Getting Started</li>
+              <li>Copy your <strong>Phone Number ID</strong> and <strong>Access Token</strong> below</li>
+              <li>Set webhook URL to: <code style="background:rgba(99,102,241,0.1);padding:2px 6px;border-radius:4px;font-size:0.8rem">https://hostclaw-production-8e47.up.railway.app/webhooks/whatsapp</code></li>
+              <li>Verify Token: <code style="background:rgba(99,102,241,0.1);padding:2px 6px;border-radius:4px;font-size:0.8rem">chatsai_webhook_verify_2026</code></li>
+            </ol>
           </div>
 
-          <div class="text-center">
-            <div class="qr-area" id="qrArea">
-              <div class="spinner"></div>
+          <div style="max-width:500px">
+            <div class="form-group">
+              <label class="form-label">Phone Number ID</label>
+              <input type="text" class="form-input" id="waPhoneNumberId" placeholder="e.g. 123456789012345">
             </div>
-            <p class="text-muted mt-1" id="qrStatus" style="font-size: 0.8125rem;">Starting WhatsApp session...</p>
-            <div id="qrTimeout" class="qr-timeout hidden">QR code expired. Click below to generate a new one.</div>
+            <div class="form-group">
+              <label class="form-label">Permanent Access Token</label>
+              <input type="password" class="form-input" id="waAccessToken" placeholder="Your WhatsApp Cloud API access token">
+              <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem">Use a System User token for permanent access (not the temporary one)</p>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Business Account ID <span style="color:var(--text-muted)">(optional)</span></label>
+              <input type="text" class="form-input" id="waBusinessAccountId" placeholder="e.g. 987654321098765">
+            </div>
+            <div id="waConnectResult" style="display:none;padding:10px;border-radius:8px;margin-bottom:1rem;font-size:0.875rem"></div>
           </div>
 
           <div class="step-nav">
@@ -529,7 +546,7 @@
               </button>
             </div>
             <div class="step-nav-right">
-              <button class="btn btn-secondary" id="btnRefreshQR" onclick="startWhatsApp()">Refresh QR</button>
+              <button class="btn btn-primary" id="btnConnectWA" onclick="connectWhatsAppCloud()">Connect WhatsApp</button>
             </div>
           </div>
         </div>
@@ -787,7 +804,6 @@
 
       if (selectedPlatform === 'whatsapp') {
         document.getElementById('connectWhatsapp').classList.remove('hidden');
-        startWhatsApp();
       } else if (selectedPlatform === 'telegram') {
         document.getElementById('connectTelegram').classList.remove('hidden');
         document.getElementById('telegramToken').value = '';
@@ -795,73 +811,45 @@
       }
     }
 
-    // WhatsApp QR flow
-    async function startWhatsApp() {
-      var qrArea = document.getElementById('qrArea');
-      var qrStatus = document.getElementById('qrStatus');
-      var qrTimeout = document.getElementById('qrTimeout');
+    // WhatsApp Cloud API connect
+    async function connectWhatsAppCloud() {
+      var phoneNumberId = document.getElementById('waPhoneNumberId').value.trim();
+      var accessToken = document.getElementById('waAccessToken').value.trim();
+      var businessAccountId = document.getElementById('waBusinessAccountId').value.trim();
+      var resultDiv = document.getElementById('waConnectResult');
+      var btn = document.getElementById('btnConnectWA');
 
-      qrArea.innerHTML = '<div class="spinner"></div>';
-      qrStatus.textContent = 'Starting WhatsApp session...';
-      qrStatus.classList.remove('hidden');
-      qrTimeout.classList.add('hidden');
+      if (!phoneNumberId) { showToast('Please enter your Phone Number ID', 'warning'); return; }
+      if (!accessToken) { showToast('Please enter your Access Token', 'warning'); return; }
 
-      stopQRPoll();
+      btn.disabled = true;
+      btn.textContent = 'Connecting...';
+      resultDiv.style.display = 'none';
 
       try {
-        await api('/api/platforms/whatsapp/start', { method: 'POST' });
-        startQRPoll();
+        var data = await api('/api/platforms/whatsapp/cloud-connect', {
+          method: 'POST',
+          body: JSON.stringify({ phoneNumberId: phoneNumberId, accessToken: accessToken, businessAccountId: businessAccountId })
+        });
+
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = 'rgba(16,185,129,0.1)';
+        resultDiv.style.border = '1px solid #10b981';
+        resultDiv.style.color = '#6ee7b7';
+        resultDiv.innerHTML = '✅ Connected! Phone: ' + (data.phone_number || phoneNumberId) + '<br>Name: ' + (data.verified_name || 'WhatsApp Business') + '<br><br>Webhook URL: <code style="font-size:0.75rem">' + (data.webhook_url || '') + '</code>';
+
+        connectedBotName = data.verified_name || data.phone_number || 'WhatsApp Business';
+        showToast('WhatsApp Business connected!', 'success');
+        goToStep(3);
       } catch (e) {
-        qrArea.innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
-        qrStatus.textContent = 'Failed to start session';
-        showToast('Could not start WhatsApp: ' + e.message, 'error');
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = 'rgba(239,68,68,0.1)';
+        resultDiv.style.border = '1px solid #ef4444';
+        resultDiv.style.color = '#fca5a5';
+        resultDiv.textContent = e.message || 'Failed to connect. Check your credentials.';
       }
-    }
-
-    function startQRPoll() {
-      var QR_POLL_MS = 3000;
-      var QR_TIMEOUT_MS = 60000;
-
-      qrPollInterval = setInterval(async function () {
-        try {
-          var data = await api('/api/platforms/whatsapp/qr');
-
-          if (data.status === 'qr' && data.qrDataUrl) {
-            var qrArea = document.getElementById('qrArea');
-            qrArea.innerHTML = '<img src="' + data.qrDataUrl + '" alt="Scan this QR code with WhatsApp">';
-            document.getElementById('qrStatus').textContent = 'Scan the QR code with your phone';
-          } else if (data.status === 'connected') {
-            stopQRPoll();
-            connectedBotName = data.name || data.phone || 'WhatsApp Bot';
-            showToast('WhatsApp connected successfully', 'success');
-            goToStep(3);
-          } else if (data.status === 'connecting' || data.status === 'not_started') {
-            document.getElementById('qrStatus').textContent = 'Connecting to WhatsApp servers...';
-          } else if (data.status === 'reconnecting') {
-            document.getElementById('qrStatus').textContent = 'Reconnecting...';
-          }
-        } catch (e) {
-          // Silently ignore individual poll failures
-        }
-      }, QR_POLL_MS);
-
-      qrTimeoutId = setTimeout(function () {
-        stopQRPoll();
-        document.getElementById('qrArea').innerHTML = '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--warning)" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
-        document.getElementById('qrStatus').classList.add('hidden');
-        document.getElementById('qrTimeout').classList.remove('hidden');
-      }, QR_TIMEOUT_MS);
-    }
-
-    function stopQRPoll() {
-      if (qrPollInterval) {
-        clearInterval(qrPollInterval);
-        qrPollInterval = null;
-      }
-      if (qrTimeoutId) {
-        clearTimeout(qrTimeoutId);
-        qrTimeoutId = null;
-      }
+      btn.disabled = false;
+      btn.textContent = 'Connect WhatsApp';
     }
 
     // Telegram token flow

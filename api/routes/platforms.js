@@ -83,7 +83,53 @@ router.get('/whatsapp/check', authenticate, async (req, res) => {
   });
 });
 
-// ===== WHATSAPP — QR Code via Baileys =====
+// ===== WHATSAPP CLOUD API — Official Meta API =====
+router.post('/whatsapp/cloud-connect', authenticate, async (req, res) => {
+  try {
+    const { phoneNumberId, accessToken, businessAccountId } = req.body;
+
+    if (!phoneNumberId || !accessToken) {
+      return res.status(400).json({ error: 'Phone Number ID and Access Token are required' });
+    }
+
+    // Verify credentials with Meta
+    const waCloud = require('../services/whatsapp-cloud');
+    let phoneInfo;
+    try {
+      phoneInfo = await waCloud.getPhoneNumberInfo(phoneNumberId, accessToken);
+    } catch (e) {
+      const errMsg = e.response?.data?.error?.message || e.message;
+      return res.status(400).json({ error: 'Invalid credentials: ' + errMsg });
+    }
+
+    const displayPhone = phoneInfo.display_phone_number || phoneNumberId;
+    const verifiedName = phoneInfo.verified_name || 'WhatsApp Business';
+
+    // Save to DB
+    await User.updatePlatform(req.user.userId, 'whatsapp', {
+      status: 'connected',
+      type: 'cloud_api',
+      phone_number_id: phoneNumberId,
+      access_token: accessToken,
+      business_account_id: businessAccountId || null,
+      phone_number: displayPhone,
+      bot_name: verifiedName,
+      connected_at: new Date().toISOString()
+    });
+
+    res.json({
+      message: 'WhatsApp Business connected via Cloud API',
+      phone_number: displayPhone,
+      verified_name: verifiedName,
+      webhook_url: `${API_BASE}/webhooks/whatsapp`
+    });
+  } catch (error) {
+    console.error('WhatsApp Cloud connect error:', error);
+    res.status(500).json({ error: 'Failed to connect: ' + error.message });
+  }
+});
+
+// ===== WHATSAPP — QR Code via Baileys (local/VPS only) =====
 router.post('/whatsapp/start', authenticate, async (req, res) => {
   const userId = req.user.userId;
   const wa = getWAService();

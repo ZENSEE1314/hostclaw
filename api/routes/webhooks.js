@@ -832,4 +832,133 @@ router.post('/stripe', async (req, res) => {
   }
 });
 
+// ===== WHATSAPP CLOUD API WEBHOOK =====
+
+const waCloud = require('../services/whatsapp-cloud');
+
+// Webhook verification — Meta sends GET with challenge
+router.get('/whatsapp', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  const verifyToken = process.env.WHATSAPP_VERIFY_TOKEN || 'chatsai_webhook_verify_2026';
+
+  if (mode === 'subscribe' && token === verifyToken) {
+    console.log('WhatsApp Cloud webhook verified');
+    return res.status(200).send(challenge);
+  }
+  res.sendStatus(403);
+});
+
+// Incoming messages from WhatsApp Cloud API
+router.post('/whatsapp', async (req, res) => {
+  // Always respond 200 quickly — Meta retries on timeout
+  res.sendStatus(200);
+
+  try {
+    const body = req.body;
+    if (body.object !== 'whatsapp_business_account') return;
+
+    for (const entry of body.entry || []) {
+      for (const change of entry.changes || []) {
+        if (change.field !== 'messages') continue;
+        const value = change.value;
+        if (!value.messages) continue;
+
+        const phoneNumberId = value.metadata?.phone_number_id;
+        if (!phoneNumberId) continue;
+
+        for (const msg of value.messages) {
+          if (msg.type !== 'text') continue;
+          const from = msg.from;
+          const text = msg.text?.body;
+          if (!text) continue;
+
+          console.log(`WhatsApp Cloud: message from ${from}: ${text.substring(0, 50)}`);
+
+          // Find user by phone_number_id
+          const { query } = require('../config/database');
+          const allUsers = await query('SELECT * FROM users WHERE platforms IS NOT NULL');
+
+          let user = null;
+          for (const row of allUsers.rows) {
+            const plats = parsePlatforms(row);
+            if (plats.whatsapp?.phone_number_id === phoneNumberId) {
+              user = row;
+              break;
+            }
+          }
+
+          if (!user) {
+            console.log(`WhatsApp Cloud: no user found for phone_number_id ${phoneNumberId}`);
+            continue;
+          }
+
+          // Check message balance
+          if (!User.canSendMessage(user)) {
+            const plats = parsePlatforms(user);
+            const token = plats.whatsapp?.access_token;
+            if (token) {
+              await waCloud.sendTextMessage(phoneNumberId, token, from, 'Message limit reached. Please upgrade your plan at chatsai.app to continue.');
+            }
+            continue;
+          }
+
+          // Deduct message
+          const deducted = await User.deductMessage(user.id);
+          if (!deducted) continue;
+
+          // Mark as read
+          const plats = parsePlatforms(user);
+          const accessToken = plats.whatsapp?.access_token;
+          if (!accessToken) continue;
+
+          await waCloud.markAsRead(phoneNumberId, accessToken, msg.id);
+
+          // Save user message
+          const sessionId = `whatsapp_cloud_${from}`;
+          await Chat.saveMessage({ user_id: user.id, session_id: sessionId, role: 'user', content: text });
+
+          // Get chat history + agent
+          const chatHistory = await Chat.getSessionHistory(user.id, sessionId, 10);
+          const Agent = require('../models/agent');
+          const agent = await Agent.findDefaultForUser(user.id);
+
+          const providers = parseProviders(user);
+          const defProv = user.default_provider || 'openai';
+          const providerConfig = providers[defProv] || providers[Object.keys(providers)[0]] || null;
+
+          // Generate AI response
+          const aiRes = await generateAIResponse({
+            message: text,
+            provider: defProv,
+            providerConfig,
+            skills: [],
+            chatHistory,
+            agent
+          });
+
+          // Send reply
+          await waCloud.sendTextMessage(phoneNumberId, accessToken, from, aiRes.content);
+
+          // Save AI response
+          await Chat.saveMessage({
+            user_id: user.id,
+            session_id: sessionId,
+            role: 'assistant',
+            content: aiRes.content,
+            model: aiRes.model,
+            tokens: aiRes.tokens
+          });
+
+          console.log(`WhatsApp Cloud: replied to ${from} via ${aiRes.model}`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('WhatsApp Cloud webhook error:', error.message);
+  }
+});
+
 module.exports = router;
