@@ -104,7 +104,7 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://fonts.googleapis.com", "data:"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https://api.stripe.com", "https://fonts.googleapis.com"],
+      connectSrc: ["'self'", "https://hostclaw-production-8e47.up.railway.app", "https://api.stripe.com", "https://fonts.googleapis.com"],
       frameSrc: ["'self'", "https://js.stripe.com"],
     }
   }
