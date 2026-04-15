@@ -77,6 +77,7 @@
             <div class="nav-title">Management</div>
             <div class="nav-item" onclick="showSection('users')"><span>👥</span> Users</div>
             <div class="nav-item" onclick="showSection('agents')"><span>🤖</span> Agents</div>
+            <div class="nav-item" onclick="showSection('email')"><span>📧</span> Email Broadcast</div>
         </div>
         <div class="nav-section">
             <div class="nav-item" onclick="logout()"><span>🚪</span> Logout</div>
@@ -155,8 +156,51 @@
             </div>
             <div id="agentsContainer"><div style="text-align:center;padding:60px;color:#94a3b8;">Loading agents...</div></div>
         </div>
+        <!-- Email Broadcast Section -->
+        <div id="emailSection" class="section">
+            <div class="header">
+                <h1>📧 Email Broadcast</h1>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Compose Email</div></div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label">Target Audience</label>
+                            <select class="form-select" id="emailTarget" onchange="updatePreview()">
+                                <option value="all">All Users</option>
+                                <option value="free">Free Plan Users</option>
+                                <option value="starter">Starter Plan</option>
+                                <option value="growth">Growth Plan</option>
+                                <option value="pro">Pro Plan</option>
+                                <option value="enterprise">Enterprise Plan</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Subject</label>
+                            <input type="text" class="form-input" id="emailSubject" placeholder="e.g. New Feature Announcement" oninput="updatePreview()">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Message (HTML supported)</label>
+                            <textarea class="form-input" id="emailMessage" rows="10" placeholder="Write your message here... HTML tags are supported for formatting." style="resize:vertical;min-height:200px" oninput="updatePreview()"></textarea>
+                        </div>
+                        <div style="display:flex;gap:12px">
+                            <button class="btn btn-primary" onclick="sendBroadcast()" id="sendEmailBtn" style="flex:1">📨 Send to All</button>
+                            <button class="btn btn-secondary" onclick="clearEmailForm()">Clear</button>
+                        </div>
+                        <div id="emailResult" style="margin-top:16px;display:none;padding:12px;border-radius:8px;font-size:14px"></div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Preview</div></div>
+                    <div class="card-body" id="emailPreview" style="background:#0a0a1a;border-radius:8px;padding:20px;min-height:300px">
+                        <div style="color:#64748b;text-align:center;padding:40px">Enter a subject and message to see preview</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    
+
     <!-- Edit Modal -->
     <div class="modal-overlay" id="editModal">
         <div class="modal">
@@ -182,7 +226,7 @@
         let allUsers = [];
         
         function showSection(name) {
-            ['login', 'dashboard', 'sales', 'users', 'agents'].forEach(s => {
+            ['login', 'dashboard', 'sales', 'users', 'agents', 'email'].forEach(s => {
                 const el = document.getElementById(s + 'Section');
                 if (el) el.style.display = 'none';
             });
@@ -407,6 +451,83 @@
             if (e.target.id === 'editModal') closeModal();
         });
         
+        // Email Broadcast functions
+        function updatePreview() {
+            const subject = document.getElementById('emailSubject').value || 'Your Subject Here';
+            const message = document.getElementById('emailMessage').value || 'Your message will appear here...';
+            const target = document.getElementById('emailTarget');
+            const targetText = target.options[target.selectedIndex].text;
+
+            document.getElementById('emailPreview').innerHTML = `
+                <div style="max-width:500px;margin:0 auto;font-family:Inter,sans-serif;">
+                    <div style="background:linear-gradient(135deg,#6366f1,#06b6d4);padding:3px;border-radius:14px;">
+                        <div style="background:#0a0a1a;border-radius:12px;padding:30px;">
+                            <div style="font-size:10px;color:#64748b;margin-bottom:8px;">TO: ${targetText}</div>
+                            <div style="font-size:10px;color:#64748b;margin-bottom:16px;">FROM: ChatsAI &lt;support@chatsai.app&gt;</div>
+                            <h2 style="color:#fff;margin-bottom:16px;font-size:18px;">${subject.replace(/</g,'&lt;')}</h2>
+                            <div style="color:#cbd5e1;line-height:1.7;font-size:14px;">${message}</div>
+                            <div style="margin-top:24px;padding-top:16px;border-top:1px solid #2d2d3d;text-align:center;">
+                                <a href="#" style="display:inline-block;background:linear-gradient(135deg,#6366f1,#06b6d4);color:#fff;padding:10px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px;">Visit ChatsAI →</a>
+                            </div>
+                            <div style="margin-top:16px;text-align:center;font-size:11px;color:#475569;">© 2026 ChatsAI. All rights reserved.</div>
+                        </div>
+                    </div>
+                </div>`;
+        }
+
+        function clearEmailForm() {
+            document.getElementById('emailSubject').value = '';
+            document.getElementById('emailMessage').value = '';
+            document.getElementById('emailTarget').value = 'all';
+            document.getElementById('emailResult').style.display = 'none';
+            updatePreview();
+        }
+
+        async function sendBroadcast() {
+            const subject = document.getElementById('emailSubject').value.trim();
+            const message = document.getElementById('emailMessage').value.trim();
+            const target = document.getElementById('emailTarget').value;
+            const targetText = document.getElementById('emailTarget').options[document.getElementById('emailTarget').selectedIndex].text;
+            const resultEl = document.getElementById('emailResult');
+            const btn = document.getElementById('sendEmailBtn');
+
+            if (!subject) { showEmailResult('error', 'Please enter a subject.'); return; }
+            if (!message) { showEmailResult('error', 'Please enter a message.'); return; }
+
+            if (!confirm(`Send email "${subject}" to ${targetText}?\n\nThis will send to all matching users and cannot be undone.`)) return;
+
+            btn.disabled = true;
+            btn.textContent = '⏳ Sending...';
+
+            try {
+                const res = await fetch(`${API_URL}/api/admin/announce`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                    body: JSON.stringify({ subject, message, target })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    showEmailResult('success', `✅ Email sent to ${data.recipients || 0} users!`);
+                } else {
+                    showEmailResult('error', data.error || 'Failed to send emails.');
+                }
+            } catch (err) {
+                showEmailResult('error', 'Network error: ' + err.message);
+            }
+            btn.disabled = false;
+            btn.textContent = '📨 Send to All';
+        }
+
+        function showEmailResult(type, msg) {
+            const el = document.getElementById('emailResult');
+            el.style.display = 'block';
+            el.style.background = type === 'success' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)';
+            el.style.border = '1px solid ' + (type === 'success' ? '#10b981' : '#ef4444');
+            el.style.color = type === 'success' ? '#6ee7b7' : '#fca5a5';
+            el.textContent = msg;
+        }
+
         init();
     </script>
 </body>
