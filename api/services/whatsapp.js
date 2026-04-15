@@ -101,6 +101,14 @@ async function createSession(userId, onConnected, onMessage) {
 
     session.socket = sock;
 
+    // Keep-alive ping to prevent Railway from killing the WebSocket
+    const keepAlive = setInterval(() => {
+      if (session.connected && sock.ws) {
+        try { sock.ws.ping(); } catch (e) {}
+      }
+    }, 25000);
+    session.keepAlive = keepAlive;
+
     sock.ev.on('creds.update', (update) => { Object.assign(creds, update); });
 
     sock.ev.on('connection.update', async (update) => {
@@ -128,6 +136,7 @@ async function createSession(userId, onConnected, onMessage) {
       }
 
       if (connection === 'close') {
+        clearInterval(keepAlive);
         const code = (new Boom(lastDisconnect?.error))?.output?.statusCode;
         if (code === DisconnectReason.loggedOut) {
           session.status = 'disconnected';
@@ -182,6 +191,7 @@ function getSession(userId) {
 
 function deleteSession(userId) {
   const s = sessions.get(userId);
+  if (s?.keepAlive) clearInterval(s.keepAlive);
   if (s?.socket) {
     try { s.socket.end(undefined); } catch (e) {}
   }
