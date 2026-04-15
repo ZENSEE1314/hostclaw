@@ -27,7 +27,7 @@ class EmailService {
     
     try {
       const info = await this.transporter.sendMail({
-        from: `"ChatsAI" <${process.env.SMTP_USER}>`,
+        from: process.env.SMTP_FROM || `"ChatsAI" <${process.env.SMTP_USER}>`,
         to,
         subject,
         html
