@@ -91,7 +91,10 @@ async function createSession(userId, onConnected, onMessage) {
       },
       printQRInTerminal: false,
       syncFullHistory: false,
-      connectTimeoutMs: 60000,
+      connectTimeoutMs: 120000,
+      qrTimeout: 60000,
+      defaultQueryTimeoutMs: 60000,
+      retryRequestDelayMs: 500,
       generateHighQualityLinkPreview: false,
       getMessage: async () => undefined
     });
@@ -129,8 +132,21 @@ async function createSession(userId, onConnected, onMessage) {
         if (code === DisconnectReason.loggedOut) {
           session.status = 'disconnected';
           sessions.delete(userId);
-        } else if (connection === 'close') {
+          console.log(`WhatsApp [${userId}]: Logged out, session cleared`);
+        } else if (code === DisconnectReason.timedOut || code === DisconnectReason.connectionClosed) {
           session.status = 'reconnecting';
+          console.log(`WhatsApp [${userId}]: Timed out (code ${code}), restarting session...`);
+          // Auto-restart after timeout — gives a new QR
+          setTimeout(() => {
+            if (sessions.get(userId)?.status === 'reconnecting') {
+              createSession(userId, onConnected, onMessage).catch(e =>
+                console.error(`WhatsApp [${userId}]: Auto-restart failed:`, e.message)
+              );
+            }
+          }, 3000);
+        } else {
+          session.status = 'reconnecting';
+          console.log(`WhatsApp [${userId}]: Connection closed (code ${code}), will retry`);
         }
       }
     });
