@@ -326,7 +326,10 @@ async function callOllama(message, apiKey, model, skills, chatHistory = [], agen
     temperature: 0.7,
     max_tokens: 2000
   }, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'ngrok-skip-browser-warning': 'true'
+    },
     timeout: 60000
   });
 
