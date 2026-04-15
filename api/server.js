@@ -102,6 +102,8 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   'https://aibotchat.app',
   'https://www.aibotchat.app',
+  'https://chatsai.app',
+  'https://www.chatsai.app',
   'https://hostclaw-web.onrender.com',
   'https://hostclaw.onrender.com',
   'http://localhost:3000',
@@ -311,12 +313,21 @@ app.use('/api/sales', salesRoutes);
 app.use('/api/schedule', scheduleRoutes);
 app.use('/webhooks', webhookRoutes);
 
-// Error handling
-app.use(errorHandler);
+// Error handling for API routes
+app.use('/api', errorHandler);
+app.use('/webhooks', errorHandler);
 
-// 404 handler
+// Serve frontend static files from parent directory
+const path = require('path');
+const frontendPath = path.join(__dirname, '..');
+app.use(express.static(frontendPath, { extensions: ['html'] }));
+
+// SPA fallback — serve index.html for non-API routes
 app.use((req, res) => {
-  res.status(404).json({ error: 'Not found' });
+  if (req.path.startsWith('/api/') || req.path.startsWith('/webhooks')) {
+    return res.status(404).json({ error: 'Not found' });
+  }
+  res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // Follow-up processor — sends scheduled promo messages
