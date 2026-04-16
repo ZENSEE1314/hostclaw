@@ -507,36 +507,21 @@
       <!-- Step 2: Connect -->
       <div class="step-panel" id="step2">
 
-        <!-- WhatsApp Cloud API connect flow -->
+        <!-- WhatsApp connect flow -->
         <div id="connectWhatsapp" class="hidden">
           <div class="qr-instructions">
-            <h3 style="margin-bottom:0.75rem">WhatsApp Business Cloud API</h3>
-            <p>Connect using Meta's official WhatsApp Business API. <a href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started" target="_blank" style="color:var(--accent)">Setup Guide</a></p>
+            <h3 style="margin-bottom:0.75rem">Connect WhatsApp</h3>
+            <p>Scan the QR code with your phone to connect your WhatsApp number.</p>
             <ol style="margin:1rem 0;padding-left:1.5rem;color:var(--text-secondary);font-size:0.875rem;line-height:1.8">
-              <li>Go to <a href="https://developers.facebook.com" target="_blank" style="color:var(--accent)">developers.facebook.com</a> → Create App → Business → WhatsApp</li>
-              <li>In App Dashboard → WhatsApp → Getting Started</li>
-              <li>Copy your <strong>Phone Number ID</strong> and <strong>Access Token</strong> below</li>
-              <li>Set webhook URL to: <code style="background:rgba(99,102,241,0.1);padding:2px 6px;border-radius:4px;font-size:0.8rem">https://hostclaw-production-8e47.up.railway.app/webhooks/whatsapp</code></li>
-              <li>Verify Token: <code style="background:rgba(99,102,241,0.1);padding:2px 6px;border-radius:4px;font-size:0.8rem">chatsai_webhook_verify_2026</code></li>
+              <li>Click <strong>Connect WhatsApp</strong> below</li>
+              <li>Open <strong>WhatsApp</strong> on your phone</li>
+              <li>Go to <strong>Settings → Linked Devices → Link a Device</strong></li>
+              <li>Scan the QR code that appears</li>
             </ol>
           </div>
 
-          <div style="max-width:500px">
-            <div class="form-group">
-              <label class="form-label">Phone Number ID</label>
-              <input type="text" class="form-input" id="waPhoneNumberId" placeholder="e.g. 123456789012345">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Permanent Access Token</label>
-              <input type="password" class="form-input" id="waAccessToken" placeholder="Your WhatsApp Cloud API access token">
-              <p style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem">Use a System User token for permanent access (not the temporary one)</p>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Business Account ID <span style="color:var(--text-muted)">(optional)</span></label>
-              <input type="text" class="form-input" id="waBusinessAccountId" placeholder="e.g. 987654321098765">
-            </div>
-            <div id="waConnectResult" style="display:none;padding:10px;border-radius:8px;margin-bottom:1rem;font-size:0.875rem"></div>
-          </div>
+          <div id="waQrArea" style="display:none;text-align:center;padding:1.5rem;background:rgba(255,255,255,0.03);border-radius:12px;margin-bottom:1rem"></div>
+          <div id="waConnectResult" style="display:none;padding:10px;border-radius:8px;margin-bottom:1rem;font-size:0.875rem"></div>
 
           <div class="step-nav">
             <div class="step-nav-left">
@@ -546,7 +531,7 @@
               </button>
             </div>
             <div class="step-nav-right">
-              <button class="btn btn-primary" id="btnConnectWA" onclick="connectWhatsAppCloud()">Connect WhatsApp</button>
+              <button class="btn btn-primary" id="btnConnectWA" onclick="startWhatsAppVPS()">Connect WhatsApp</button>
             </div>
           </div>
         </div>
@@ -817,34 +802,80 @@
       }
     }
 
-    // WhatsApp Cloud API connect
-    async function connectWhatsAppCloud() {
-      var phoneNumberId = document.getElementById('waPhoneNumberId').value.trim();
-      var accessToken = document.getElementById('waAccessToken').value.trim();
-      var businessAccountId = document.getElementById('waBusinessAccountId').value.trim();
+    // WhatsApp VPS QR scan
+    async function startWhatsAppVPS() {
       var resultDiv = document.getElementById('waConnectResult');
+      var qrArea = document.getElementById('waQrArea');
       var btn = document.getElementById('btnConnectWA');
 
-      if (!phoneNumberId) { showToast('Please enter your Phone Number ID', 'warning'); return; }
-      if (!accessToken) { showToast('Please enter your Access Token', 'warning'); return; }
+      btn.disabled = true;
+      btn.textContent = 'Starting...';
+      resultDiv.style.display = 'none';
+      qrArea.innerHTML = '<div class="spinner"></div>';
+      qrArea.style.display = 'block';
 
+      try {
+        await api('/api/platforms/whatsapp/vps-start', { method: 'POST' });
+
+        // Poll for QR
+        var pollCount = 0;
+        var maxPolls = 40; // 40 * 3s = 2 minutes
+        var pollInterval = setInterval(async function() {
+          pollCount++;
+          if (pollCount > maxPolls) {
+            clearInterval(pollInterval);
+            qrArea.innerHTML = '<p style="color:var(--warning)">Timed out. Click Connect again.</p>';
+            btn.disabled = false;
+            btn.textContent = 'Connect WhatsApp';
+            return;
+          }
+          try {
+            var data = await api('/api/platforms/whatsapp/vps-qr');
+            if (data.status === 'qr' && data.qrDataUrl) {
+              qrArea.innerHTML = '<img src="' + data.qrDataUrl + '" alt="Scan QR" style="border-radius:12px;max-width:256px">';
+              btn.textContent = 'Scan the QR code...';
+            } else if (data.status === 'connected') {
+              clearInterval(pollInterval);
+              qrArea.innerHTML = '<p style="color:var(--success);font-size:1.2rem">✅ WhatsApp Connected!</p>';
+              connectedBotName = 'WhatsApp Bot';
+              showToast('WhatsApp connected!', 'success');
+              btn.disabled = false;
+              btn.textContent = 'Connected';
+              goToStep(3);
+            } else if (data.status === 'connecting') {
+              qrArea.innerHTML = '<div class="spinner"></div><p style="color:var(--text-muted);font-size:0.8rem;margin-top:0.5rem">Connecting to WhatsApp...</p>';
+            }
+          } catch(e) {}
+        }, 3000);
+      } catch (e) {
+        qrArea.innerHTML = '';
+        qrArea.style.display = 'none';
+        resultDiv.style.display = 'block';
+        resultDiv.style.background = 'rgba(239,68,68,0.1)';
+        resultDiv.style.border = '1px solid #ef4444';
+        resultDiv.style.color = '#fca5a5';
+        resultDiv.textContent = e.message || 'Failed to start. Try again.';
+        btn.disabled = false;
+        btn.textContent = 'Connect WhatsApp';
+      }
+    }
+
+    // WhatsApp Cloud API connect (kept as alternative)
+    async function connectWhatsAppCloud() {
+      var phoneNumberId = document.getElementById('waPhoneNumberId')?.value?.trim();
+      var accessToken = document.getElementById('waAccessToken')?.value?.trim();
+      if (!phoneNumberId || !accessToken) { startWhatsAppVPS(); return; }
+
+      var resultDiv = document.getElementById('waConnectResult');
+      var btn = document.getElementById('btnConnectWA');
       btn.disabled = true;
       btn.textContent = 'Connecting...';
-      resultDiv.style.display = 'none';
-
       try {
         var data = await api('/api/platforms/whatsapp/cloud-connect', {
           method: 'POST',
-          body: JSON.stringify({ phoneNumberId: phoneNumberId, accessToken: accessToken, businessAccountId: businessAccountId })
+          body: JSON.stringify({ phoneNumberId: phoneNumberId, accessToken: accessToken })
         });
-
-        resultDiv.style.display = 'block';
-        resultDiv.style.background = 'rgba(16,185,129,0.1)';
-        resultDiv.style.border = '1px solid #10b981';
-        resultDiv.style.color = '#6ee7b7';
-        resultDiv.innerHTML = '✅ Connected! Phone: ' + (data.phone_number || phoneNumberId) + '<br>Name: ' + (data.verified_name || 'WhatsApp Business') + '<br><br>Webhook URL: <code style="font-size:0.75rem">' + (data.webhook_url || '') + '</code>';
-
-        connectedBotName = data.verified_name || data.phone_number || 'WhatsApp Business';
+        connectedBotName = data.verified_name || 'WhatsApp Business';
         showToast('WhatsApp Business connected!', 'success');
         goToStep(3);
       } catch (e) {
@@ -852,7 +883,7 @@
         resultDiv.style.background = 'rgba(239,68,68,0.1)';
         resultDiv.style.border = '1px solid #ef4444';
         resultDiv.style.color = '#fca5a5';
-        resultDiv.textContent = e.message || 'Failed to connect. Check your credentials.';
+        resultDiv.textContent = e.message || 'Failed to connect.';
       }
       btn.disabled = false;
       btn.textContent = 'Connect WhatsApp';

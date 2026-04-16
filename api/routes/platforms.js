@@ -129,7 +129,47 @@ router.post('/whatsapp/cloud-connect', authenticate, async (req, res) => {
   }
 });
 
-// ===== WHATSAPP — QR Code via Baileys (local/VPS only) =====
+// ===== WHATSAPP VPS BRIDGE — Proxy to DigitalOcean VPS =====
+const WA_VPS_URL = process.env.WA_VPS_URL || 'http://178.128.103.14:3001';
+
+router.post('/whatsapp/vps-start', authenticate, async (req, res) => {
+  try {
+    const result = await axios.post(`${WA_VPS_URL}/session/start`, { userId: req.user.userId }, { timeout: 15000 });
+    res.json(result.data);
+  } catch (e) {
+    res.status(500).json({ error: 'VPS bridge error: ' + (e.response?.data?.error || e.message) });
+  }
+});
+
+router.get('/whatsapp/vps-qr', authenticate, async (req, res) => {
+  try {
+    const result = await axios.get(`${WA_VPS_URL}/session/${req.user.userId}/qr`, { timeout: 10000 });
+    res.json(result.data);
+  } catch (e) {
+    res.json({ status: 'not_started' });
+  }
+});
+
+// Callback from VPS when WhatsApp connects
+router.post('/whatsapp/vps-connected', async (req, res) => {
+  try {
+    const { userId, phoneNumber, name } = req.body;
+    if (!userId) return res.status(400).json({ error: 'userId required' });
+    await User.updatePlatform(userId, 'whatsapp', {
+      status: 'connected',
+      type: 'vps_baileys',
+      phone_number: phoneNumber,
+      bot_name: name || phoneNumber,
+      vps_url: WA_VPS_URL,
+      connected_at: new Date().toISOString()
+    });
+    res.json({ saved: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ===== WHATSAPP — QR Code via Baileys (local only, deprecated) =====
 router.post('/whatsapp/start', authenticate, async (req, res) => {
   const userId = req.user.userId;
   const wa = getWAService();
