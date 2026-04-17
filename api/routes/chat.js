@@ -7,7 +7,52 @@ const { generateAIResponse } = require('../services/ai');
 
 const router = express.Router();
 
-// All chat routes require payment
+// WhatsApp VPS webhook — public, called by the Baileys bridge without a JWT.
+// Must be declared before router.use(authenticate) so it bypasses auth.
+router.post('/whatsapp-webhook', async (req, res) => {
+  try {
+    const { userId, from, text } = req.body;
+    if (!userId || !text) return res.status(400).json({ error: 'userId and text required' });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (!User.canSendMessage(user)) {
+      return res.json({ reply: 'Message limit reached. Upgrade at chatsai.app' });
+    }
+    const deducted = await User.deductMessage(userId);
+    if (!deducted) return res.json({ reply: 'Message limit reached.' });
+
+    const sessionId = `whatsapp_${from}`;
+    await Chat.saveMessage({ user_id: userId, session_id: sessionId, role: 'user', content: text });
+
+    const Agent = require('../models/agent');
+    const chatHistory = await Chat.getSessionHistory(userId, sessionId, 10);
+    const agent = await Agent.findDefaultForUser(userId);
+
+    const providers = typeof user.api_providers === 'string' ? JSON.parse(user.api_providers || '{}') : (user.api_providers || {});
+    const defProv = user.default_provider || 'ollama';
+    const providerConfig = providers[defProv] || providers[Object.keys(providers)[0]] || { model: 'gemma4:31b-cloud' };
+
+    const aiRes = await generateAIResponse({
+      message: text,
+      provider: defProv,
+      providerConfig,
+      skills: [],
+      chatHistory,
+      agent
+    });
+
+    await Chat.saveMessage({ user_id: userId, session_id: sessionId, role: 'assistant', content: aiRes.content, model: aiRes.model, tokens: aiRes.tokens });
+
+    res.json({ reply: aiRes.content, model: aiRes.model });
+  } catch (error) {
+    console.error('WhatsApp VPS webhook error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// All other chat routes require auth + payment
 router.use(authenticate);
 router.use(checkPayment);
 
@@ -225,54 +270,5 @@ router.delete('/history', async (req, res, next) => {
   }
 });
 
-
-// WhatsApp VPS webhook — receives messages from VPS bridge, returns AI reply
-router.post('/whatsapp-webhook', async (req, res) => {
-  try {
-    const { userId, from, text, messageId } = req.body;
-    if (!userId || !text) return res.status(400).json({ error: 'userId and text required' });
-
-    const User = require('../models/user');
-    const Chat = require('../models/chat');
-    const Agent = require('../models/agent');
-    const { generateAIResponse } = require('../services/ai');
-
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-
-    // Check message balance
-    if (!User.canSendMessage(user)) {
-      return res.json({ reply: 'Message limit reached. Upgrade at chatsai.app' });
-    }
-    const deducted = await User.deductMessage(userId);
-    if (!deducted) return res.json({ reply: 'Message limit reached.' });
-
-    const sessionId = `whatsapp_${from}`;
-    await Chat.saveMessage({ user_id: userId, session_id: sessionId, role: 'user', content: text });
-
-    const chatHistory = await Chat.getSessionHistory(userId, sessionId, 10);
-    const agent = await Agent.findDefaultForUser(userId);
-
-    const providers = typeof user.api_providers === 'string' ? JSON.parse(user.api_providers || '{}') : (user.api_providers || {});
-    const defProv = user.default_provider || 'openai';
-    const providerConfig = providers[defProv] || providers[Object.keys(providers)[0]] || null;
-
-    const aiRes = await generateAIResponse({
-      message: text,
-      provider: defProv,
-      providerConfig,
-      skills: [],
-      chatHistory,
-      agent
-    });
-
-    await Chat.saveMessage({ user_id: userId, session_id: sessionId, role: 'assistant', content: aiRes.content, model: aiRes.model, tokens: aiRes.tokens });
-
-    res.json({ reply: aiRes.content, model: aiRes.model });
-  } catch (error) {
-    console.error('WhatsApp VPS webhook error:', error.message);
-    res.status(500).json({ error: error.message });
-  }
-});
 
 module.exports = router;
