@@ -538,7 +538,7 @@
     </div>
 
     <script>
-        const API_URL = 'https://hostclaw-production-8e47.up.railway.app';
+        const API_URL = window.location.origin;
 
         // Redirect if already logged in
         if (localStorage.getItem('token')) window.location.href = '/dashboard.html';
