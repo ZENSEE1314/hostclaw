@@ -195,4 +195,80 @@ router.delete('/:id/bookings/:bookingId', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+// Generate FAQ suggestions from the agent's business profile using the user's default AI provider.
+// POST body (optional): { count: number, focus: string }
+router.post('/:id/faqs/generate', async (req, res, next) => {
+  try {
+    const agent = await Agent.findById(req.params.id);
+    if (!agent || agent.user_id !== req.user.userId) return res.status(404).json({ error: 'Agent not found' });
+
+    const { count = 6, focus = '' } = req.body || {};
+    const business = typeof agent.business_info === 'string'
+      ? JSON.parse(agent.business_info || '{}')
+      : (agent.business_info || {});
+
+    const profile = [
+      business.name ? `Business: ${business.name}` : '',
+      business.industry ? `Industry: ${business.industry}` : '',
+      business.description ? `About: ${business.description}` : '',
+      business.hours ? `Hours: ${business.hours}` : '',
+      business.address ? `Address: ${business.address}` : '',
+      business.phone ? `Phone: ${business.phone}` : '',
+      agent.description ? `Agent description: ${agent.description}` : '',
+      agent.system_prompt ? `System prompt: ${agent.system_prompt}` : ''
+    ].filter(Boolean).join('\n');
+
+    if (!profile.trim()) {
+      return res.status(400).json({ error: 'Fill in the business info first (name, description, etc.) before generating FAQs.' });
+    }
+
+    const { generateAIResponse } = require('../services/ai');
+    const User = require('../models/user');
+    const user = await User.findById(req.user.userId);
+    const providers = typeof user.api_providers === 'string' ? JSON.parse(user.api_providers || '{}') : (user.api_providers || {});
+    const defProv = user.default_provider || 'ollama';
+    const providerConfig = providers[defProv] || providers[Object.keys(providers)[0]] || { model: 'gemma4:31b-cloud' };
+
+    const instruction = `Based on this business profile, generate exactly ${count} realistic FAQs that customers commonly ask. ${focus ? 'Focus area: ' + focus + '. ' : ''}Return ONLY a JSON array, no prose, no markdown fences. Each item must have this shape: {"question":"...", "answer":"...", "keywords":"comma,separated,terms"}. Answers should be concise (1-3 sentences) and factual to the profile.\n\nPROFILE:\n${profile}`;
+
+    const aiRes = await generateAIResponse({
+      message: instruction,
+      provider: defProv,
+      providerConfig,
+      skills: [],
+      chatHistory: [],
+      agent: null
+    });
+
+    // Extract JSON array from the model's response (tolerate markdown fences)
+    let text = (aiRes.content || '').trim();
+    const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fence) text = fence[1].trim();
+    const arrayStart = text.indexOf('[');
+    const arrayEnd = text.lastIndexOf(']');
+    if (arrayStart === -1 || arrayEnd === -1) {
+      return res.status(502).json({ error: 'AI returned no valid FAQ list', raw: text.slice(0, 300) });
+    }
+
+    let faqs;
+    try {
+      faqs = JSON.parse(text.slice(arrayStart, arrayEnd + 1));
+    } catch (e) {
+      return res.status(502).json({ error: 'Failed to parse AI output', raw: text.slice(0, 300) });
+    }
+
+    const cleaned = (Array.isArray(faqs) ? faqs : [])
+      .filter(f => f && f.question && f.answer)
+      .map(f => ({
+        question: String(f.question).trim(),
+        answer: String(f.answer).trim(),
+        keywords: String(f.keywords || '').trim()
+      }));
+
+    res.json({ faqs: cleaned, model: aiRes.model });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

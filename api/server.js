@@ -37,6 +37,7 @@ const creativeRoutes = require('./routes/creative');
 const scraperRoutes = require('./routes/scraper');
 const salesRoutes = require('./routes/sales');
 const scheduleRoutes = require('./routes/schedule');
+const uploadRoutes = require('./routes/upload');
 const { errorHandler } = require('./middleware/error');
 const { initDb } = require('./config/database');
 
@@ -312,6 +313,7 @@ app.use('/api/site-settings', siteSettingsRoutes);
 app.use('/api/creative', creativeRoutes);
 app.use('/api/scraper', scraperRoutes);
 app.use('/api/sales', salesRoutes);
+app.use('/api/upload', uploadRoutes);
 app.use('/api/schedule', scheduleRoutes);
 app.use('/webhooks', webhookRoutes);
 

@@ -913,10 +913,16 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
           <div class="kb-panel" id="panelFaqs" role="tabpanel">
             <div class="flex justify-between items-center mb-2">
               <span class="text-secondary" style="font-size:0.8125rem" id="faqCount">0 FAQs</span>
-              <button class="btn btn-primary btn-sm" onclick="openFAQModal()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                Add FAQ
-              </button>
+              <div style="display:flex;gap:0.5rem">
+                <button class="btn btn-outline btn-sm" id="generateFaqsBtn" onclick="generateFAQsWithAI()" title="Auto-generate FAQs from your company profile">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                  Generate with AI
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="openFAQModal()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  Add FAQ
+                </button>
+              </div>
             </div>
             <div id="faqList" class="kb-entries"></div>
             <div id="faqEmpty" class="empty-state hidden">
@@ -1120,12 +1126,18 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
         <textarea id="prodDesc" class="form-textarea" rows="3" placeholder="Describe this product..."></textarea>
       </div>
       <div class="form-group">
-        <label class="form-label" for="prodImages">Image URLs (one per line)</label>
-        <textarea id="prodImages" class="form-textarea" rows="3" placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg"></textarea>
+        <label class="form-label">Product Images</label>
+        <input type="file" id="prodImageFiles" accept="image/*" multiple style="display:block;margin-bottom:0.5rem">
+        <div id="prodImagePreview" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem"></div>
+        <p class="form-hint" style="margin-bottom:0.35rem">Upload JPG/PNG/WebP (max 25MB each). Existing URLs below still work.</p>
+        <textarea id="prodImages" class="form-textarea" rows="2" placeholder="Or paste image URLs (one per line) — optional"></textarea>
       </div>
       <div class="form-group">
-        <label class="form-label" for="prodVideo">Video URL</label>
-        <input type="url" id="prodVideo" class="form-input" placeholder="https://youtube.com/watch?v=...">
+        <label class="form-label">Product Video</label>
+        <input type="file" id="prodVideoFile" accept="video/*" style="display:block;margin-bottom:0.5rem">
+        <div id="prodVideoPreview" style="margin-bottom:0.5rem"></div>
+        <p class="form-hint" style="margin-bottom:0.35rem">Upload MP4/WebM (max 25MB). Or paste a URL below.</p>
+        <input type="url" id="prodVideo" class="form-input" placeholder="Or paste video URL (e.g. YouTube) — optional">
       </div>
 
       <div class="form-group">
@@ -1578,6 +1590,24 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
       openProductModal(localIdx);
     }
 
+    async function uploadFiles(fileList) {
+      if (!fileList || !fileList.length) return [];
+      const fd = new FormData();
+      for (const f of fileList) fd.append('files', f);
+      const token = getToken();
+      const res = await fetch(`${API_URL}/api/upload`, {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+        body: fd
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Upload failed (${res.status})`);
+      }
+      const data = await res.json();
+      return data.urls || [];
+    }
+
     async function handleSaveProduct() {
       const name = document.getElementById('prodName').value.trim();
       if (!name) {
@@ -1585,8 +1615,33 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
         return;
       }
 
+      const saveBtn = document.getElementById('prodSaveBtn');
+      const origText = saveBtn.textContent;
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Uploading...';
+
+      let uploadedImages = [];
+      let uploadedVideo = '';
+      try {
+        const imgInput = document.getElementById('prodImageFiles');
+        const vidInput = document.getElementById('prodVideoFile');
+        if (imgInput?.files?.length) uploadedImages = await uploadFiles(imgInput.files);
+        if (vidInput?.files?.[0]) {
+          const urls = await uploadFiles([vidInput.files[0]]);
+          uploadedVideo = urls[0] || '';
+        }
+      } catch (e) {
+        showToast(e.message || 'Upload failed', 'error');
+        saveBtn.disabled = false;
+        saveBtn.textContent = origText;
+        return;
+      }
+
       const imageLines = document.getElementById('prodImages').value.trim();
-      const imageUrls = imageLines ? imageLines.split('\n').map(u => u.trim()).filter(Boolean) : [];
+      const imageUrls = [
+        ...uploadedImages,
+        ...(imageLines ? imageLines.split('\n').map(u => u.trim()).filter(Boolean) : [])
+      ];
 
       const packages = [];
       document.querySelectorAll('#packageRows .package-row').forEach(row => {
@@ -1603,7 +1658,7 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
         title: name,
         content: document.getElementById('prodDesc').value.trim(),
         image_urls: imageUrls,
-        video_url: document.getElementById('prodVideo').value.trim(),
+        video_url: uploadedVideo || document.getElementById('prodVideo').value.trim(),
         packages: packages
       };
 
@@ -1618,8 +1673,45 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
         await saveKB();
         renderProducts();
         closeModal('productModal');
+        // Reset upload inputs so next product opens clean
+        const ii = document.getElementById('prodImageFiles'); if (ii) ii.value = '';
+        const vi = document.getElementById('prodVideoFile'); if (vi) vi.value = '';
       } catch (err) {
         showToast('Failed to save: ' + err.message, 'error');
+      } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = origText;
+      }
+    }
+
+    async function generateFAQsWithAI() {
+      const btn = document.getElementById('generateFaqsBtn');
+      const orig = btn.innerHTML;
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+      try {
+        const res = await api(`/api/agents/${agentId}/faqs/generate`, {
+          method: 'POST',
+          body: JSON.stringify({ count: 6 })
+        });
+        const faqs = res.faqs || [];
+        if (!faqs.length) throw new Error('AI returned no FAQs');
+        for (const f of faqs) {
+          kb.push({
+            type: 'faq',
+            question: f.question,
+            answer: f.answer,
+            keywords: (f.keywords || '').split(',').map(k => k.trim()).filter(Boolean)
+          });
+        }
+        await saveKB();
+        renderFAQs();
+        showToast(`Added ${faqs.length} AI-generated FAQs. Edit or delete as needed.`, 'success');
+      } catch (e) {
+        showToast(e.message || 'Failed to generate FAQs', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
       }
     }
 
