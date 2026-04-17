@@ -227,6 +227,7 @@
         <div class="form-group">
           <label class="form-label" for="agentModel">AI Model</label>
           <select class="form-select" id="agentModel">
+            <option value="gemma4:31b-cloud" selected>Gemma4 31B Cloud (Ollama, default)</option>
             <option value="gpt-4o">GPT-4o</option>
             <option value="gpt-4-turbo">GPT-4 Turbo</option>
             <option value="claude-3.5-sonnet">Claude 3.5 Sonnet</option>
@@ -257,6 +258,7 @@
     requireAuth();
 
     const MODEL_LABELS = {
+      'gemma4:31b-cloud': 'Gemma4 31B Cloud (Ollama)',
       'gpt-4o': 'GPT-4o',
       'gpt-4-turbo': 'GPT-4 Turbo',
       'claude-3.5-sonnet': 'Claude 3.5 Sonnet',
