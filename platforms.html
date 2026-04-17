@@ -584,6 +584,15 @@
             </div>
           </div>
 
+          <div style="background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.35);border-radius:10px;padding:1rem 1.15rem;margin-bottom:1.25rem;display:flex;gap:0.85rem;align-items:flex-start">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div style="flex:1">
+              <div style="font-weight:600;color:#e0e7ff;margin-bottom:4px">One more step — create an AI agent</div>
+              <div style="font-size:0.85rem;color:#c7d2fe;margin-bottom:0.75rem">Your bot won't reply until you create an agent and link it to this platform. The agent holds the AI model, system prompt, and business info.</div>
+              <a href="/agents.html" class="btn btn-primary" style="padding:0.5rem 0.9rem;font-size:0.85rem">Create / Manage Agents →</a>
+            </div>
+          </div>
+
           <div class="form-group">
             <label class="form-label" for="systemPrompt">System Prompt</label>
             <textarea class="form-textarea config-textarea" id="systemPrompt" rows="6">You are a helpful customer service assistant for [Business Name]. Answer enquiries professionally, provide product information, and help close sales. Be friendly and concise.</textarea>
@@ -633,10 +642,11 @@
             <span class="badge badge-success">Active</span>
           </div>
 
-          <p class="golive-test">Send a message to your bot from another device to test it. The AI will respond automatically based on your configuration.</p>
+          <p class="golive-test">Before messages get AI replies, make sure you have an <strong>active agent</strong> linked to this platform. The agent is where you choose the AI model (Gemma4 Cloud, GPT-4o, Claude, etc.) and set its system prompt.</p>
 
           <div class="golive-actions">
-            <a href="/dashboard.html" class="btn btn-primary">Go to Dashboard</a>
+            <a href="/agents.html" class="btn btn-primary">Set up AI Agent →</a>
+            <a href="/dashboard.html" class="btn btn-outline">Go to Dashboard</a>
             <button class="btn btn-outline" onclick="resetWizard()">Connect Another Platform</button>
           </div>
         </div>
