@@ -203,20 +203,28 @@ router.post('/:id/faqs/generate', async (req, res, next) => {
     if (!agent || agent.user_id !== req.user.userId) return res.status(404).json({ error: 'Agent not found' });
 
     const { count = 6, focus = '' } = req.body || {};
-    const business = typeof agent.business_info === 'string'
-      ? JSON.parse(agent.business_info || '{}')
-      : (agent.business_info || {});
+    const kb = Array.isArray(agent.knowledge_base)
+      ? agent.knowledge_base
+      : (typeof agent.knowledge_base === 'string' ? JSON.parse(agent.knowledge_base || '[]') : []);
+    const biz = kb.find(e => e.type === 'business_info') || {};
+    const products = kb.filter(e => e.type === 'product');
 
-    const profile = [
-      business.name ? `Business: ${business.name}` : '',
-      business.industry ? `Industry: ${business.industry}` : '',
-      business.description ? `About: ${business.description}` : '',
-      business.hours ? `Hours: ${business.hours}` : '',
-      business.address ? `Address: ${business.address}` : '',
-      business.phone ? `Phone: ${business.phone}` : '',
+    const profileParts = [
+      biz.title ? `Company: ${biz.title}` : '',
+      biz.industry ? `Industry: ${biz.industry}` : '',
+      biz.description ? `About: ${biz.description}` : '',
+      biz.hours ? `Hours: ${biz.hours}` : '',
+      biz.address ? `Address: ${biz.address}` : '',
+      biz.phone ? `Phone: ${biz.phone}` : '',
+      biz.website ? `Website: ${biz.website}` : '',
       agent.description ? `Agent description: ${agent.description}` : '',
-      agent.system_prompt ? `System prompt: ${agent.system_prompt}` : ''
-    ].filter(Boolean).join('\n');
+      agent.system_prompt ? `Bot persona: ${agent.system_prompt}` : ''
+    ].filter(Boolean);
+
+    if (products.length) {
+      profileParts.push('Products/Services: ' + products.map(p => p.title).join(', '));
+    }
+    const profile = profileParts.join('\n');
 
     if (!profile.trim()) {
       return res.status(400).json({ error: 'Fill in the business info first (name, description, etc.) before generating FAQs.' });

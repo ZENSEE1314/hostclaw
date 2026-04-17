@@ -397,6 +397,9 @@ function buildSystemPrompt({ skills = [], agent = null } = {}) {
     if (bizInfo.length > 0) {
       prompt += '--- BUSINESS INFORMATION ---\n';
       for (const b of bizInfo) {
+        if (b.title) prompt += `Company Name: ${b.title}\n`;
+        if (b.industry) prompt += `Industry: ${b.industry}\n`;
+        if (b.description) prompt += `About Us: ${b.description}\n`;
         if (b.address) prompt += `Address: ${b.address}\n`;
         if (b.hours) prompt += `Opening Hours: ${b.hours}\n`;
         if (b.email) prompt += `Email: ${b.email}\n`;
