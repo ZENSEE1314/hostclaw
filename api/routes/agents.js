@@ -195,6 +195,42 @@ router.delete('/:id/bookings/:bookingId', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+// Generate an "About / What You Do" paragraph from just business name + industry.
+router.post('/:id/about/generate', async (req, res, next) => {
+  try {
+    const agent = await Agent.findById(req.params.id, req.user.userId);
+    if (!agent) return res.status(404).json({ error: 'Agent not found' });
+
+    const { name = '', industry = '' } = req.body || {};
+    if (!name.trim() && !industry.trim()) {
+      return res.status(400).json({ error: 'Provide at least a business name or industry.' });
+    }
+
+    const { generateAIResponse } = require('../services/ai');
+    const User = require('../models/user');
+    const user = await User.findById(req.user.userId);
+    const providers = typeof user.api_providers === 'string' ? JSON.parse(user.api_providers || '{}') : (user.api_providers || {});
+    const defProv = user.default_provider || 'ollama';
+    const providerConfig = providers[defProv] || providers[Object.keys(providers)[0]] || { model: 'gemma4:31b-cloud' };
+
+    const instruction = `Write a short, friendly "About Us" paragraph (3-5 sentences, max 500 characters) for a business. Speak to customers in first-person plural ("we", "our"). Describe what the business does, who it serves, and what makes it appealing. Do NOT use quotes, markdown, headers, or bullet points. Plain prose only.\n\nBusiness name: ${name || '(not provided)'}\nIndustry / offerings: ${industry || '(not provided)'}`;
+
+    const aiRes = await generateAIResponse({
+      message: instruction,
+      provider: defProv,
+      providerConfig,
+      skills: [],
+      chatHistory: [],
+      agent: null
+    });
+
+    const about = (aiRes.content || '').trim().replace(/^["']|["']$/g, '').slice(0, 800);
+    res.json({ about, model: aiRes.model });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Generate a short agent description from the business profile.
 router.post('/:id/description/generate', async (req, res, next) => {
   try {

@@ -819,7 +819,13 @@
               <input type="text" id="bizIndustry" class="form-input" placeholder="e.g. KTV / Karaoke, Restaurant, E-commerce, Salon">
             </div>
             <div class="form-group full-width">
-              <label class="form-label" for="bizDescription">About / What You Do</label>
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:0.4rem">
+                <label class="form-label" for="bizDescription" style="margin:0">About / What You Do</label>
+                <button type="button" class="btn btn-outline btn-sm" id="generateBizAboutBtn" onclick="generateBusinessAbout()" title="Generate from Industry + Business Name">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                  Generate with AI
+                </button>
+              </div>
               <textarea id="bizDescription" class="form-textarea" rows="4" placeholder="Describe what your company does, who you serve, what makes you different. The AI uses this to explain your business to customers."></textarea>
             </div>
             <div class="form-group full-width">
@@ -1699,6 +1705,33 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
       } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = origText;
+      }
+    }
+
+    async function generateBusinessAbout() {
+      const btn = document.getElementById('generateBizAboutBtn');
+      const orig = btn.innerHTML;
+      const name = document.getElementById('bizName').value.trim();
+      const industry = document.getElementById('bizIndustry').value.trim();
+      if (!industry && !name) {
+        showToast('Fill in Business Name or Industry first', 'warning');
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+      try {
+        const res = await api(`/api/agents/${agentId}/about/generate`, {
+          method: 'POST',
+          body: JSON.stringify({ name, industry })
+        });
+        if (!res.about) throw new Error('No about text returned');
+        document.getElementById('bizDescription').value = res.about;
+        showToast('About text generated. Review and click Save.', 'success');
+      } catch (e) {
+        showToast(e.message || 'Failed to generate', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
       }
     }
 
