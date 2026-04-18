@@ -7,6 +7,77 @@ const { generateAIResponse } = require('../services/ai');
 
 const router = express.Router();
 
+// Extract phone number from WhatsApp JID (e.g. 628123456789@s.whatsapp.net -> 628123456789)
+function phoneFromJid(from) {
+  if (!from) return '';
+  return String(from).split('@')[0].split(':')[0];
+}
+
+// Heuristic: detect "my name is X", "I'm X", "saya X", "nama saya X", "ini X"
+function extractNameFromText(text) {
+  if (!text) return '';
+  const patterns = [
+    /\bmy name is\s+([A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F' -]{1,40}?)(?:[.,!?\n]|$)/i,
+    /\bi am\s+([A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F' -]{1,40}?)(?:[.,!?\n]|$)/i,
+    /\bi'?m\s+([A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F' -]{1,40}?)(?:[.,!?\n]|$)/i,
+    /\bthis is\s+([A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F' -]{1,40}?)(?:[.,!?\n]|$)/i,
+    /\bnama\s+saya\s+([A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F' -]{1,40}?)(?:[.,!?\n]|$)/i,
+    /\bsaya\s+([A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F' -]{1,40}?)(?:[.,!?\n]|$)/i,
+    /\bini\s+([A-Za-z\u00C0-\u024F][A-Za-z\u00C0-\u024F' -]{1,40}?)(?:[.,!?\n]|$)/i
+  ];
+  for (const p of patterns) {
+    const m = text.match(p);
+    if (m && m[1]) {
+      const name = m[1].trim().replace(/\s+/g, ' ');
+      // reject common false-positives
+      if (name.length < 2 || /^(fine|good|great|here|back|sure|yes|no|ok|okay)$/i.test(name)) continue;
+      return name;
+    }
+  }
+  return '';
+}
+
+async function upsertWhatsAppContact(userId, from, text) {
+  try {
+    const { query } = require('../config/database');
+    const u = await User.findById(userId);
+    if (!u) return;
+    let contacts = [];
+    if (u.contacts) {
+      contacts = Array.isArray(u.contacts) ? u.contacts : JSON.parse(u.contacts || '[]');
+    }
+    const phone = phoneFromJid(from);
+    let contact = contacts.find(c => c.platform === 'whatsapp' && c.platform_id === from);
+    const extractedName = extractNameFromText(text);
+
+    if (!contact) {
+      const crypto = require('crypto');
+      contact = {
+        id: crypto.randomUUID(),
+        name: extractedName || phone,
+        phone,
+        email: '',
+        platform: 'whatsapp',
+        platform_id: from,
+        group: 'general',
+        tags: [],
+        created_at: new Date().toISOString()
+      };
+      contacts.push(contact);
+    } else if (extractedName && (!contact.name || contact.name === phone || /^\d+$/.test(contact.name))) {
+      // Update name only if current name is the raw phone (not set by the user yet)
+      contact.name = extractedName;
+    }
+
+    await query(
+      'UPDATE users SET contacts = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [JSON.stringify(contacts), userId]
+    );
+  } catch (e) {
+    console.error('upsertWhatsAppContact error:', e.message);
+  }
+}
+
 // WhatsApp VPS webhook — public, called by the Baileys bridge without a JWT.
 // Must be declared before router.use(authenticate) so it bypasses auth.
 router.post('/whatsapp-webhook', async (req, res) => {
@@ -22,6 +93,9 @@ router.post('/whatsapp-webhook', async (req, res) => {
     }
     const deducted = await User.deductMessage(userId);
     if (!deducted) return res.json({ reply: 'Message limit reached.' });
+
+    // CRM: auto-create/update contact from this message
+    await upsertWhatsAppContact(userId, from, text);
 
     const sessionId = `whatsapp_${from}`;
     await Chat.saveMessage({ user_id: userId, session_id: sessionId, role: 'user', content: text });
@@ -235,8 +309,15 @@ router.post('/reply', async (req, res, next) => {
           text: message
         }).catch(e => console.error('Telegram send error:', e.message));
       }
+    } else if (platform === 'whatsapp') {
+      // Relay to local Baileys bridge
+      const axios = require('axios');
+      const bridgeUrl = process.env.WA_VPS_URL || 'http://localhost:3001';
+      await axios.post(`${bridgeUrl}/session/${req.user.userId}/send`, {
+        to: platformId,
+        text: message
+      }, { timeout: 15000 }).catch(e => console.error('WhatsApp send error:', e.message));
     }
-    // WhatsApp manual reply would need Baileys socket reference (complex)
 
     res.json({ sent: true });
   } catch (error) { next(error); }

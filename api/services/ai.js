@@ -361,11 +361,10 @@ function buildSystemPrompt({ skills = [], agent = null } = {}) {
 
   let prompt = '';
 
-  // Use custom system prompt if provided
+  // Use custom system prompt if provided, else generate based on bot type
   if (customPrompt) {
     prompt = customPrompt + '\n\n';
   } else {
-    // Generate prompt based on bot type
     switch (botType) {
       case 'customer_service':
         prompt = `You are a friendly and professional customer service representative for ${businessName}. ` +
@@ -388,6 +387,12 @@ function buildSystemPrompt({ skills = [], agent = null } = {}) {
           `Be friendly, concise, and conversational.\n\n`;
         break;
     }
+  }
+
+  // CRM capture guidance for business bots
+  if (botType === 'customer_service' || botType === 'sales') {
+    prompt += `--- CRM GUIDANCE ---\n` +
+      `Within the first 1-2 replies, politely ask the customer for their name if you don't know it yet (e.g. "May I have your name please?"). Remember any name they give you and use it in subsequent replies. If it's natural, also ask for their contact email. Never demand — ask once, politely. If they decline, carry on without pushing.\n\n`;
   }
 
   // Inject knowledge base content by type

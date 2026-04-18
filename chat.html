@@ -274,10 +274,27 @@
         .chat-empty svg { opacity: 0.3; margin-bottom: 1rem; }
         .chat-empty p { font-size: 0.9rem; }
 
+        .back-to-list {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--accent-light);
+            cursor: pointer;
+            padding: 0.25rem;
+            margin-right: 0.25rem;
+        }
+
         @media (max-width: 768px) {
-            .chat-layout { grid-template-columns: 1fr; height: calc(100vh - 6rem); }
-            .conv-list { display: none; }
-            .conv-list.show { display: flex; position: fixed; inset: 0; z-index: 100; }
+            .chat-layout { grid-template-columns: 1fr; height: calc(100vh - 5rem); border-radius: 0; }
+            .conv-list { display: flex; }
+            .chat-panel { display: none; }
+            .chat-layout.show-chat .conv-list { display: none; }
+            .chat-layout.show-chat .chat-panel { display: flex; }
+            .back-to-list { display: inline-flex; align-items: center; }
+            .chat-messages { padding: 1rem; }
+            .chat-input-area { padding: 0.75rem; gap: 0.5rem; }
+            .chat-input-area input { font-size: 16px; /* prevent iOS zoom */ }
+            .msg { max-width: 85%; }
         }
     </style>
 </head>
@@ -298,7 +315,7 @@
             </div>
         </div>
 
-        <div class="chat-layout">
+        <div class="chat-layout" id="chatLayout">
             <!-- Conversation List -->
             <div class="conv-list" id="convList">
                 <div class="conv-search">
@@ -314,6 +331,9 @@
             <!-- Chat Panel -->
             <div class="chat-panel">
                 <div class="chat-header" id="chatHeader" style="display:none">
+                    <button class="back-to-list" onclick="backToList()" aria-label="Back">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+                    </button>
                     <div class="conv-icon web" id="chatIcon">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                     </div>
@@ -357,8 +377,25 @@
     let activeSession = null;
     let isBotPaused = false;
     const botStatusCache = {};
+    let contactMap = {}; // platform_id -> contact name
 
-    loadConversations();
+    loadContacts().then(loadConversations);
+
+    async function loadContacts() {
+      try {
+        const data = await api('/api/contacts');
+        const contacts = data.contacts || [];
+        contactMap = {};
+        for (const c of contacts) {
+          if (c.platform_id && c.name) contactMap[c.platform_id] = c.name;
+        }
+      } catch (e) { contactMap = {}; }
+    }
+
+    function backToList() {
+      document.getElementById('chatLayout').classList.remove('show-chat');
+      activeSession = null;
+    }
 
     async function loadConversations() {
         try {
@@ -430,6 +467,12 @@
         activeSession = sid;
         const conv = conversations[sid];
         if (!conv) return;
+
+        // Mobile: swap to chat view
+        document.getElementById('chatLayout').classList.add('show-chat');
+
+        // Refresh contacts so newly-extracted names show up
+        await loadContacts();
 
         // Update list active state
         document.querySelectorAll('.conv-item').forEach(el => el.classList.remove('active'));
@@ -551,10 +594,14 @@
 
     function formatSessionName(sid, platform) {
         if (sid === 'default') return 'Web Chat';
-        const prefix = platform === 'telegram' ? 'Telegram' : platform === 'whatsapp' ? 'WhatsApp' : '';
         const id = sid.replace(/^(telegram_|whatsapp_|web_)/, '');
-        if (id.length > 15) return `${prefix} ${id.substring(0, 12)}...`;
-        return `${prefix} ${id}`;
+        // Use CRM contact name if we have it
+        if (contactMap[id]) return contactMap[id];
+        // Fall back to phone/platform id
+        const phone = id.split('@')[0].split(':')[0];
+        const prefix = platform === 'telegram' ? 'Telegram' : platform === 'whatsapp' ? 'WhatsApp' : '';
+        if (phone.length > 15) return `${prefix} ${phone.substring(0, 12)}...`;
+        return `${prefix} ${phone}`;
     }
 
     async function toggleBot() {
