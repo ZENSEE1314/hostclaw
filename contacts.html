@@ -615,10 +615,22 @@
           <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center">
             <img id="generatedImage" src="" alt="Generated image" style="max-width:100%;border-radius:var(--radius-sm);margin-bottom:0.75rem">
             <p class="text-muted" style="font-size:0.75rem;margin-bottom:0.75rem" id="generatedPrompt"></p>
-            <div style="display:flex;gap:0.5rem;justify-content:center">
+            <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap">
               <a id="downloadLink" href="" download="chatsai-image.png" class="btn btn-secondary btn-sm">Download</a>
+              <button class="btn btn-outline btn-sm" onclick="openEditor(document.getElementById('generatedImage').src)">Edit in Canvas</button>
               <button class="btn btn-primary btn-sm" onclick="useInBroadcast()">Use in Broadcast</button>
             </div>
+          </div>
+        </div>
+
+        <!-- Image History -->
+        <div style="margin-top:1.25rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem">
+            <div class="form-label" style="margin:0">Image History</div>
+            <button class="btn btn-outline btn-sm" onclick="loadImageHistory()">Refresh</button>
+          </div>
+          <div id="imageHistoryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:0.5rem">
+            <p class="text-muted" style="grid-column:1/-1;font-size:0.8rem">Loading...</p>
           </div>
         </div>
       </div>
@@ -1453,6 +1465,214 @@
         }
       });
     });
+  </script>
+
+  <!-- Canvas Editor Modal -->
+  <div id="editorModal" class="modal-overlay" style="align-items:flex-start;padding-top:2vh" role="dialog" aria-labelledby="editorTitle" aria-modal="true">
+    <div class="modal-card" style="max-width:1100px;width:95vw">
+      <div class="modal-header">
+        <h3 class="modal-title" id="editorTitle">Edit Image</h3>
+        <button class="modal-close" onclick="closeEditor()" aria-label="Close">&times;</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem;align-items:center">
+        <button class="btn btn-outline btn-sm" onclick="editorAddText()">+ Add Text</button>
+        <button class="btn btn-outline btn-sm" onclick="document.getElementById('editorUpload').click()">+ Add Logo/Image</button>
+        <input type="file" id="editorUpload" accept="image/*" style="display:none" onchange="editorAddImageFromFile(this)">
+        <button class="btn btn-outline btn-sm" onclick="editorDeleteSelected()">Delete Selected</button>
+        <button class="btn btn-outline btn-sm" onclick="editorBringForward()">▲</button>
+        <button class="btn btn-outline btn-sm" onclick="editorSendBackward()">▼</button>
+        <span style="width:1px;height:24px;background:var(--border);margin:0 0.25rem"></span>
+        <label style="display:flex;align-items:center;gap:0.25rem;font-size:0.8rem">Color <input type="color" id="editorColor" value="#ffffff" oninput="editorSetColor(this.value)" style="width:30px;height:26px;padding:0;border:none;background:none"></label>
+        <label style="display:flex;align-items:center;gap:0.25rem;font-size:0.8rem">Size <input type="number" id="editorFontSize" min="8" max="200" value="48" onchange="editorSetFontSize(this.value)" style="width:60px;padding:0.25rem;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;color:var(--text)"></label>
+        <select id="editorFontFamily" onchange="editorSetFontFamily(this.value)" style="padding:0.3rem;background:var(--bg-card);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:0.8rem">
+          <option value="Inter, sans-serif">Inter</option>
+          <option value="Arial, sans-serif">Arial</option>
+          <option value="'Times New Roman', serif">Times</option>
+          <option value="'Courier New', monospace">Courier</option>
+          <option value="Impact, sans-serif">Impact</option>
+          <option value="Georgia, serif">Georgia</option>
+          <option value="'Comic Sans MS', cursive">Comic</option>
+        </select>
+        <label style="display:flex;align-items:center;gap:0.25rem;font-size:0.8rem"><input type="checkbox" id="editorBold" onchange="editorSetBold(this.checked)"> Bold</label>
+      </div>
+      <div style="background:#111;padding:0.5rem;border-radius:8px;display:flex;justify-content:center;overflow:auto;max-height:70vh">
+        <canvas id="editorCanvas"></canvas>
+      </div>
+      <div class="modal-actions" style="justify-content:flex-end;gap:0.5rem">
+        <button class="btn btn-outline btn-sm" onclick="closeEditor()">Cancel</button>
+        <button class="btn btn-outline btn-sm" onclick="editorDownload()">Download</button>
+        <button class="btn btn-primary btn-sm" onclick="editorSaveToHistory()">Save to History</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js"></script>
+  <script>
+    let editorCanvas = null;
+
+    async function loadImageHistory() {
+      const grid = document.getElementById('imageHistoryGrid');
+      try {
+        const data = await api('/api/creative/history');
+        const items = data.history || [];
+        if (!items.length) {
+          grid.innerHTML = '<p class="text-muted" style="grid-column:1/-1;font-size:0.8rem">No saved images yet. Generate one above!</p>';
+          return;
+        }
+        grid.innerHTML = items.map(it => `
+          <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;position:relative;aspect-ratio:1;display:flex;flex-direction:column">
+            <img src="${escapeHtml(it.image_url)}" alt="${escapeHtml(it.prompt || '')}" style="width:100%;flex:1;object-fit:cover;cursor:pointer" onclick="openEditor('${escapeHtml(it.image_url)}')" title="Click to edit">
+            <div style="padding:0.35rem;display:flex;gap:0.25rem;align-items:center;background:rgba(0,0,0,0.3)">
+              <a href="${escapeHtml(it.image_url)}" download="chatsai-${it.id}.png" class="btn btn-outline" style="padding:0.25rem 0.4rem;font-size:0.65rem;flex:1;text-align:center" title="Download">↓</a>
+              <button class="btn btn-outline" style="padding:0.25rem 0.4rem;font-size:0.65rem;flex:1" onclick="openEditor('${escapeHtml(it.image_url)}')" title="Edit">✎</button>
+              <button class="btn btn-outline" style="padding:0.25rem 0.4rem;font-size:0.65rem;color:var(--danger)" onclick="deleteHistoryItem('${it.id}')" title="Delete">🗑</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        grid.innerHTML = `<p class="text-muted" style="grid-column:1/-1;font-size:0.8rem">Failed to load: ${escapeHtml(e.message)}</p>`;
+      }
+    }
+
+    async function deleteHistoryItem(id) {
+      if (!confirm('Delete this image from history?')) return;
+      try {
+        await api('/api/creative/history/' + id, { method: 'DELETE' });
+        loadImageHistory();
+        showToast('Deleted', 'success');
+      } catch (e) { showToast(e.message, 'error'); }
+    }
+
+    // ─── Canvas Editor (Fabric.js) ─────────────────────────
+    function openEditor(imageUrl) {
+      if (typeof fabric === 'undefined') { showToast('Editor still loading, try again in a second', 'warning'); return; }
+
+      const modal = document.getElementById('editorModal');
+      modal.classList.add('active');
+
+      if (editorCanvas) { editorCanvas.dispose(); editorCanvas = null; }
+      editorCanvas = new fabric.Canvas('editorCanvas', { backgroundColor: '#000' });
+
+      // Need crossOrigin for toDataURL to work on external Pollinations URLs
+      fabric.Image.fromURL(imageUrl, (img) => {
+        if (!img) { showToast('Could not load image for editing', 'error'); return; }
+        // Fit within ~900px
+        const maxW = Math.min(900, window.innerWidth - 80);
+        const maxH = Math.min(650, window.innerHeight - 200);
+        const scale = Math.min(maxW / img.width, maxH / img.height, 1);
+        const w = img.width * scale;
+        const h = img.height * scale;
+        editorCanvas.setWidth(w);
+        editorCanvas.setHeight(h);
+        img.scale(scale);
+        img.set({ selectable: false, evented: false });
+        editorCanvas.setBackgroundImage(img, editorCanvas.renderAll.bind(editorCanvas));
+      }, { crossOrigin: 'anonymous' });
+    }
+
+    function closeEditor() {
+      document.getElementById('editorModal').classList.remove('active');
+      if (editorCanvas) { editorCanvas.dispose(); editorCanvas = null; }
+    }
+
+    function editorAddText() {
+      if (!editorCanvas) return;
+      const color = document.getElementById('editorColor').value;
+      const size = parseInt(document.getElementById('editorFontSize').value, 10) || 48;
+      const family = document.getElementById('editorFontFamily').value;
+      const text = new fabric.Textbox('Double-click to edit', {
+        left: editorCanvas.getWidth() / 2 - 150,
+        top: editorCanvas.getHeight() / 2 - 30,
+        width: 300,
+        fontSize: size,
+        fontFamily: family,
+        fill: color,
+        textAlign: 'center',
+        stroke: '#000',
+        strokeWidth: 1
+      });
+      editorCanvas.add(text).setActiveObject(text);
+      editorCanvas.renderAll();
+    }
+
+    function editorAddImageFromFile(input) {
+      const file = input.files?.[0];
+      if (!file || !editorCanvas) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        fabric.Image.fromURL(e.target.result, (img) => {
+          if (!img) return;
+          // Scale large uploads to ~30% of canvas width
+          const target = editorCanvas.getWidth() * 0.3;
+          img.scaleToWidth(target);
+          img.set({ left: 50, top: 50 });
+          editorCanvas.add(img).setActiveObject(img);
+          editorCanvas.renderAll();
+        });
+      };
+      reader.readAsDataURL(file);
+      input.value = '';
+    }
+
+    function editorDeleteSelected() {
+      if (!editorCanvas) return;
+      const obj = editorCanvas.getActiveObject();
+      if (obj) { editorCanvas.remove(obj); editorCanvas.renderAll(); }
+    }
+
+    function editorBringForward() { editorCanvas?.getActiveObject() && editorCanvas.bringForward(editorCanvas.getActiveObject()); }
+    function editorSendBackward() { editorCanvas?.getActiveObject() && editorCanvas.sendBackwards(editorCanvas.getActiveObject()); }
+
+    function editorSetColor(v) {
+      const obj = editorCanvas?.getActiveObject();
+      if (obj) { obj.set('fill', v); editorCanvas.renderAll(); }
+    }
+    function editorSetFontSize(v) {
+      const obj = editorCanvas?.getActiveObject();
+      if (obj && obj.type === 'textbox') { obj.set('fontSize', parseInt(v, 10) || 48); editorCanvas.renderAll(); }
+    }
+    function editorSetFontFamily(v) {
+      const obj = editorCanvas?.getActiveObject();
+      if (obj && obj.type === 'textbox') { obj.set('fontFamily', v); editorCanvas.renderAll(); }
+    }
+    function editorSetBold(v) {
+      const obj = editorCanvas?.getActiveObject();
+      if (obj && obj.type === 'textbox') { obj.set('fontWeight', v ? 'bold' : 'normal'); editorCanvas.renderAll(); }
+    }
+
+    function editorDownload() {
+      if (!editorCanvas) return;
+      try {
+        const dataUrl = editorCanvas.toDataURL({ format: 'png', quality: 1 });
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = `chatsai-edit-${Date.now()}.png`;
+        document.body.appendChild(a); a.click(); a.remove();
+      } catch (e) {
+        showToast('Download failed — image may be cross-origin blocked. Try "Save to History" instead.', 'error');
+      }
+    }
+
+    async function editorSaveToHistory() {
+      if (!editorCanvas) return;
+      try {
+        const dataUrl = editorCanvas.toDataURL({ format: 'png', quality: 1 });
+        await api('/api/creative/history/save-edit', {
+          method: 'POST',
+          body: JSON.stringify({ data_url: dataUrl, prompt: 'Edited in canvas' })
+        });
+        showToast('Saved to history', 'success');
+        loadImageHistory();
+        closeEditor();
+      } catch (e) { showToast(e.message || 'Save failed', 'error'); }
+    }
+
+    // Load history on page start
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => { loadImageHistory(); });
+    } else {
+      loadImageHistory();
+    }
   </script>
 </body>
 </html>

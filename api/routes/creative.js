@@ -41,6 +41,34 @@ router.post('/generate-image', async (req, res, next) => {
     // Deduct 1 message for image generation
     await User.deductMessage(req.user.userId);
 
+    // Save to user's image history so they can re-download later
+    try {
+      const { query } = require('../config/database');
+      const crypto = require('crypto');
+      const u = await User.findById(req.user.userId);
+      let history = [];
+      if (u.generated_images) {
+        history = Array.isArray(u.generated_images) ? u.generated_images : JSON.parse(u.generated_images || '[]');
+      }
+      history.unshift({
+        id: crypto.randomUUID(),
+        image_url: imageUrl,
+        prompt: description,
+        enhanced_prompt: enhancedPrompt,
+        style,
+        width, height,
+        created_at: new Date().toISOString()
+      });
+      // Keep last 100
+      history = history.slice(0, 100);
+      await query(
+        'UPDATE users SET generated_images = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+        [JSON.stringify(history), req.user.userId]
+      );
+    } catch (e) {
+      console.error('Failed to save image history:', e.message);
+    }
+
     res.json({
       image_url: imageUrl,
       prompt_used: enhancedPrompt,
@@ -50,6 +78,84 @@ router.post('/generate-image', async (req, res, next) => {
       height,
       download_url: imageUrl
     });
+  } catch (error) { next(error); }
+});
+
+// List user's generated image history
+router.get('/history', async (req, res, next) => {
+  try {
+    const u = await User.findById(req.user.userId);
+    let history = [];
+    if (u.generated_images) {
+      history = Array.isArray(u.generated_images) ? u.generated_images : JSON.parse(u.generated_images || '[]');
+    }
+    res.json({ history });
+  } catch (error) { next(error); }
+});
+
+// Delete one image from history
+router.delete('/history/:id', async (req, res, next) => {
+  try {
+    const { query } = require('../config/database');
+    const u = await User.findById(req.user.userId);
+    let history = [];
+    if (u.generated_images) {
+      history = Array.isArray(u.generated_images) ? u.generated_images : JSON.parse(u.generated_images || '[]');
+    }
+    const next = history.filter(h => h.id !== req.params.id);
+    await query(
+      'UPDATE users SET generated_images = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [JSON.stringify(next), req.user.userId]
+    );
+    res.json({ deleted: true });
+  } catch (error) { next(error); }
+});
+
+// Save an edited image (data URL) to history
+router.post('/history/save-edit', async (req, res, next) => {
+  try {
+    const { data_url, source_id, prompt } = req.body;
+    if (!data_url) return res.status(400).json({ error: 'data_url is required' });
+    if (!data_url.startsWith('data:image/')) return res.status(400).json({ error: 'invalid image data' });
+
+    // Decode base64 data URL and save to /uploads/ so it's served statically by Nginx
+    const match = data_url.match(/^data:image\/(\w+);base64,(.+)$/);
+    if (!match) return res.status(400).json({ error: 'malformed data URL' });
+    const ext = (match[1] || 'png').toLowerCase();
+    const buf = Buffer.from(match[2], 'base64');
+    if (buf.length > 10 * 1024 * 1024) return res.status(400).json({ error: 'image too large (10MB max)' });
+
+    const path = require('path');
+    const fs = require('fs');
+    const crypto = require('crypto');
+    const uploadsDir = path.resolve(__dirname, '..', '..', 'uploads');
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    const filename = `edit-${Date.now()}-${crypto.randomBytes(8).toString('hex')}.${ext}`;
+    fs.writeFileSync(path.join(uploadsDir, filename), buf);
+    const url = `/uploads/${filename}`;
+
+    // Save to history
+    const { query } = require('../config/database');
+    const u = await User.findById(req.user.userId);
+    let history = [];
+    if (u.generated_images) {
+      history = Array.isArray(u.generated_images) ? u.generated_images : JSON.parse(u.generated_images || '[]');
+    }
+    history.unshift({
+      id: crypto.randomUUID(),
+      image_url: url,
+      prompt: prompt || 'Edited image',
+      enhanced_prompt: '',
+      style: 'edited',
+      edited_from: source_id || null,
+      created_at: new Date().toISOString()
+    });
+    history = history.slice(0, 100);
+    await query(
+      'UPDATE users SET generated_images = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [JSON.stringify(history), req.user.userId]
+    );
+    res.json({ image_url: url });
   } catch (error) { next(error); }
 });
 
