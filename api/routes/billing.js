@@ -82,8 +82,29 @@ router.get('/usage', async (req, res, next) => {
 // Get referral stats
 router.get('/referral', async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.userId);
     const { query } = require('../config/database');
+    const crypto = require('crypto');
+    let user = await User.findById(req.user.userId);
+
+    // Backfill: if the account doesn't have a referral code yet, generate one now
+    // so legacy accounts and edge-case signups always see a code.
+    if (!user.my_referral_code) {
+      let attempts = 0;
+      while (attempts < 5) {
+        const code = crypto.randomBytes(4).toString('hex').toUpperCase().slice(0, 6);
+        try {
+          await query(
+            `UPDATE users SET my_referral_code = $1 WHERE id = $2 AND (my_referral_code IS NULL OR my_referral_code = '')`,
+            [code, req.user.userId]
+          );
+          user = await User.findById(req.user.userId);
+          if (user.my_referral_code) break;
+        } catch (e) {
+          // Likely a unique-constraint collision — try another random code
+        }
+        attempts++;
+      }
+    }
 
     const referralsResult = await query(
       `SELECT COUNT(*) as count FROM users WHERE referred_by = $1`,
