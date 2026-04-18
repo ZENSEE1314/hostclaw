@@ -41,6 +41,60 @@ function isLidJid(from) {
   return /@lid$/i.test(from || '');
 }
 
+// Detect "I need to check / ask the manager" punt phrases in the AI reply — indicates the KB
+// didn't cover the question, so we queue it for the owner to answer.
+function isPuntReply(reply) {
+  if (!reply) return false;
+  const r = reply.toLowerCase();
+  return (
+    /check with (my |our |the )?(boss|manager|owner|team|colleague)/i.test(r) ||
+    /confirm with (my |our |the )?(boss|manager|owner|team)/i.test(r) ||
+    /get back to you/i.test(r) ||
+    /let me (double[- ]?)?check/i.test(r) ||
+    /reply (?:in a bit|shortly|later)/i.test(r) ||
+    /\bfollow up\b/i.test(r) ||
+    /i['\u2019]?ll ask/i.test(r)
+  );
+}
+
+async function queuePendingFAQ(agent, userId, question, aiReply) {
+  try {
+    if (!agent || !agent.id) return;
+    if (!isPuntReply(aiReply)) return;
+    const q = String(question || '').trim();
+    if (q.length < 3 || q.length > 500) return;
+
+    const Agent = require('../models/agent');
+    const fresh = await Agent.findById(agent.id, userId);
+    if (!fresh) return;
+
+    let kb = [];
+    if (fresh.knowledge_base) {
+      kb = Array.isArray(fresh.knowledge_base) ? fresh.knowledge_base : JSON.parse(fresh.knowledge_base || '[]');
+    }
+
+    // Skip if an identical pending question already exists (case/whitespace-insensitive)
+    const norm = (s) => String(s || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const already = kb.some(e =>
+      (e.type === 'pending_faq' || e.type === 'faq') &&
+      (norm(e.title) === norm(q) || norm(e.question) === norm(q))
+    );
+    if (already) return;
+
+    kb.push({
+      type: 'pending_faq',
+      title: q,
+      content: '',
+      keywords: [],
+      created_at: new Date().toISOString()
+    });
+
+    await Agent.update(agent.id, userId, { knowledge_base: kb });
+  } catch (e) {
+    console.error('queuePendingFAQ error:', e.message);
+  }
+}
+
 async function upsertWhatsAppContact(userId, from, text, pushName = '') {
   try {
     const { query } = require('../config/database');
@@ -142,6 +196,10 @@ router.post('/whatsapp-webhook', async (req, res) => {
     });
 
     await Chat.saveMessage({ user_id: userId, session_id: sessionId, role: 'assistant', content: aiRes.content, model: aiRes.model, tokens: aiRes.tokens });
+
+    // If the AI punted ("let me check with the manager"), queue the customer's question as a pending FAQ
+    // so the owner can fill in the real answer from the dashboard.
+    await queuePendingFAQ(agent, userId, text, aiRes.content);
 
     res.json({ reply: aiRes.content, model: aiRes.model });
   } catch (error) {

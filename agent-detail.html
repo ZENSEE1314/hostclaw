@@ -938,6 +938,14 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
                 </button>
               </div>
             </div>
+            <!-- Pending FAQs (auto-collected from customer questions the bot couldn't answer) -->
+            <div id="pendingFaqSection" class="hidden" style="margin-bottom:1rem">
+              <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+                <span class="keyword-badge" style="background:rgba(245,158,11,0.15);color:#fbbf24;border:1px solid rgba(245,158,11,0.3)">Needs your answer</span>
+                <span class="text-secondary" style="font-size:0.75rem">Customers asked these — the bot promised to check. Fill in the answer so it learns.</span>
+              </div>
+              <div id="pendingFaqList" class="kb-entries"></div>
+            </div>
             <div id="faqList" class="kb-entries"></div>
             <div id="faqEmpty" class="empty-state hidden">
               <div class="empty-icon">
@@ -1798,8 +1806,68 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
       }
     }
 
+    // ─── Pending FAQs (auto-queued when bot couldn't answer) ──────────
+    function renderPendingFAQs() {
+      const items = getKBByType('pending_faq');
+      const section = document.getElementById('pendingFaqSection');
+      const container = document.getElementById('pendingFaqList');
+      if (!items.length) { section.classList.add('hidden'); container.innerHTML = ''; return; }
+      section.classList.remove('hidden');
+      container.innerHTML = items.map((entry, localIdx) => {
+        const q = entry.title || entry.question || '';
+        const when = entry.created_at ? new Date(entry.created_at).toLocaleString() : '';
+        return `
+          <div class="kb-entry" style="border-color:rgba(245,158,11,0.3)">
+            <div class="kb-entry-body">
+              <div class="kb-entry-header">
+                <span class="kb-entry-title">${escapeHTML(q)}</span>
+              </div>
+              <div class="text-secondary" style="font-size:0.7rem;margin-bottom:0.5rem">Asked ${escapeHTML(when)}</div>
+              <textarea id="pendingAnswer_${localIdx}" class="form-textarea" rows="2" placeholder="Type the answer — it will become a real FAQ the bot uses going forward..."></textarea>
+              <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+                <button class="btn btn-primary btn-sm" onclick="handleAnswerPendingFAQ(${localIdx})">Save answer</button>
+                <button class="btn btn-outline btn-sm" onclick="handleDismissPendingFAQ(${localIdx})">Dismiss</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function handleAnswerPendingFAQ(localIdx) {
+      const textarea = document.getElementById('pendingAnswer_' + localIdx);
+      const answer = (textarea?.value || '').trim();
+      if (!answer) { showToast('Type an answer first', 'warning'); return; }
+      const realIdx = getKBIndex('pending_faq', localIdx);
+      if (realIdx < 0) return;
+      const entry = kb[realIdx];
+      kb[realIdx] = {
+        type: 'faq',
+        title: entry.title || entry.question || '',
+        content: answer,
+        keywords: []
+      };
+      try {
+        await saveKB();
+        renderPendingFAQs();
+        renderFAQs();
+        showToast('Added to FAQs', 'success');
+      } catch (e) { showToast('Failed to save: ' + e.message, 'error'); }
+    }
+
+    async function handleDismissPendingFAQ(localIdx) {
+      const realIdx = getKBIndex('pending_faq', localIdx);
+      if (realIdx < 0) return;
+      kb.splice(realIdx, 1);
+      try {
+        await saveKB();
+        renderPendingFAQs();
+      } catch (e) { showToast('Failed: ' + e.message, 'error'); }
+    }
+
     // ─── FAQs ──────────────────────────────────────────────
     function renderFAQs() {
+      renderPendingFAQs();
       const items = getKBByType('faq');
       const container = document.getElementById('faqList');
       const empty = document.getElementById('faqEmpty');
