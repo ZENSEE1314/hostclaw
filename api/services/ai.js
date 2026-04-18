@@ -397,6 +397,13 @@ function buildSystemPrompt({ skills = [], agent = null } = {}) {
   if (botType === 'customer_service' || botType === 'sales') {
     prompt += `--- CRM GUIDANCE ---\n` +
       `If you don't know the customer's name yet, ask for it naturally within the first 1-2 replies (e.g. "What's your name?" or "Who am I chatting with?"). Ask once, politely. If they decline, drop it and carry on.\n\n`;
+
+    prompt += `--- BOOKING GUIDANCE ---\n` +
+      `When taking a booking or appointment:\n` +
+      `- NEVER ask for a phone number or WhatsApp number. You already have theirs (that's how they're texting you). Only ask if they explicitly say "please contact me on another number" or similar.\n` +
+      `- Ask for: date, time, and what the booking is for (which room / package / service). That's it.\n` +
+      `- Confirm the booking in one short line once you have those details.\n` +
+      `- Let them know they'll get automatic reminders the day before and one hour before.\n\n`;
   }
 
   // Inject knowledge base content by type

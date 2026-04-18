@@ -171,14 +171,17 @@ router.get('/:id/bookings', async (req, res, next) => {
 // Create a booking
 router.post('/:id/bookings', async (req, res, next) => {
   try {
-    const { date, time, customer_name, customer_phone } = req.body;
+    const { date, time, customer_name, customer_phone, customer_jid, service, session_id } = req.body;
     if (!date || !time) {
       return res.status(400).json({ error: 'Date and time are required' });
     }
     const result = await Agent.addBooking(req.params.id, {
       date, time,
       customer_name: customer_name || 'Guest',
-      customer_phone: customer_phone || ''
+      customer_phone: customer_phone || '',
+      customer_jid: customer_jid || '',  // WhatsApp JID for reminders
+      session_id: session_id || '',      // chat session if created from conversation
+      service: service || ''
     });
     if (result?.error === 'slot_taken') {
       return res.status(409).json({ error: 'This time slot is already booked. Please choose another time.' });

@@ -86,8 +86,9 @@ async function startup() {
       // Start processors (check every 2 minutes)
       setInterval(processFollowUps, 2 * 60 * 1000);
       setInterval(processScheduledTasks, 2 * 60 * 1000);
-      setInterval(processAppointmentReminders, 5 * 60 * 1000);
-      console.log('📅 Processors started: follow-ups (2min), tasks (2min), reminders (5min)');
+      // New booking reminder worker: sends WhatsApp reminders 1 day + 1 hour before
+      require('./workers/booking-reminders').start();
+      console.log('📅 Processors started: follow-ups (2min), tasks (2min), booking-reminders (5min)');
     });
   } catch (err) {
     console.error('❌ Startup failed:', err);
