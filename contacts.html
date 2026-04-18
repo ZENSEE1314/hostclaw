@@ -1479,6 +1479,7 @@
         <button class="btn btn-outline btn-sm" onclick="document.getElementById('editorUpload').click()">+ Add Logo/Image</button>
         <input type="file" id="editorUpload" accept="image/*" style="display:none" onchange="editorAddImageFromFile(this)">
         <button class="btn btn-outline btn-sm" onclick="editorDeleteSelected()">Delete Selected</button>
+        <button class="btn btn-outline btn-sm" id="editorRemoveBgBtn" onclick="editorRemoveBackground()" title="Remove background from selected image (first run downloads ~30MB model)">Remove BG</button>
         <button class="btn btn-outline btn-sm" onclick="editorBringForward()">▲</button>
         <button class="btn btn-outline btn-sm" onclick="editorSendBackward()">▼</button>
         <span style="width:1px;height:24px;background:var(--border);margin:0 0.25rem"></span>
@@ -1618,6 +1619,80 @@
       if (!editorCanvas) return;
       const obj = editorCanvas.getActiveObject();
       if (obj) { editorCanvas.remove(obj); editorCanvas.renderAll(); }
+    }
+
+    // Remove background — works on the selected image OR the background image if nothing is selected.
+    // Uses @imgly/background-removal (runs client-side via ONNX; ~30MB model downloads once, then cached).
+    let _bgRemovalLib = null;
+    async function loadBgRemovalLib() {
+      if (_bgRemovalLib) return _bgRemovalLib;
+      _bgRemovalLib = await import('https://esm.sh/@imgly/background-removal@1.4.5');
+      return _bgRemovalLib;
+    }
+
+    async function editorRemoveBackground() {
+      if (!editorCanvas) return;
+      const btn = document.getElementById('editorRemoveBgBtn');
+      const orig = btn.textContent;
+
+      // Figure out the target: selected image object, or the background
+      let target = editorCanvas.getActiveObject();
+      let isBackground = false;
+      if (!target || target.type !== 'image') {
+        target = editorCanvas.backgroundImage;
+        isBackground = true;
+        if (!target) {
+          showToast('Select an image to remove its background, or generate one first', 'warning');
+          return;
+        }
+      }
+
+      btn.disabled = true; btn.textContent = 'Loading model...';
+      try {
+        const { removeBackground } = await loadBgRemovalLib();
+
+        // Get the pixels: draw target to an offscreen canvas, then convert to blob
+        const srcCanvas = document.createElement('canvas');
+        const imgEl = target._element || target.getElement?.();
+        if (!imgEl) throw new Error('Could not read image pixels');
+        srcCanvas.width = imgEl.naturalWidth || imgEl.width;
+        srcCanvas.height = imgEl.naturalHeight || imgEl.height;
+        srcCanvas.getContext('2d').drawImage(imgEl, 0, 0, srcCanvas.width, srcCanvas.height);
+
+        btn.textContent = 'Removing BG...';
+        const blob = await new Promise(r => srcCanvas.toBlob(r, 'image/png'));
+        const resultBlob = await removeBackground(blob);
+        const resultUrl = URL.createObjectURL(resultBlob);
+
+        // Replace the target on the canvas
+        fabric.Image.fromURL(resultUrl, (newImg) => {
+          if (!newImg) { showToast('Failed to load result', 'error'); return; }
+          if (isBackground) {
+            const cw = editorCanvas.getWidth();
+            const ch = editorCanvas.getHeight();
+            const scale = Math.min(cw / newImg.width, ch / newImg.height);
+            newImg.scale(scale);
+            newImg.set({ selectable: false, evented: false });
+            editorCanvas.setBackgroundImage(newImg, editorCanvas.renderAll.bind(editorCanvas));
+          } else {
+            newImg.set({
+              left: target.left, top: target.top,
+              scaleX: target.scaleX, scaleY: target.scaleY,
+              angle: target.angle || 0
+            });
+            editorCanvas.remove(target);
+            editorCanvas.add(newImg).setActiveObject(newImg);
+            editorCanvas.renderAll();
+          }
+          showToast('Background removed', 'success');
+        }, { crossOrigin: 'anonymous' });
+      } catch (e) {
+        console.error('Remove BG error:', e);
+        showToast('Background removal failed: ' + (e.message || 'unknown error'), 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
     }
 
     function editorBringForward() { editorCanvas?.getActiveObject() && editorCanvas.bringForward(editorCanvas.getActiveObject()); }
