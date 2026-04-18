@@ -355,14 +355,59 @@ async function processFollowUps() {
           ? JSON.parse(followup.platforms || '{}') : (followup.platforms || {});
 
         let sent = false;
+        const msg = followup.message;
+        const to = followup.platform_id;
+        const decode = (s) => Buffer.from(s, 'base64').toString();
 
         if (followup.platform === 'telegram' && platforms.telegram?.bot_token) {
-          const token = Buffer.from(platforms.telegram.bot_token, 'base64').toString();
+          const token = decode(platforms.telegram.bot_token);
           await axios.post(`https://api.telegram.org/bot${token}/sendMessage`, {
-            chat_id: followup.platform_id,
-            text: followup.message
+            chat_id: to,
+            text: msg.substring(0, 4096)
           });
           sent = true;
+        } else if (followup.platform === 'whatsapp' && platforms.whatsapp?.phone_number_id && platforms.whatsapp?.access_token) {
+          const waCloud = require('./services/whatsapp-cloud');
+          await waCloud.sendTextMessage(
+            platforms.whatsapp.phone_number_id,
+            platforms.whatsapp.access_token,
+            to,
+            msg.substring(0, 4096)
+          );
+          sent = true;
+        } else if (followup.platform === 'whatsapp' && process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_ID) {
+          // Fallback to legacy global WhatsApp config
+          await axios.post(`https://graph.facebook.com/v18.0/${process.env.WHATSAPP_PHONE_ID}/messages`, {
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to,
+            type: 'text',
+            text: { body: msg.substring(0, 4096) }
+          }, { headers: { Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}` } });
+          sent = true;
+        } else if (followup.platform === 'messenger' && platforms.messenger?.page_token) {
+          const token = decode(platforms.messenger.page_token);
+          await axios.post(`https://graph.facebook.com/v18.0/me/messages`, {
+            recipient: { id: to },
+            message: { text: msg.substring(0, 2000) }
+          }, { params: { access_token: token } });
+          sent = true;
+        } else if (followup.platform === 'discord' && platforms.discord?.bot_token) {
+          const token = decode(platforms.discord.bot_token);
+          await axios.post(`https://discord.com/api/v10/channels/${to}/messages`, {
+            content: msg.substring(0, 2000)
+          }, { headers: { Authorization: `Bot ${token}` } });
+          sent = true;
+        } else if (followup.platform === 'slack' && platforms.slack?.bot_token) {
+          const token = decode(platforms.slack.bot_token);
+          await axios.post('https://slack.com/api/chat.postMessage', {
+            channel: to,
+            text: msg.substring(0, 4000),
+            unfurl_links: false
+          }, { headers: { Authorization: `Bearer ${token}` } });
+          sent = true;
+        } else {
+          console.warn(`Follow-up skipped: platform '${followup.platform}' not configured for user ${followup.user_id}`);
         }
 
         // Mark as sent
