@@ -506,6 +506,15 @@
           <p class="page-header-sub">Manage your contacts and send messages across platforms</p>
         </div>
         <div class="header-actions">
+          <input type="file" id="csvImportInput" accept=".csv,text/csv" style="display:none" onchange="handleImportCSV(this)">
+          <button class="btn btn-outline" onclick="document.getElementById('csvImportInput').click()" title="Import contacts from CSV">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Import CSV
+          </button>
+          <button class="btn btn-outline" onclick="handleExportCSV()" title="Download all contacts as CSV">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
           <button class="btn btn-secondary" onclick="openModal('addContactModal')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
             Add Contact
@@ -841,6 +850,101 @@
       if (!requireAuth()) return;
       loadContacts();
     });
+
+    /* CSV Import / Export */
+    function csvEscape(v) {
+      const s = (v == null ? '' : String(v));
+      if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+      return s;
+    }
+
+    function handleExportCSV() {
+      if (!contacts.length) { showToast('No contacts to export', 'warning'); return; }
+      const header = ['Name', 'Phone', 'Email', 'Platform', 'PlatformID', 'Group', 'Tags', 'CreatedAt'];
+      const rows = contacts.map(c => [
+        c.name || '', c.phone || '', c.email || '',
+        c.platform || '', c.platform_id || '', c.group || 'general',
+        (Array.isArray(c.tags) ? c.tags.join(';') : (c.tags || '')),
+        c.created_at || ''
+      ]);
+      const csv = [header, ...rows].map(r => r.map(csvEscape).join(',')).join('\r\n');
+      // Prepend BOM so Excel detects UTF-8 properly
+      const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `contacts-${new Date().toISOString().slice(0,10)}.csv`;
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+      showToast(`Exported ${contacts.length} contacts`, 'success');
+    }
+
+    // Minimal RFC-4180-ish CSV parser (handles quoted fields with commas/newlines)
+    function parseCSV(text) {
+      const rows = [];
+      let row = [], field = '', inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i], next = text[i + 1];
+        if (inQuotes) {
+          if (ch === '"' && next === '"') { field += '"'; i++; }
+          else if (ch === '"') { inQuotes = false; }
+          else field += ch;
+        } else {
+          if (ch === '"') inQuotes = true;
+          else if (ch === ',') { row.push(field); field = ''; }
+          else if (ch === '\r') { /* ignore */ }
+          else if (ch === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+          else field += ch;
+        }
+      }
+      if (field.length || row.length) { row.push(field); rows.push(row); }
+      return rows.filter(r => r.some(v => v && v.trim()));
+    }
+
+    async function handleImportCSV(input) {
+      const file = input.files?.[0];
+      if (!file) return;
+      const text = await file.text();
+      input.value = ''; // reset so same file can be re-picked
+
+      const rows = parseCSV(text);
+      if (rows.length === 0) { showToast('CSV is empty', 'warning'); return; }
+
+      // Header detection: if first row contains "name" case-insensitive, treat as header
+      const hasHeader = rows[0].some(h => /name|phone|email/i.test(h || ''));
+      const header = hasHeader ? rows[0].map(h => h.trim().toLowerCase()) : null;
+      const dataRows = hasHeader ? rows.slice(1) : rows;
+
+      const col = (name) => header ? header.indexOf(name) : -1;
+      const idxName = hasHeader ? col('name') : 0;
+      const idxPhone = hasHeader ? col('phone') : 1;
+      const idxEmail = hasHeader ? col('email') : 2;
+      const idxPlatform = hasHeader ? col('platform') : -1;
+      const idxGroup = hasHeader ? col('group') : -1;
+      const idxTags = hasHeader ? col('tags') : -1;
+
+      if (!confirm(`Import ${dataRows.length} contacts from ${file.name}?`)) return;
+
+      let added = 0, failed = 0;
+      for (const r of dataRows) {
+        const name = (r[idxName] || '').trim();
+        if (!name) { failed++; continue; }
+        const body = {
+          name,
+          phone: idxPhone >= 0 ? (r[idxPhone] || '').trim() : '',
+          email: idxEmail >= 0 ? (r[idxEmail] || '').trim() : '',
+          platform: idxPlatform >= 0 ? (r[idxPlatform] || '').trim() : '',
+          group: idxGroup >= 0 ? ((r[idxGroup] || '').trim() || 'general') : 'general',
+          tags: idxTags >= 0 ? (r[idxTags] || '').split(/[;,|]/).map(t => t.trim()).filter(Boolean) : []
+        };
+        try {
+          await api('/api/contacts', { method: 'POST', body: JSON.stringify(body) });
+          added++;
+        } catch (e) { failed++; }
+      }
+      showToast(`Imported ${added} contact${added !== 1 ? 's' : ''}${failed ? `, ${failed} skipped` : ''}`, added ? 'success' : 'warning');
+      loadContacts();
+    }
 
     /* Data Loading */
     async function loadContacts() {
