@@ -1711,8 +1711,8 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
         for (const f of faqs) {
           kb.push({
             type: 'faq',
-            question: f.question,
-            answer: f.answer,
+            title: f.question,
+            content: f.answer,
             keywords: (f.keywords || '').split(',').map(k => k.trim()).filter(Boolean)
           });
         }
@@ -1756,17 +1756,21 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
 
       empty.classList.add('hidden');
       container.innerHTML = items.map((entry, localIdx) => {
-        const keywords = (entry.keywords || []).map(k =>
+        const kw = entry.keywords;
+        const kwArr = Array.isArray(kw) ? kw : (typeof kw === 'string' ? kw.split(',').map(s => s.trim()).filter(Boolean) : []);
+        const keywords = kwArr.map(k =>
           `<span class="keyword-badge">${escapeHTML(k)}</span>`
         ).join('');
+        const title = entry.title || entry.question || '';
+        const content = entry.content || entry.answer || '';
 
         return `
           <div class="kb-entry">
             <div class="kb-entry-body">
               <div class="kb-entry-header">
-                <span class="kb-entry-title">${escapeHTML(entry.title)}</span>
+                <span class="kb-entry-title">${escapeHTML(title)}</span>
               </div>
-              <div class="kb-entry-content">${escapeHTML(entry.content || '')}</div>
+              <div class="kb-entry-content">${escapeHTML(content)}</div>
               ${keywords ? `<div class="keyword-badges">${keywords}</div>` : ''}
             </div>
             <div class="kb-entry-actions">
@@ -1795,9 +1799,10 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
         const items = getKBByType('faq');
         const entry = items[editingFAQIndex];
         if (entry) {
-          document.getElementById('faqQuestion').value = entry.title || '';
-          document.getElementById('faqAnswer').value = entry.content || '';
-          document.getElementById('faqKeywords').value = (entry.keywords || []).join(', ');
+          document.getElementById('faqQuestion').value = entry.title || entry.question || '';
+          document.getElementById('faqAnswer').value = entry.content || entry.answer || '';
+          const kw = entry.keywords;
+          document.getElementById('faqKeywords').value = Array.isArray(kw) ? kw.join(', ') : (kw || '');
         }
       }
 
