@@ -224,6 +224,39 @@ router.put('/profile', authenticate, async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+// Get notification preferences
+router.get('/notification-prefs', authenticate, async (req, res, next) => {
+  try {
+    const { query } = require('../config/database');
+    const r = await query('SELECT notification_prefs FROM users WHERE id = $1', [req.user.userId]);
+    let prefs = {};
+    if (r.rows[0]?.notification_prefs) {
+      try { prefs = typeof r.rows[0].notification_prefs === 'string' ? JSON.parse(r.rows[0].notification_prefs) : r.rows[0].notification_prefs; } catch { prefs = {}; }
+    }
+    // Defaults match the settings.html checkbox defaults
+    const defaults = { notifyDisconnect: true, notifyLimit: true, notifyReferral: false };
+    res.json({ prefs: { ...defaults, ...prefs } });
+  } catch (error) { next(error); }
+});
+
+// Save notification preferences
+router.put('/notification-prefs', authenticate, async (req, res, next) => {
+  try {
+    const { prefs } = req.body;
+    if (!prefs || typeof prefs !== 'object') return res.status(400).json({ error: 'prefs object required' });
+    const { query } = require('../config/database');
+    // Only allow known keys to avoid arbitrary writes
+    const allowed = ['notifyDisconnect', 'notifyLimit', 'notifyReferral'];
+    const clean = {};
+    for (const k of allowed) if (k in prefs) clean[k] = !!prefs[k];
+    await query(
+      'UPDATE users SET notification_prefs = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [JSON.stringify(clean), req.user.userId]
+    );
+    res.json({ prefs: clean });
+  } catch (error) { next(error); }
+});
+
 // Change password
 router.post('/change-password', authenticate, async (req, res, next) => {
   try {

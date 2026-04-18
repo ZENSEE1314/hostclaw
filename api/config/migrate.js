@@ -276,6 +276,12 @@ async function migrate() {
       console.log('✅ Column users.generated_images ready');
     } catch (e) { console.log('ℹ️ users.generated_images:', e.message); }
 
+    // Notification preferences
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS notification_prefs TEXT DEFAULT '{}'`);
+      console.log('✅ Column users.notification_prefs ready');
+    } catch (e) { console.log('ℹ️ users.notification_prefs:', e.message); }
+
     console.log('✅ All migrations complete!');
     return true;
   } catch (err) {

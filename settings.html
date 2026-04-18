@@ -91,7 +91,7 @@
                 </label>
             </div>
             <div style="margin-top:1.25rem">
-                <button class="btn btn-secondary" onclick="showToast('Notification preferences saved','success')">Save Preferences</button>
+                <button class="btn btn-secondary" id="saveNotifBtn" onclick="saveNotificationPrefs()">Save Preferences</button>
             </div>
         </div>
 
@@ -129,6 +129,43 @@
 <script src="/js/sidebar.js"></script>
 <script>
     requireAuth();
+
+    async function loadNotificationPrefs() {
+      try {
+        const res = await api('/api/auth/notification-prefs');
+        const prefs = res.prefs || {};
+        if ('notifyDisconnect' in prefs) document.getElementById('notifyDisconnect').checked = !!prefs.notifyDisconnect;
+        if ('notifyLimit' in prefs) document.getElementById('notifyLimit').checked = !!prefs.notifyLimit;
+        if ('notifyReferral' in prefs) document.getElementById('notifyReferral').checked = !!prefs.notifyReferral;
+      } catch (e) { /* fall back to HTML defaults */ }
+    }
+
+    async function saveNotificationPrefs() {
+      const btn = document.getElementById('saveNotifBtn');
+      btn.disabled = true;
+      const orig = btn.textContent;
+      btn.textContent = 'Saving...';
+      try {
+        await api('/api/auth/notification-prefs', {
+          method: 'PUT',
+          body: JSON.stringify({
+            prefs: {
+              notifyDisconnect: document.getElementById('notifyDisconnect').checked,
+              notifyLimit: document.getElementById('notifyLimit').checked,
+              notifyReferral: document.getElementById('notifyReferral').checked
+            }
+          })
+        });
+        showToast('Notification preferences saved', 'success');
+      } catch (e) {
+        showToast('Save failed: ' + (e.message || 'unknown'), 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = orig;
+      }
+    }
+
+    loadNotificationPrefs();
 
     (async function loadProfile() {
         try {

@@ -368,7 +368,7 @@
                 </div>
                 <div class="referral-code-box">
                     <span class="referral-code" id="referralCode">------</span>
-                    <button class="btn btn-sm btn-secondary" onclick="copyReferralCode()">Copy</button>
+                    <button class="btn btn-sm btn-secondary" onclick="copyReferralCode()" title="Copy signup link with your referral code">Copy Link</button>
                 </div>
                 <div class="referral-stats">
                     <div>
@@ -513,12 +513,21 @@
 
         function copyReferralCode() {
             const code = document.getElementById('referralCode').textContent;
-            if (code === '------') return;
+            if (!code || code === '------') return;
 
-            navigator.clipboard.writeText(code).then(() => {
-                showToast('Referral code copied to clipboard', 'success');
+            // Copy the full signup link so recipients can just click it
+            const link = `${window.location.origin}/signup.html?ref=${encodeURIComponent(code)}`;
+
+            navigator.clipboard.writeText(link).then(() => {
+                showToast('Referral link copied: ' + link, 'success');
             }).catch(() => {
-                showToast('Failed to copy code', 'error');
+                // Fallback for older browsers / insecure contexts
+                const ta = document.createElement('textarea');
+                ta.value = link;
+                document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); showToast('Referral link copied', 'success'); }
+                catch { showToast('Failed to copy. Link: ' + link, 'error'); }
+                ta.remove();
             });
         }
 
