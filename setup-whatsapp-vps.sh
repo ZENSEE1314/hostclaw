@@ -132,15 +132,20 @@ app.post('/session/start', async (req, res) => {
       if (connection === 'close') {
         const code = new Boom(lastDisconnect?.error)?.output?.statusCode;
         if (code === DisconnectReason.loggedOut) {
-          console.log(`[${userId}] Logged out`);
+          console.log(`[${userId}] Logged out — clearing auth, user must re-scan QR`);
           sessions.delete(userId);
           fs.rmSync(authDir, { recursive: true, force: true });
         } else {
-          console.log(`[${userId}] Disconnected (code ${code}), reconnecting...`);
-          setTimeout(() => {
-            if (sessions.has(userId)) {
-              // Re-create session
+          // Connection dropped, not logged out — reconnect automatically using saved auth
+          console.log(`[${userId}] Disconnected (code ${code}), reconnecting in 5s...`);
+          setTimeout(async () => {
+            try {
               sessions.delete(userId);
+              // Re-start the session using the same auth files
+              await axios.post(`http://localhost:${PORT}/session/start`, { userId }).catch(() => {});
+              console.log(`[${userId}] Reconnect initiated`);
+            } catch (e) {
+              console.error(`[${userId}] Reconnect failed:`, e.message);
             }
           }, 5000);
         }
