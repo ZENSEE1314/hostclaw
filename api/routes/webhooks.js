@@ -651,11 +651,8 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
         const { query: dbQuery } = require('../config/database');
         const crypto = require('crypto');
 
-        // Check if message looks like a product enquiry (price, cost, package, buy, order)
-        const enquiryKeywords = /price|cost|how much|package|buy|order|purchase|booking|book|quote|rate|promo|discount|deal/i;
-        const isEnquiry = enquiryKeywords.test(text);
-
-        if (isEnquiry) {
+        // Any inbound message from a new session counts as an enquiry.
+        if (text && text.trim().length > 0) {
           // Check if lead already exists for this session
           const existingLead = await dbQuery(
             'SELECT id, status FROM sales_leads WHERE user_id = $1 AND session_id = $2 LIMIT 1',
