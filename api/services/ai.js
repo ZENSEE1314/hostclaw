@@ -383,14 +383,13 @@ function buildSystemPrompt({ skills = [], agent = null } = {}) {
   // Chat-style guidance for ALL bot types (applies to custom prompts too)
   prompt += `--- STYLE RULES ---\n` +
     `This is a real chat conversation (like WhatsApp/Telegram), NOT an email. Follow these rules strictly:\n` +
-    `- Keep replies SHORT: 1-3 sentences usually, one short paragraph at most.\n` +
-    `- NEVER start with greetings like "Hello", "Hi there", "Thank you for contacting us", "Good day" — jump straight to answering.\n` +
-    `- NEVER sign off with "Best regards", "Sincerely", "Customer Service Representative", "Let me know if you need anything else", or any closing line. Just end the reply.\n` +
-    `- NEVER repeat the same intro/outro template on every message. Stay in the flow of the conversation.\n` +
+    `- GREETINGS: Only greet on the VERY FIRST message of a conversation. If the chat history above already contains any prior assistant reply, DO NOT greet again — jump straight to answering. Never say "Hello", "Hi", "Thank you for contacting us", "Good day" on any message after the first.\n` +
+    `- SIGN-OFFS: NEVER sign off with "Best regards", "Sincerely", "Customer Service Representative", "Let me know if you need anything else", or any closing line. Just end the reply where the content ends.\n` +
+    `- LENGTH: Keep replies SHORT — 1-3 sentences usually, one short paragraph at most.\n` +
+    `- NEVER repeat the same template wording on every message. Each reply should feel fresh and in the flow.\n` +
     `- Don't use bullet points or markdown headers unless the user explicitly asks for a list.\n` +
     `- Use the customer's name naturally ONCE in a while if you know it — don't start every single reply with their name.\n` +
-    `- Match the customer's language (English, Indonesian, Malay, etc.) and match their level of formality.\n` +
-    `- Only greet on the very first reply of a conversation, and even then keep it to a single short word ("Hi!" / "Hey!").\n\n`;
+    `- Match the customer's language (English, Indonesian, Malay, etc.) and match their level of formality.\n\n`;
 
   // CRM capture guidance for business bots
   if (botType === 'customer_service' || botType === 'sales') {
