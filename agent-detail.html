@@ -1085,7 +1085,13 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
             </select>
           </div>
           <div class="form-group" style="margin-bottom: 0;">
-            <label class="form-label" for="descriptionInput">Description</label>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;margin-bottom:0.4rem">
+              <label class="form-label" for="descriptionInput" style="margin:0">Description</label>
+              <button type="button" class="btn btn-outline btn-sm" id="generateAgentDescBtn" onclick="generateAgentDescription()" title="Generate from Business Info">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                Generate with AI
+              </button>
+            </div>
             <textarea id="descriptionInput" class="form-textarea" rows="3" placeholder="Brief description of this agent..."></textarea>
           </div>
           <div class="mt-2">
@@ -1693,6 +1699,24 @@ Bot: Sure thing! We have a Starter plan at $19/month — perfect if you're just 
       } finally {
         saveBtn.disabled = false;
         saveBtn.textContent = origText;
+      }
+    }
+
+    async function generateAgentDescription() {
+      const btn = document.getElementById('generateAgentDescBtn');
+      const orig = btn.innerHTML;
+      btn.disabled = true;
+      btn.textContent = 'Generating...';
+      try {
+        const res = await api(`/api/agents/${agentId}/description/generate`, { method: 'POST' });
+        if (!res.description) throw new Error('No description returned');
+        document.getElementById('descriptionInput').value = res.description;
+        showToast('Description generated. Review and click Save Settings.', 'success');
+      } catch (e) {
+        showToast(e.message || 'Failed to generate', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = orig;
       }
     }
 

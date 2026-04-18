@@ -195,6 +195,55 @@ router.delete('/:id/bookings/:bookingId', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+// Generate a short agent description from the business profile.
+router.post('/:id/description/generate', async (req, res, next) => {
+  try {
+    const agent = await Agent.findById(req.params.id, req.user.userId);
+    if (!agent) return res.status(404).json({ error: 'Agent not found' });
+
+    const kb = Array.isArray(agent.knowledge_base)
+      ? agent.knowledge_base
+      : (typeof agent.knowledge_base === 'string' ? JSON.parse(agent.knowledge_base || '[]') : []);
+    const biz = kb.find(e => e.type === 'business_info') || {};
+
+    const profileParts = [
+      biz.title ? `Company: ${biz.title}` : '',
+      biz.industry ? `Industry: ${biz.industry}` : '',
+      biz.description ? `About: ${biz.description}` : '',
+      biz.hours ? `Hours: ${biz.hours}` : '',
+      biz.address ? `Address: ${biz.address}` : '',
+      biz.website ? `Website: ${biz.website}` : ''
+    ].filter(Boolean);
+
+    if (!profileParts.length) {
+      return res.status(400).json({ error: 'Fill in the Business Info first (name, industry, about).' });
+    }
+
+    const { generateAIResponse } = require('../services/ai');
+    const User = require('../models/user');
+    const user = await User.findById(req.user.userId);
+    const providers = typeof user.api_providers === 'string' ? JSON.parse(user.api_providers || '{}') : (user.api_providers || {});
+    const defProv = user.default_provider || 'ollama';
+    const providerConfig = providers[defProv] || providers[Object.keys(providers)[0]] || { model: 'gemma4:31b-cloud' };
+
+    const instruction = `Write ONE short internal description (1-2 sentences, max 200 chars) of what this AI agent does, based on the business profile. Do not repeat the company name. Do not use quotes or markdown. Plain text only.\n\nPROFILE:\n${profileParts.join('\n')}`;
+
+    const aiRes = await generateAIResponse({
+      message: instruction,
+      provider: defProv,
+      providerConfig,
+      skills: [],
+      chatHistory: [],
+      agent: null
+    });
+
+    const desc = (aiRes.content || '').trim().replace(/^["']|["']$/g, '').slice(0, 300);
+    res.json({ description: desc, model: aiRes.model });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Generate FAQ suggestions from the agent's business profile using the user's default AI provider.
 // POST body (optional): { count: number, focus: string }
 router.post('/:id/faqs/generate', async (req, res, next) => {
