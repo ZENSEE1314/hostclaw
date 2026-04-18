@@ -1315,18 +1315,39 @@
       const desc = document.getElementById('promoPrompt').value.trim();
       if (!desc) { showToast('Describe what you want', 'error'); return; }
       const btn = document.getElementById('generateBtn');
+      const imgEl = document.getElementById('generatedImage');
+      const resultEl = document.getElementById('generatedResult');
       btn.disabled = true; btn.textContent = 'Generating...';
       try {
         const data = await api('/api/creative/generate-image', {
           method: 'POST',
           body: JSON.stringify({ description: desc, style: selectedStyle })
         });
-        document.getElementById('generatedImage').src = data.image_url;
+
+        // Show placeholder + result box immediately so user sees progress
+        resultEl.style.display = 'block';
+        imgEl.alt = 'Generating — Pollinations.ai typically takes 10-30s...';
+        imgEl.style.minHeight = '200px';
+        imgEl.style.background = 'var(--bg-secondary)';
         document.getElementById('downloadLink').href = data.image_url;
         document.getElementById('generatedPrompt').textContent = 'AI prompt: ' + (data.prompt_used || '').substring(0, 150);
-        document.getElementById('generatedResult').style.display = 'block';
+
+        btn.textContent = 'Rendering...';
+        // Load the image with timeout handling
+        await new Promise((resolve, reject) => {
+          const timer = setTimeout(() => reject(new Error('Image generation timed out (60s). Try a simpler description.')), 90000);
+          imgEl.onload = () => { clearTimeout(timer); resolve(); };
+          imgEl.onerror = () => { clearTimeout(timer); reject(new Error('Image service failed to return an image. Try again.')); };
+          imgEl.src = data.image_url;
+        });
+
+        imgEl.style.minHeight = '';
+        imgEl.style.background = '';
         showToast('Image generated', 'success');
-      } catch (e) { showToast(e.message, 'error'); }
+      } catch (e) {
+        showToast(e.message || 'Image generation failed', 'error');
+        console.error('generateImage error:', e);
+      }
       finally { btn.disabled = false; btn.textContent = 'Generate Image'; }
     }
 

@@ -25,36 +25,18 @@ router.post('/generate-image', async (req, res, next) => {
     };
 
     const styleHint = styleMap[style] || 'professional marketing material';
-    const promptRequest = `Create a detailed image generation prompt for: "${description}". Style: ${styleHint}. Return ONLY the prompt text, nothing else. Make it vivid and detailed for AI image generation. Keep it under 200 words.`;
 
-    // Generate enhanced prompt using AI
-    let enhancedPrompt = description;
-    try {
-      const aiRes = await generateAIResponse({
-        message: promptRequest,
-        provider: undefined,
-        providerConfig: null,
-        skills: []
-      });
-      if (!aiRes.error) {
-        enhancedPrompt = aiRes.content.replace(/^["']|["']$/g, '').trim();
-      }
-    } catch (e) {
-      console.log('Prompt enhancement failed, using original:', e.message);
-    }
+    // Skip slow AI-prompt enhancement — just append the style hint directly.
+    // This cuts 10-20s of latency and removes a failure mode where the AI model stalls.
+    const enhancedPrompt = `${description}, ${styleHint}, high quality, detailed, 4k`;
 
-    // Step 2: Generate image using Pollinations.ai (free, no API key)
+    // Step 2: Generate image URL via Pollinations.ai (free, no API key)
+    // Use 1024x1024 + seed for consistency; model=flux gives sharper results than default.
     const encodedPrompt = encodeURIComponent(enhancedPrompt);
     const width = 1024;
     const height = 1024;
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&nologo=true`;
-
-    // Verify the image URL works
-    try {
-      const check = await axios.head(imageUrl, { timeout: 5000 });
-    } catch (e) {
-      // Pollinations might not support HEAD, that's ok — URL is valid
-    }
+    const seed = Math.floor(Math.random() * 1000000);
+    const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&nologo=true&model=flux&seed=${seed}`;
 
     // Deduct 1 message for image generation
     await User.deductMessage(req.user.userId);
