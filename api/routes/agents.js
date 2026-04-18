@@ -199,8 +199,8 @@ router.delete('/:id/bookings/:bookingId', async (req, res, next) => {
 // POST body (optional): { count: number, focus: string }
 router.post('/:id/faqs/generate', async (req, res, next) => {
   try {
-    const agent = await Agent.findById(req.params.id);
-    if (!agent || agent.user_id !== req.user.userId) return res.status(404).json({ error: 'Agent not found' });
+    const agent = await Agent.findById(req.params.id, req.user.userId);
+    if (!agent) return res.status(404).json({ error: 'Agent not found' });
 
     const { count = 6, focus = '' } = req.body || {};
     const kb = Array.isArray(agent.knowledge_base)
