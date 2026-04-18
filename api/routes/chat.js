@@ -95,7 +95,41 @@ async function queuePendingFAQ(agent, userId, question, aiReply) {
   }
 }
 
-async function upsertWhatsAppContact(userId, from, text, pushName = '') {
+// E.164 international country code → country
+const COUNTRY_CODES = [
+  ['1',   'US/Canada'], ['7',   'Russia/Kazakhstan'],
+  ['20',  'Egypt'], ['27',  'South Africa'], ['30',  'Greece'], ['31',  'Netherlands'],
+  ['32',  'Belgium'], ['33',  'France'], ['34',  'Spain'], ['36',  'Hungary'],
+  ['39',  'Italy'], ['40',  'Romania'], ['41',  'Switzerland'], ['44',  'United Kingdom'],
+  ['45',  'Denmark'], ['46',  'Sweden'], ['47',  'Norway'], ['48',  'Poland'],
+  ['49',  'Germany'], ['51',  'Peru'], ['52',  'Mexico'], ['54',  'Argentina'],
+  ['55',  'Brazil'], ['56',  'Chile'], ['57',  'Colombia'], ['58',  'Venezuela'],
+  ['60',  'Malaysia'], ['61',  'Australia'], ['62',  'Indonesia'], ['63',  'Philippines'],
+  ['64',  'New Zealand'], ['65',  'Singapore'], ['66',  'Thailand'], ['81',  'Japan'],
+  ['82',  'South Korea'], ['84',  'Vietnam'], ['86',  'China'], ['90',  'Turkey'],
+  ['91',  'India'], ['92',  'Pakistan'], ['93',  'Afghanistan'], ['94',  'Sri Lanka'],
+  ['95',  'Myanmar'], ['98',  'Iran'], ['212', 'Morocco'], ['213', 'Algeria'],
+  ['216', 'Tunisia'], ['234', 'Nigeria'], ['254', 'Kenya'], ['255', 'Tanzania'],
+  ['351', 'Portugal'], ['352', 'Luxembourg'], ['353', 'Ireland'], ['358', 'Finland'],
+  ['380', 'Ukraine'], ['420', 'Czech Republic'], ['421', 'Slovakia'], ['852', 'Hong Kong'],
+  ['853', 'Macau'], ['855', 'Cambodia'], ['856', 'Laos'], ['880', 'Bangladesh'],
+  ['886', 'Taiwan'], ['960', 'Maldives'], ['961', 'Lebanon'], ['962', 'Jordan'],
+  ['963', 'Syria'], ['964', 'Iraq'], ['965', 'Kuwait'], ['966', 'Saudi Arabia'],
+  ['967', 'Yemen'], ['968', 'Oman'], ['971', 'UAE'], ['972', 'Israel'], ['974', 'Qatar'],
+  ['976', 'Mongolia'], ['977', 'Nepal'], ['995', 'Georgia']
+];
+
+function detectCountry(phoneDigits) {
+  if (!phoneDigits) return '';
+  // Longest prefix wins
+  const sorted = [...COUNTRY_CODES].sort((a, b) => b[0].length - a[0].length);
+  for (const [code, country] of sorted) {
+    if (phoneDigits.startsWith(code)) return country;
+  }
+  return '';
+}
+
+async function upsertWhatsAppContact(userId, from, text, pushName = '', senderPn = '', participantPn = '') {
   try {
     const { query } = require('../config/database');
     const u = await User.findById(userId);
@@ -104,9 +138,14 @@ async function upsertWhatsAppContact(userId, from, text, pushName = '') {
     if (u.contacts) {
       contacts = Array.isArray(u.contacts) ? u.contacts : JSON.parse(u.contacts || '[]');
     }
-    // WhatsApp privacy mode sends @lid — no real phone in JID. Use pushName for display.
+    // Phone resolution:
+    //   - Prefer senderPn / participantPn (Baileys passes these for @lid messages)
+    //   - Fall back to JID prefix for normal @s.whatsapp.net
     const isLid = isLidJid(from);
-    const phone = isLid ? '' : phoneFromJid(from);
+    const pnDigits = (s) => String(s || '').split('@')[0].split(':')[0].replace(/\D/g, '');
+    const phoneFromPn = pnDigits(senderPn) || pnDigits(participantPn);
+    const phone = phoneFromPn || (isLid ? '' : phoneFromJid(from));
+    const country = detectCountry(phone);
     let contact = contacts.find(c => c.platform === 'whatsapp' && c.platform_id === from);
     const extractedName = extractNameFromText(text);
 
@@ -122,7 +161,8 @@ async function upsertWhatsAppContact(userId, from, text, pushName = '') {
       contact = {
         id: crypto.randomUUID(),
         name: bestName,
-        phone,
+        phone: phone ? `+${phone}` : '',
+        country: country || '',
         email: '',
         platform: 'whatsapp',
         platform_id: from,
@@ -144,7 +184,8 @@ async function upsertWhatsAppContact(userId, from, text, pushName = '') {
         contact.name = pushName;
       }
       if (pushName) contact.push_name = pushName;
-      if (!contact.phone && phone) contact.phone = phone;
+      if (!contact.phone && phone) contact.phone = `+${phone}`;
+      if (!contact.country && country) contact.country = country;
     }
 
     await query(
@@ -160,7 +201,7 @@ async function upsertWhatsAppContact(userId, from, text, pushName = '') {
 // Must be declared before router.use(authenticate) so it bypasses auth.
 router.post('/whatsapp-webhook', async (req, res) => {
   try {
-    const { userId, from, text, pushName = '' } = req.body;
+    const { userId, from, text, pushName = '', senderPn = '', participantPn = '' } = req.body;
     if (!userId || !text) return res.status(400).json({ error: 'userId and text required' });
 
     const user = await User.findById(userId);
@@ -173,7 +214,7 @@ router.post('/whatsapp-webhook', async (req, res) => {
     if (!deducted) return res.json({ reply: 'Message limit reached.' });
 
     // CRM: auto-create/update contact from this message
-    await upsertWhatsAppContact(userId, from, text, pushName);
+    await upsertWhatsAppContact(userId, from, text, pushName, senderPn, participantPn);
 
     const sessionId = `whatsapp_${from}`;
     await Chat.saveMessage({ user_id: userId, session_id: sessionId, role: 'user', content: text });

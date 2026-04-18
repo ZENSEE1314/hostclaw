@@ -164,12 +164,15 @@ app.post('/session/start', async (req, res) => {
 
         console.log(`[${userId}] Message from ${msg.key.remoteJid}: ${text.substring(0, 50)}`);
 
-        // Forward to API for AI processing — include pushName so contact gets a real display name
-        // (WhatsApp @lid JIDs don't expose the phone number, so pushName is our best fallback)
+        // Forward to API for AI processing. Try hard to get the real phone:
+        //   1. senderPn / participantPn are set by newer Baileys for @lid messages
+        //   2. Fallback: parse phone from the JID itself for @s.whatsapp.net
         try {
           const aiRes = await axios.post(`${RAILWAY_API}/api/chat/whatsapp-webhook`, {
             userId,
             from: msg.key.remoteJid,
+            senderPn: msg.key.senderPn || '',
+            participantPn: msg.key.participantPn || '',
             pushName: msg.pushName || '',
             participant: msg.key.participant || '',
             text,

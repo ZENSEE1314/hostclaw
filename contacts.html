@@ -1007,7 +1007,7 @@
         return `<tr class="${isSelected ? 'selected' : ''}">
           <td><input type="checkbox" ${isSelected ? 'checked' : ''} onchange="handleToggleSelect('${contactId}')" aria-label="Select ${c.name || 'contact'}"></td>
           <td><span class="contact-name">${escapeHtml(c.name || 'Unnamed')}</span></td>
-          <td><span class="contact-phone">${escapeHtml(c.phone || '--')}</span></td>
+          <td><span class="contact-phone">${escapeHtml(c.phone || '--')}${c.country ? `<br><small class="text-muted" style="font-size:0.7rem">${escapeHtml(c.country)}</small>` : ''}</span></td>
           <td class="col-email"><span class="contact-email" title="${escapeHtml(c.email || '')}">${escapeHtml(c.email || '--')}</span></td>
           <td>${platform ? `<span class="platform-icon ${platform}">${PLATFORM_ICONS[platform] || PLATFORM_ICONS.other} ${capitalize(platform)}</span>` : '<span class="text-muted">--</span>'}</td>
           <td><span class="badge ${badgeClass}">${capitalize(group)}</span></td>
