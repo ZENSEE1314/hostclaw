@@ -37,7 +37,11 @@ function extractNameFromText(text) {
   return '';
 }
 
-async function upsertWhatsAppContact(userId, from, text) {
+function isLidJid(from) {
+  return /@lid$/i.test(from || '');
+}
+
+async function upsertWhatsAppContact(userId, from, text, pushName = '') {
   try {
     const { query } = require('../config/database');
     const u = await User.findById(userId);
@@ -46,27 +50,47 @@ async function upsertWhatsAppContact(userId, from, text) {
     if (u.contacts) {
       contacts = Array.isArray(u.contacts) ? u.contacts : JSON.parse(u.contacts || '[]');
     }
-    const phone = phoneFromJid(from);
+    // WhatsApp privacy mode sends @lid — no real phone in JID. Use pushName for display.
+    const isLid = isLidJid(from);
+    const phone = isLid ? '' : phoneFromJid(from);
     let contact = contacts.find(c => c.platform === 'whatsapp' && c.platform_id === from);
     const extractedName = extractNameFromText(text);
+
+    // Pick the best display name we have, in preference order:
+    // 1. Name the customer explicitly states in the chat
+    // 2. WhatsApp pushName (their profile name)
+    // 3. Phone number (if available)
+    // 4. Fallback "WhatsApp User"
+    const bestName = extractedName || (pushName || '').trim() || phone || 'WhatsApp User';
 
     if (!contact) {
       const crypto = require('crypto');
       contact = {
         id: crypto.randomUUID(),
-        name: extractedName || phone,
+        name: bestName,
         phone,
         email: '',
         platform: 'whatsapp',
         platform_id: from,
+        push_name: pushName || '',
         group: 'general',
         tags: [],
         created_at: new Date().toISOString()
       };
       contacts.push(contact);
-    } else if (extractedName && (!contact.name || contact.name === phone || /^\d+$/.test(contact.name))) {
-      // Update name only if current name is the raw phone (not set by the user yet)
-      contact.name = extractedName;
+    } else {
+      // Upgrade name if current is weaker (phone/blank/LID) and we have something better
+      const isWeakName = !contact.name
+        || contact.name === contact.phone
+        || /^\d+$/.test(contact.name)
+        || contact.name === 'WhatsApp User';
+      if (extractedName) {
+        contact.name = extractedName;
+      } else if (isWeakName && pushName) {
+        contact.name = pushName;
+      }
+      if (pushName) contact.push_name = pushName;
+      if (!contact.phone && phone) contact.phone = phone;
     }
 
     await query(
@@ -82,7 +106,7 @@ async function upsertWhatsAppContact(userId, from, text) {
 // Must be declared before router.use(authenticate) so it bypasses auth.
 router.post('/whatsapp-webhook', async (req, res) => {
   try {
-    const { userId, from, text } = req.body;
+    const { userId, from, text, pushName = '' } = req.body;
     if (!userId || !text) return res.status(400).json({ error: 'userId and text required' });
 
     const user = await User.findById(userId);
@@ -95,7 +119,7 @@ router.post('/whatsapp-webhook', async (req, res) => {
     if (!deducted) return res.json({ reply: 'Message limit reached.' });
 
     // CRM: auto-create/update contact from this message
-    await upsertWhatsAppContact(userId, from, text);
+    await upsertWhatsAppContact(userId, from, text, pushName);
 
     const sessionId = `whatsapp_${from}`;
     await Chat.saveMessage({ user_id: userId, session_id: sessionId, role: 'user', content: text });
@@ -133,7 +157,8 @@ router.use(checkPayment);
 // Get chat history
 router.get('/history', async (req, res, next) => {
   try {
-    const messages = await Chat.getChatHistory(req.user.userId, 50);
+    const limit = Math.min(parseInt(req.query.limit) || 500, 2000);
+    const messages = await Chat.getChatHistory(req.user.userId, limit);
     res.json({ messages });
   } catch (error) {
     next(error);

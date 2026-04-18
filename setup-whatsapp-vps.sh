@@ -159,11 +159,14 @@ app.post('/session/start', async (req, res) => {
 
         console.log(`[${userId}] Message from ${msg.key.remoteJid}: ${text.substring(0, 50)}`);
 
-        // Forward to Railway API for AI processing
+        // Forward to API for AI processing — include pushName so contact gets a real display name
+        // (WhatsApp @lid JIDs don't expose the phone number, so pushName is our best fallback)
         try {
           const aiRes = await axios.post(`${RAILWAY_API}/api/chat/whatsapp-webhook`, {
             userId,
             from: msg.key.remoteJid,
+            pushName: msg.pushName || '',
+            participant: msg.key.participant || '',
             text,
             messageId: msg.key.id
           }, { timeout: 30000 });

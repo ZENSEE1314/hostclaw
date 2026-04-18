@@ -378,8 +378,46 @@
     let isBotPaused = false;
     const botStatusCache = {};
     let contactMap = {}; // platform_id -> contact name
+    let pollTimer = null;
 
-    loadContacts().then(loadConversations);
+    loadContacts().then(loadConversations).then(startPolling);
+
+    function startPolling() {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(async () => {
+        const prevCount = allMessages.length;
+        await loadContacts();
+        await loadConversations({ silent: true });
+        // If active conversation has new messages, re-render it
+        if (activeSession && allMessages.length > prevCount) {
+          const conv = conversations[activeSession];
+          if (conv) renderMessages(conv);
+        }
+      }, 10000);
+    }
+
+    function renderMessages(conv) {
+      const container = document.getElementById('chatMessages');
+      const atBottom = container.scrollTop + container.clientHeight >= container.scrollHeight - 50;
+      container.innerHTML = conv.messages.map(msg => {
+        const isUser = msg.role === 'user';
+        const isHuman = msg.model === 'human';
+        let badgeHtml = '';
+        if (!isUser) {
+          badgeHtml = isHuman
+            ? '<span class="msg-badge operator">You</span>'
+            : '<span class="msg-badge bot">Bot</span>';
+        }
+        return `
+          <div class="msg ${msg.role}">
+            ${badgeHtml}
+            <div>${escapeHtml(msg.content)}</div>
+            <div class="msg-time">${msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</div>
+          </div>
+        `;
+      }).join('');
+      if (atBottom) container.scrollTop = container.scrollHeight;
+    }
 
     async function loadContacts() {
       try {
@@ -397,7 +435,7 @@
       activeSession = null;
     }
 
-    async function loadConversations() {
+    async function loadConversations(opts = {}) {
         try {
             const data = await api('/api/chat/history');
             allMessages = data.messages || data || [];
@@ -421,7 +459,7 @@
 
             renderConversationList();
         } catch (e) {
-            document.getElementById('convItems').innerHTML = '<div class="chat-empty" style="padding:2rem"><p>No conversations yet</p></div>';
+            if (!opts.silent) document.getElementById('convItems').innerHTML = '<div class="chat-empty" style="padding:2rem"><p>No conversations yet</p></div>';
         }
     }
 
@@ -500,28 +538,9 @@
         }
         updateBotToggleUI();
 
-        // Render messages with badges
+        renderMessages(conv);
+        // Force scroll to bottom on initial open
         const container = document.getElementById('chatMessages');
-        container.innerHTML = conv.messages.map(msg => {
-            const isUser = msg.role === 'user';
-            const isHuman = msg.model === 'human';
-            let badgeHtml = '';
-            if (!isUser) {
-                if (isHuman) {
-                    badgeHtml = '<span class="msg-badge operator">You</span>';
-                } else {
-                    badgeHtml = '<span class="msg-badge bot">Bot</span>';
-                }
-            }
-            return `
-                <div class="msg ${msg.role}">
-                    ${badgeHtml}
-                    <div>${escapeHtml(msg.content)}</div>
-                    <div class="msg-time">${msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) : ''}</div>
-                </div>
-            `;
-        }).join('');
-
         container.scrollTop = container.scrollHeight;
         renderConversationList();
     }
