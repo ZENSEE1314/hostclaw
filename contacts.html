@@ -1475,6 +1475,9 @@
         <button class="modal-close" onclick="closeEditor()" aria-label="Close">&times;</button>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem;align-items:center">
+        <button class="btn btn-outline btn-sm" id="editorUndoBtn" onclick="editorUndo()" title="Undo (Ctrl+Z)" disabled>↶ Undo</button>
+        <button class="btn btn-outline btn-sm" id="editorRedoBtn" onclick="editorRedo()" title="Redo (Ctrl+Y)" disabled>↷ Redo</button>
+        <span style="width:1px;height:24px;background:var(--border);margin:0 0.25rem"></span>
         <button class="btn btn-outline btn-sm" onclick="editorAddText()">+ Add Text</button>
         <button class="btn btn-outline btn-sm" onclick="document.getElementById('editorUpload').click()">+ Add Logo/Image</button>
         <input type="file" id="editorUpload" accept="image/*" style="display:none" onchange="editorAddImageFromFile(this)">
@@ -1510,6 +1513,68 @@
   <script src="https://cdn.jsdelivr.net/npm/fabric@5.3.0/dist/fabric.min.js"></script>
   <script>
     let editorCanvas = null;
+    // Undo/redo state
+    let _undoStack = [];
+    let _redoStack = [];
+    let _suppressHistory = false;
+    const MAX_UNDO = 40;
+
+    function editorPushHistory() {
+      if (!editorCanvas || _suppressHistory) return;
+      try {
+        const snap = JSON.stringify(editorCanvas.toJSON(['selectable', 'evented']));
+        _undoStack.push(snap);
+        if (_undoStack.length > MAX_UNDO) _undoStack.shift();
+        _redoStack = []; // new action invalidates redo
+        editorUpdateUndoButtons();
+      } catch (e) { /* ignore */ }
+    }
+
+    function editorUpdateUndoButtons() {
+      const u = document.getElementById('editorUndoBtn');
+      const r = document.getElementById('editorRedoBtn');
+      if (u) u.disabled = _undoStack.length <= 1; // keep the initial snapshot as floor
+      if (r) r.disabled = _redoStack.length === 0;
+    }
+
+    function editorLoadState(json) {
+      if (!editorCanvas) return;
+      _suppressHistory = true;
+      editorCanvas.loadFromJSON(json, () => {
+        editorCanvas.renderAll();
+        _suppressHistory = false;
+        editorUpdateUndoButtons();
+      });
+    }
+
+    function editorUndo() {
+      if (_undoStack.length <= 1) return;
+      const current = _undoStack.pop();
+      _redoStack.push(current);
+      const prev = _undoStack[_undoStack.length - 1];
+      editorLoadState(prev);
+    }
+
+    function editorRedo() {
+      if (!_redoStack.length) return;
+      const next = _redoStack.pop();
+      _undoStack.push(next);
+      editorLoadState(next);
+    }
+
+    // Keyboard shortcuts when editor is open
+    document.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('editorModal');
+      if (!modal || !modal.classList.contains('active')) return;
+      // Skip if user is typing in an input or editing text on canvas
+      const tag = (e.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (editorCanvas?.getActiveObject()?.isEditing) return;
+
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); editorUndo(); }
+      else if (mod && (e.key.toLowerCase() === 'y' || (e.key.toLowerCase() === 'z' && e.shiftKey))) { e.preventDefault(); editorRedo(); }
+    });
 
     async function loadImageHistory() {
       const grid = document.getElementById('imageHistoryGrid');
@@ -1554,6 +1619,18 @@
       if (editorCanvas) { editorCanvas.dispose(); editorCanvas = null; }
       editorCanvas = new fabric.Canvas('editorCanvas', { backgroundColor: '#000' });
 
+      // Reset history for this editing session
+      _undoStack = [];
+      _redoStack = [];
+      editorUpdateUndoButtons();
+
+      // Track every modification for undo/redo
+      const pushIfLive = () => { if (!_suppressHistory) editorPushHistory(); };
+      editorCanvas.on('object:added', pushIfLive);
+      editorCanvas.on('object:removed', pushIfLive);
+      editorCanvas.on('object:modified', pushIfLive);
+      editorCanvas.on('text:changed', pushIfLive);
+
       // Need crossOrigin for toDataURL to work on external Pollinations URLs
       fabric.Image.fromURL(imageUrl, (img) => {
         if (!img) { showToast('Could not load image for editing', 'error'); return; }
@@ -1567,7 +1644,14 @@
         editorCanvas.setHeight(h);
         img.scale(scale);
         img.set({ selectable: false, evented: false });
-        editorCanvas.setBackgroundImage(img, editorCanvas.renderAll.bind(editorCanvas));
+        editorCanvas.setBackgroundImage(img, () => {
+          editorCanvas.renderAll();
+          // Save the initial state as floor of undo stack
+          _suppressHistory = true;
+          _undoStack.push(JSON.stringify(editorCanvas.toJSON(['selectable', 'evented'])));
+          _suppressHistory = false;
+          editorUpdateUndoButtons();
+        });
       }, { crossOrigin: 'anonymous' });
     }
 
