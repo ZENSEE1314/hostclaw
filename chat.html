@@ -534,38 +534,43 @@
         input.value = '';
         const container = document.getElementById('chatMessages');
         const sessionId = activeSession || 'default';
+        const isExternalPlatform = sessionId.startsWith('whatsapp_') || sessionId.startsWith('telegram_');
 
-        if (isBotPaused) {
-            // Manual mode: operator sends directly
+        // For external platforms (WhatsApp/Telegram), every manual message from the operator
+        // relays through /api/chat/reply to the actual platform. The bot pause toggle only
+        // affects automatic AI replies to incoming customer messages, not operator replies.
+        if (isExternalPlatform || isBotPaused) {
             container.innerHTML += `<div class="msg assistant"><span class="msg-badge operator">You</span><div>${escapeHtml(text)}</div><div class="msg-time">now</div></div>`;
             container.scrollTop = container.scrollHeight;
 
             try {
-                await api('/api/chat/reply', {
+                const res = await api('/api/chat/reply', {
                     method: 'POST',
                     body: JSON.stringify({ session_id: sessionId, message: text })
                 });
+                if (res && res.sent === false) throw new Error(res.error || 'Send failed');
             } catch (e) {
                 container.innerHTML += `<div class="msg assistant"><div style="color:var(--danger)">Send failed: ${escapeHtml(e.message)}</div></div>`;
                 container.scrollTop = container.scrollHeight;
             }
-        } else {
-            // Bot mode: send as user, get AI reply
-            container.innerHTML += `<div class="msg user"><div>${escapeHtml(text)}</div><div class="msg-time">now</div></div>`;
-            container.scrollTop = container.scrollHeight;
+            return;
+        }
 
-            try {
-                const data = await api('/api/chat/message', {
-                    method: 'POST',
-                    body: JSON.stringify({ message: text, session_id: sessionId })
-                });
-                const reply = data.content || data.message || data.response || 'No response';
-                container.innerHTML += `<div class="msg assistant"><span class="msg-badge bot">Bot</span><div>${escapeHtml(reply)}</div><div class="msg-time">now</div></div>`;
-                container.scrollTop = container.scrollHeight;
-            } catch (e) {
-                container.innerHTML += `<div class="msg assistant"><div style="color:var(--danger)">${escapeHtml(e.message)}</div></div>`;
-                container.scrollTop = container.scrollHeight;
-            }
+        // Web chat: run through AI and show its reply
+        container.innerHTML += `<div class="msg user"><div>${escapeHtml(text)}</div><div class="msg-time">now</div></div>`;
+        container.scrollTop = container.scrollHeight;
+
+        try {
+            const data = await api('/api/chat/message', {
+                method: 'POST',
+                body: JSON.stringify({ message: text, session_id: sessionId })
+            });
+            const reply = data.content || data.message || data.response || 'No response';
+            container.innerHTML += `<div class="msg assistant"><span class="msg-badge bot">Bot</span><div>${escapeHtml(reply)}</div><div class="msg-time">now</div></div>`;
+            container.scrollTop = container.scrollHeight;
+        } catch (e) {
+            container.innerHTML += `<div class="msg assistant"><div style="color:var(--danger)">${escapeHtml(e.message)}</div></div>`;
+            container.scrollTop = container.scrollHeight;
         }
     }
 
@@ -631,14 +636,22 @@
         const btn = document.getElementById('botToggleBtn');
         const label = document.getElementById('botToggleLabel');
         const input = document.getElementById('chatInput');
+        const sid = activeSession || '';
+        const isExternal = sid.startsWith('whatsapp_') || sid.startsWith('telegram_');
 
         if (isBotPaused) {
             btn.className = 'bot-toggle-btn paused';
             label.textContent = 'Bot Paused';
-            input.placeholder = 'Type a reply (manual mode)...';
         } else {
             btn.className = 'bot-toggle-btn active';
             label.textContent = 'Bot Active';
+        }
+
+        if (isExternal) {
+            input.placeholder = 'Reply as yourself — sends to the customer...';
+        } else if (isBotPaused) {
+            input.placeholder = 'Type a reply (manual mode)...';
+        } else {
             input.placeholder = 'Type a message...';
         }
     }
