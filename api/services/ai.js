@@ -330,7 +330,7 @@ async function callOllama(message, apiKey, model, skills, chatHistory = [], agen
       'Content-Type': 'application/json',
       'ngrok-skip-browser-warning': 'true'
     },
-    timeout: 60000
+    timeout: 180000
   });
 
   return {
