@@ -211,6 +211,10 @@
                 <div class="form-group"><label class="form-label">Email</label><input type="text" id="editEmail" class="form-input" readonly></div>
                 <div class="form-group"><label class="form-label">Plan</label><select id="editPlan" class="form-select"><option value="starter">Starter</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></select></div>
                 <div class="form-group"><label class="form-label">Credits ($)</label><input type="number" id="editCredits" class="form-input" step="0.01"></div>
+                <div class="form-group"><label class="form-label">Plan Type</label><select id="editPlanType" class="form-select"><option value="free">Free</option><option value="paid">Paid (message top-up)</option><option value="unlimited">Unlimited</option></select></div>
+                <div class="form-group"><label class="form-label">Message Limit</label><input type="number" id="editMessageLimit" class="form-input" step="1" placeholder="e.g. 1000 (ignored for unlimited)"></div>
+                <div class="form-group"><label class="form-label">Message Count (usage)</label><input type="number" id="editMessageCount" class="form-input" step="1" placeholder="0 to reset"></div>
+                <div class="form-group"><label class="form-label">Plan Expires At</label><input type="datetime-local" id="editPlanExpires" class="form-input"><small style="color:#64748b">Leave blank for no expiry (forever unlimited)</small></div>
                 <div class="form-group"><div class="checkbox-wrapper"><input type="checkbox" id="editHasPaid"><label for="editHasPaid">Mark as Paid</label></div></div>
             </div>
             <div class="modal-footer">
@@ -361,6 +365,11 @@
             document.getElementById('editEmail').value = user.email || '';
             document.getElementById('editPlan').value = user.plan || 'starter';
             document.getElementById('editCredits').value = user.credits || 0;
+            document.getElementById('editPlanType').value = user.plan_type || 'free';
+            document.getElementById('editMessageLimit').value = user.message_limit ?? '';
+            document.getElementById('editMessageCount').value = user.message_count ?? 0;
+            document.getElementById('editPlanExpires').value = user.plan_expires_at
+              ? new Date(user.plan_expires_at).toISOString().slice(0, 16) : '';
             document.getElementById('editHasPaid').checked = user.has_paid === 1 || user.has_paid === true;
             document.getElementById('editModal').classList.add('active');
         }
@@ -371,9 +380,16 @@
         
         async function saveUser() {
             const userId = document.getElementById('editUserId').value;
+            const expiresRaw = document.getElementById('editPlanExpires').value;
+            const limitRaw = document.getElementById('editMessageLimit').value;
+            const countRaw = document.getElementById('editMessageCount').value;
             const updates = {
                 name: document.getElementById('editName').value,
                 plan: document.getElementById('editPlan').value,
+                plan_type: document.getElementById('editPlanType').value,
+                message_limit: limitRaw === '' ? null : parseInt(limitRaw, 10),
+                message_count: countRaw === '' ? 0 : parseInt(countRaw, 10),
+                plan_expires_at: expiresRaw ? new Date(expiresRaw).toISOString() : null,
                 credits: parseFloat(document.getElementById('editCredits').value),
                 has_paid: document.getElementById('editHasPaid').checked
             };
