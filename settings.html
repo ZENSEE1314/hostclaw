@@ -31,6 +31,11 @@
                 <input type="email" id="profileEmail" class="form-input" readonly style="opacity:0.6;cursor:not-allowed">
                 <p class="form-hint">Email cannot be changed</p>
             </div>
+            <div class="form-group">
+                <label class="form-label">Personal Contact Number</label>
+                <input type="tel" id="profileOwnerPhone" class="form-input" placeholder="e.g. 60123456789 (country code + number, digits only)">
+                <p class="form-hint">All booking alerts and reminders are sent here via WhatsApp.</p>
+            </div>
             <div class="form-group" style="margin-bottom:0">
                 <label class="form-label">Member since</label>
                 <p id="memberSince" class="text-secondary" style="font-size:0.9rem">-</p>
@@ -173,6 +178,7 @@
             const user = data.user || data;
             document.getElementById('profileName').value = user.name || '';
             document.getElementById('profileEmail').value = user.email || '';
+            document.getElementById('profileOwnerPhone').value = user.owner_phone || '';
             if (user.created_at) {
                 document.getElementById('memberSince').textContent = new Date(user.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
             }
@@ -183,9 +189,10 @@
 
     async function saveProfile() {
         const name = document.getElementById('profileName').value.trim();
+        const owner_phone = document.getElementById('profileOwnerPhone').value.trim();
         if (!name) { showToast('Name is required', 'error'); return; }
         try {
-            await api('/api/auth/profile', { method: 'PUT', body: JSON.stringify({ name }) });
+            await api('/api/auth/profile', { method: 'PUT', body: JSON.stringify({ name, owner_phone }) });
             showToast('Profile saved', 'success');
         } catch (e) { showToast(e.message, 'error'); }
     }

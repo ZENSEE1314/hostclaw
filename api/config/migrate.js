@@ -193,6 +193,11 @@ async function migrate() {
       console.log('✅ Column agents.linked_platforms ready');
     } catch (e) { console.log('ℹ️ agents.linked_platforms:', e.message); }
 
+    try {
+      await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS owner_phone TEXT`);
+      console.log('✅ Column users.owner_phone ready');
+    } catch (e) { console.log('ℹ️ users.owner_phone:', e.message); }
+
     // Site settings table for admin-editable homepage content
     await query(`
       CREATE TABLE IF NOT EXISTS site_settings (

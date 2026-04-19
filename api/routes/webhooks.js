@@ -620,6 +620,7 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
 
     // Handle booking confirmations from AI
     const bookingMatch = finalContent.match(/BOOKING_CONFIRM:([^|]+)\|([^|]+)\|([^|]+)\|([^\s\n]+)/);
+    let bookingConfirmed = false;
     if (bookingMatch && agent) {
       const [, date, time, name, phone] = bookingMatch;
       const result = await Agent.addBooking(agent.id, { date: date.trim(), time: time.trim(), customer_name: name.trim(), customer_phone: phone.trim() });
@@ -627,8 +628,27 @@ async function processAndRespond(user, text, platform, platformId, sendFn) {
         finalContent = finalContent.replace(/BOOKING_CONFIRM:[^\n]+/, '') +
           '\n\nSorry, that time slot is already booked. Please choose a different time.';
       } else {
+        bookingConfirmed = true;
         finalContent = finalContent.replace(/BOOKING_CONFIRM:[^\n]+/, '') +
           `\n\nBooking confirmed for ${name.trim()} on ${date.trim()} at ${time.trim()}.`;
+        // Fire-and-forget owner alert
+        require('../services/owner-notify').notifyOwner(
+          user.id,
+          `📅 New booking\nCustomer: ${name.trim()}\nPhone: ${phone.trim()}\nWhen: ${date.trim()} at ${time.trim()}\nBot: ${agent.business_name || agent.name || ''}`
+        ).catch(() => {});
+      }
+    }
+
+    // Booking-intent alert: customer mentioned booking keywords but AI didn't
+    // emit BOOKING_CONFIRM, so nothing was saved. Ping the owner so they can
+    // follow up manually and nothing falls through the cracks.
+    if (!bookingConfirmed && agent) {
+      const bookingIntent = /\b(book|booking|appointment|reserve|schedule|slot)\b/i;
+      if (bookingIntent.test(text)) {
+        require('../services/owner-notify').notifyOwner(
+          user.id,
+          `⚠️ Booking enquiry not auto-captured\nFrom: ${platform} ${platformId}\nMessage: "${text.substring(0, 300)}"\nBot: ${agent.business_name || agent.name || ''}\nPlease follow up manually.`
+        ).catch(() => {});
       }
     }
 

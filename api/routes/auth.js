@@ -205,6 +205,7 @@ router.get('/profile', authenticate, async (req, res, next) => {
         plan: user.plan,
         credits: user.credits,
         my_referral_code: user.my_referral_code,
+        owner_phone: user.owner_phone || '',
         created_at: user.created_at
       }
     });
@@ -216,10 +217,23 @@ router.get('/profile', authenticate, async (req, res, next) => {
 // Update profile
 router.put('/profile', authenticate, async (req, res, next) => {
   try {
-    const { name } = req.body;
-    if (!name) return res.status(400).json({ error: 'Name is required' });
+    const { name, owner_phone } = req.body;
     const { query } = require('../config/database');
-    await query('UPDATE users SET name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [name, req.user.userId]);
+    const updates = [];
+    const params = [];
+    let p = 1;
+    if (name !== undefined) {
+      if (!name.trim()) return res.status(400).json({ error: 'Name cannot be empty' });
+      updates.push(`name = $${p++}`); params.push(name.trim());
+    }
+    if (owner_phone !== undefined) {
+      const digits = String(owner_phone).replace(/\D/g, '');
+      updates.push(`owner_phone = $${p++}`); params.push(digits || null);
+    }
+    if (!updates.length) return res.status(400).json({ error: 'Nothing to update' });
+    updates.push('updated_at = CURRENT_TIMESTAMP');
+    params.push(req.user.userId);
+    await query(`UPDATE users SET ${updates.join(', ')} WHERE id = $${p}`, params);
     res.json({ message: 'Profile updated' });
   } catch (error) { next(error); }
 });
