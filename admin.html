@@ -209,7 +209,19 @@
                 <input type="hidden" id="editUserId">
                 <div class="form-group"><label class="form-label">Name</label><input type="text" id="editName" class="form-input"></div>
                 <div class="form-group"><label class="form-label">Email</label><input type="text" id="editEmail" class="form-input" readonly></div>
-                <div class="form-group"><label class="form-label">Plan</label><select id="editPlan" class="form-select"><option value="starter">Starter</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></select></div>
+                <div class="form-group">
+                    <label class="form-label">Quick Preset</label>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px">
+                        <button type="button" class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="applyPreset('free')">Free (50)</button>
+                        <button type="button" class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="applyPreset('starter')">Starter (1k)</button>
+                        <button type="button" class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="applyPreset('growth')">Growth (5k)</button>
+                        <button type="button" class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="applyPreset('pro')">Pro (unlimited / 30d)</button>
+                        <button type="button" class="btn btn-secondary" style="padding:6px 12px;font-size:12px" onclick="applyPreset('enterprise')">Enterprise (unlimited / 365d)</button>
+                        <button type="button" class="btn btn-success" style="padding:6px 12px;font-size:12px" onclick="applyPreset('forever')">Forever Unlimited</button>
+                    </div>
+                    <small style="color:#64748b">Presets fill Plan / Plan Type / Limit / Expiry below — still click Save.</small>
+                </div>
+                <div class="form-group"><label class="form-label">Plan (label)</label><select id="editPlan" class="form-select"><option value="free">Free</option><option value="starter">Starter</option><option value="growth">Growth</option><option value="pro">Pro</option><option value="enterprise">Enterprise</option></select></div>
                 <div class="form-group"><label class="form-label">Credits ($)</label><input type="number" id="editCredits" class="form-input" step="0.01"></div>
                 <div class="form-group"><label class="form-label">Plan Type</label><select id="editPlanType" class="form-select"><option value="free">Free</option><option value="paid">Paid (message top-up)</option><option value="unlimited">Unlimited</option></select></div>
                 <div class="form-group"><label class="form-label">Message Limit</label><input type="number" id="editMessageLimit" class="form-input" step="1" placeholder="e.g. 1000 (ignored for unlimited)"></div>
@@ -376,6 +388,29 @@
         
         function closeModal() {
             document.getElementById('editModal').classList.remove('active');
+        }
+
+        // One-click preset that fills plan/plan_type/limit/expiry to match a package.
+        // Expiry dates are calculated relative to now.
+        function applyPreset(preset) {
+            const now = new Date();
+            const iso = (d) => d.toISOString().slice(0, 16);
+            const presets = {
+                free:       { plan: 'free',       type: 'free',      limit: 50,       count: 0, expires: '' },
+                starter:    { plan: 'starter',    type: 'paid',      limit: 1000,     expires: '' },
+                growth:     { plan: 'growth',     type: 'paid',      limit: 5000,     expires: '' },
+                pro:        { plan: 'pro',        type: 'unlimited', limit: 500000,   expires: iso(new Date(now.getTime() + 30  * 86400000)) },
+                enterprise: { plan: 'enterprise', type: 'unlimited', limit: 1000000,  expires: iso(new Date(now.getTime() + 365 * 86400000)) },
+                forever:    { plan: 'enterprise', type: 'unlimited', limit: 1000000,  expires: '' }
+            };
+            const p = presets[preset];
+            if (!p) return;
+            document.getElementById('editPlan').value = p.plan;
+            document.getElementById('editPlanType').value = p.type;
+            document.getElementById('editMessageLimit').value = p.limit;
+            if (p.count !== undefined) document.getElementById('editMessageCount').value = p.count;
+            document.getElementById('editPlanExpires').value = p.expires;
+            document.getElementById('editHasPaid').checked = p.type !== 'free';
         }
         
         async function saveUser() {
