@@ -88,17 +88,27 @@ async function processOnce() {
         if (!jid) continue;
 
         const businessName = row.business_name || 'us';
+        const { notifyOwner } = require('../services/owner-notify');
+        const ownerSummary = (kind) => {
+          const when = `${b.date} at ${b.time}`;
+          const who = b.customer_name || 'Customer';
+          const extra = b.service || b.package || '';
+          const head = kind === '1d' ? '📅 Reminder: booking tomorrow' : '⏰ Reminder: booking in ~1 hour';
+          return `${head}\n${who} — ${when}${extra ? `\n${extra}` : ''}\nBot: ${businessName}`;
+        };
 
         // 1-day reminder window: between 24h10m and 23h50m before the appointment
         if (!b.reminders_sent.includes('1d') && msUntil > 0 && Math.abs(msUntil - 24 * 60 * 60 * 1000) <= WINDOW_MS) {
           const ok = await sendWhatsAppReminder(row.user_id, jid, reminderMessage('1d', b, businessName));
           if (ok) { b.reminders_sent.push('1d'); changed = true; }
+          notifyOwner(row.user_id, ownerSummary('1d')).catch(() => {});
         }
 
         // 1-hour reminder window: between 1h10m and 50m before
         if (!b.reminders_sent.includes('1h') && msUntil > 0 && Math.abs(msUntil - 60 * 60 * 1000) <= WINDOW_MS) {
           const ok = await sendWhatsAppReminder(row.user_id, jid, reminderMessage('1h', b, businessName));
           if (ok) { b.reminders_sent.push('1h'); changed = true; }
+          notifyOwner(row.user_id, ownerSummary('1h')).catch(() => {});
         }
       }
 
