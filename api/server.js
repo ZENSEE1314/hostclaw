@@ -89,6 +89,23 @@ async function startup() {
       // New booking reminder worker: sends WhatsApp reminders 1 day + 1 hour before
       require('./workers/booking-reminders').start();
       console.log('📅 Processors started: follow-ups (2min), tasks (2min), booking-reminders (5min)');
+
+      // Pre-warm Ollama so the first user request doesn't pay cold-start latency.
+      // Requires OLLAMA_URL and OLLAMA_MODEL; keeps the model resident for OLLAMA_KEEP_ALIVE (default 30m).
+      const ollamaUrl = process.env.OLLAMA_URL;
+      const ollamaModel = process.env.OLLAMA_MODEL;
+      if (ollamaUrl && ollamaModel) {
+        const keepAlive = process.env.OLLAMA_KEEP_ALIVE || '30m';
+        const prewarm = () => {
+          require('axios').post(`${ollamaUrl}/api/generate`, {
+            model: ollamaModel, prompt: '', keep_alive: keepAlive
+          }, { timeout: 180000, headers: { 'ngrok-skip-browser-warning': 'true' } })
+            .then(() => console.log(`🔥 Ollama pre-warmed: ${ollamaModel} (keep_alive=${keepAlive})`))
+            .catch(e => console.warn('⚠️ Ollama pre-warm failed:', e.message));
+        };
+        prewarm();
+        setInterval(prewarm, 25 * 60 * 1000); // refresh before the 30m keep_alive expires
+      }
     });
   } catch (err) {
     console.error('❌ Startup failed:', err);
